@@ -1,6 +1,7 @@
 --
--- luatabox unit tests
-package.path = package.path..";./?.lua;./systree/share/lua/5.1/?.lua;./systree/share/lua/5.1/?/init.lua"
+-- Configurator
+require 'ex_cbfun'
+
 
 -- runlindo
 local Lindo = require("base_lindo")
@@ -8,10 +9,6 @@ local pars = Lindo.parameters
 local errs = Lindo.errors
 local info = Lindo.info
 local status = Lindo.status
-require 'ex_cbfun'
-if (xta==nil) then
-  xta = tabox.env()
-end
 
 local solver
 
