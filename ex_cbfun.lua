@@ -3,6 +3,9 @@ package.path = package.path..";./?.lua;./lib/" .. szPLATFORM .. "/systree/share/
 
 function myprintlog(pModel, str)
     printf("%s", str)
+    if string.len(str)<-2 then
+		io.read()
+	end
 end
 
 function cbmip(pModel, dobj, pX)

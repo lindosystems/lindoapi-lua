@@ -164,7 +164,7 @@ end
 
 
 local status_keys = {"modelstatus","solstatus","mipstatus","gopstatus"}
-local model_keys = {"modeltype","numvars","numcons","nonz","numint","numbin","numvarsnlp","numconsnlp","nonznlp","numsets","numsc","numinst"}
+local model_keys = {"modeltype","numvars","numcons","nonz","numint","numbin","numvarsnlp","numvarsqcp","numconsnlp","numconsqcp","nonznlp","nonzqcp","numsets","numsc","numinst"}
 local sol_keys = {"simiters","nlpiters","bariters","mipsimiters","mipnlpiters","mipbariters","gopsimiters","gopnlpiters","gopbariters","branches","pobj","dobj","suminf","mipobj","gopobj","mipbnd","gopbnd"}
 local other_keys = {"utable"}
 
