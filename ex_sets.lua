@@ -227,7 +227,7 @@ local function usage()
     print("\t lua ex_sets.lua -m model.mps [options]")
     print()
     print_default_usage()
-    
+	print()
     print("    , --disp_sets                Display set/sc data")
     print("    , --addsets_mask=INTEGER     An integer mask to specify how to add sets")        
     print("    , --nsets=INTEGER            Set number of sets to 'INTEGER'")        
