@@ -1,15 +1,11 @@
---
--- Configurator
-require 'ex_cbfun'
-
-
 -- runlindo
-local Lindo = require("base_lindo")
+local Lindo = require("llindo_tabox")
 local pars = Lindo.parameters
 local errs = Lindo.errors
 local info = Lindo.info
 local status = Lindo.status
 
+require 'ex_cbfun'
 local solver
 
 ---
@@ -384,6 +380,7 @@ end
 
 if options.writeas then
     options.subfolder = "sets"
+    options.writeas = "mpssets" --change to special model 'mpssets'
     options.suffix = sprintf("%d",options.seed)    
     pModel:write(options)
 end    

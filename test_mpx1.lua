@@ -3,7 +3,7 @@
 package.path = package.path..";./?.lua;./systree/share/lua/5.1/?.lua;./systree/share/lua/5.1/?/init.lua"
 
 -- runlindo
-local Lindo = require("base_lindo")
+local Lindo = require("llindo_tabox")
 local pars = Lindo.parameters
 local errs = Lindo.errors
 local info = Lindo.info

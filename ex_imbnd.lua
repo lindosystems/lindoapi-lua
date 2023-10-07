@@ -1,11 +1,12 @@
--- config
-require 'ex_cbfun'
-
 -- runlindo
-local Lindo = require("base_lindo")
+local Lindo = require("llindo_tabox")
 local pars = Lindo.parameters
 local errs = Lindo.errors
 local info = Lindo.info
+
+-- config
+require 'ex_cbfun'
+
 
 local options, opts, optarg
 local solver
@@ -13,6 +14,39 @@ local model_file
 local verb=1
 local szerrmsg
 
+function im_optimize(yModel,kidx,objsense)
+	if not options.solve_as_lp then   
+		yModel:setModelDouParameter(pars.LS_DPARAM_MIP_TIMLIM,1000)
+		res = yModel:solveMIP()
+		yModel:xassert(res,{errs.LSERR_TIME_LIMIT})		
+		if yModel.mipstatus==1 then
+			res.objval = objsense*yModel.mipobj
+			res.status = 'ok'
+		elseif yModel.mipstatus==5 then
+			res.objval = objsense*yModel.mipbnd
+			res.status = 'ok'
+            local suffix = sprintf("_%06d_%s",kidx,objsense==-1 and "max" or "min")
+            local tempfile = addSuffix2Basename(options.model_file,suffix,"im")
+            yModel:write({writeas='ltx', suffix=suffix, subfolder="im"})
+		end				
+	else
+		res = yModel:optimize()
+		if yModel.solstatus==1 or yModel.solstatus==2 then
+			res.objval = objsense*yModel.dobj
+			res.status = 'ok'
+		end		
+	end	
+	local resx
+	if verb>3  then
+		if not solve_as_lp then   
+			resx = yModel:getMIPPrimalSolution()
+		else
+			resx = yModel:getPrimalSolution()
+		end
+		yModel:xassert(resx)
+	end	
+	return res, resx
+end
 --
 --
 function ls_calc_im_opt_bounds(pModel)    
@@ -69,7 +103,7 @@ function ls_calc_im_opt_bounds(pModel)
     resb = res
     --print_table3(resb)
     
-	local check_gin = true	
+	local check_gin = false	
 	local L, U = resb.padBestL, resb.padBestU
 	if check_gin then		
 		for j=1,L.len do
@@ -103,23 +137,27 @@ function ls_calc_im_opt_bounds(pModel)
     local n_objs, objndx, objval
     n_objs = yModel.numvars
     objndx = xta:izeros(n_objs)
-    objval = xta:zeros(n_objs)
+    objval = xta:zeros(n_objs)    
     for k=1,n_objs do objndx[k] = k-1 end
+    varndx = objndx:copy()
     
     res = yModel:modifyObjective(n_objs,objndx,objval)
     yModel:xassert(res,{2009})
     
-    
+    local elapsed = 0
     -- CALC BEST LB and UB for each var        
     local vnames = xta:field(yModel.numvars,"names","string")
     printf("\n")
-    for k=1,yModel.numvars do     
+    for k=1,yModel.numvars do     		        
+		-- prepare for modifications		
         local resn = yModel:getVariableNamej(k-1)
         if resn.pachVarName then
 			vnames[k] = resn.pachVarName
 		else
 			vnames[k] = sprintf("X%d",k)
 		end
+		if verb>1 then printf("%06d, '%20s', ",k-1,vnames[k]) end
+		
         objndx[1] = k-1
         objval[1] = -1        
         n_objs = 1
@@ -127,58 +165,33 @@ function ls_calc_im_opt_bounds(pModel)
             objndx[2] = k-2
             objval[2] = 0
             n_objs = n_objs + 1
-        end
-        if verb>1 then printf("%06d, '%20s', U=%10g, ",k-1,vnames[k],U[k]) end
+        end                
+        elapsed = xta:tic()
+        -- maximize x[k]
+        if verb>1  then printf("U=%10g, ",U[k]) end
         res = yModel:modifyObjective(n_objs,objndx,objval)        
-        yModel:xassert(res)     
-        if not solve_as_lp then   
-			res = yModel:solveMIP()
-		else
-			res = yModel:optimize()
-		end
-        yModel:xassert(res)
-        
-        local lb_j, ub_j = -1e30, 1e30
-        if yModel.solstatus==2 or yModel.solstatus==1 or yModel.mipstatus==1 then        
-            local resx 
-            if verb>3 then
-				if not solve_as_lp then   
-					resx = yModel:getMIPPrimalSolution()
-				else
-					resx = yModel:getPrimalSolution()
-				end
-            end
-            ub_j = yModel.mipobj and -yModel.mipobj or -yModel.dobj
-            if verb>1  then printf("MAXU=%10g, ",ub_j) end            
-        else			
-			if verb>1  then printf("MAXU=%10g, ",U[k]) end
+        yModel:xassert(res)             
+        local resx 
+        res, resx = im_optimize(yModel,k,-1)        
+        local lb_j, ub_j = L[k], U[k]
+        if res.status=='ok' then                    
+            ub_j = res.objval            
         end
+        if verb>1  then printf("MAXU=%10g, ",ub_j) end            
         
+		-- minimize x[k]
         if verb>1  then printf("L=%10g, ",L[k]) end
         objval[1] = 1
         res = yModel:modifyObjective(1,objndx,objval)
         yModel:xassert(res)
-        if not solve_as_lp then   
-			res = yModel:solveMIP()
-		else
-			res = yModel:optimize()
-		end
-        yModel:xassert(res)
-        if yModel.solstatus==2 or yModel.solstatus==1 or yModel.mipstatus==1 then        
-            local resx 
-            if verb>3  then
-				if not solve_as_lp then   
-					resx = yModel:getMIPPrimalSolution()
-				else
-					resx = yModel:getPrimalSolution()
-				end
-                yModel:xassert(resx)
-            end
-            lb_j = yModel.mipobj and yModel.mipobj or yModel.dobj
-            if verb>1  then printf("MINL=%10g, ",lb_j) end            
-        else
-			if verb>1  then printf("MINL=%10g, ",L[k]) end            
+		
+		res, resx = im_optimize(yModel,k,1)                
+        if res.status=='ok' then
+            lb_j = res.objval            
         end
+        if verb>1  then printf("MINL=%10g, ",lb_j) end            
+        
+        -- update best bounds
         if verb>1 then printf(" -- "); end
         
         if lb_j > resb.padBestL[k] + reps then
@@ -190,21 +203,45 @@ function ls_calc_im_opt_bounds(pModel)
 			resb.padBestU[k] = ub_j;
             if verb>1 then printf("(*U*)") end
         end
-        if verb>1 then printf("\n") end
+        elapsed = xta:tic() - elapsed
+        if verb>1 then printf(" %.2f secs\n",elapsed) end
     end
     local rt = xta:table()
     rt:add(vnames)
     rt:add(resb.padBestL,"lb")
     rt:add(resb.padBestU,"ub")
-    for k=1,rt.nrows do
-        if resb.padBestL[k]>-1e30 and resb.padBestU[k]<1e30 then
-            printf("@BND(%g, %s, %g);\n",resb.padBestL[k],vnames[k],resb.padBestU[k]);
-        end
-    end    
-      
-    if yModel then
-        yModel:dispose()
+    if verb>2 then
+		for k=1,rt.nrows do
+			if resb.padBestL[k]>-1e30 and resb.padBestU[k]<1e30 then
+				printf("@BND(%g, %s, %g);\n",resb.padBestL[k],vnames[k],resb.padBestU[k]);
+			end
+		end    
     end
+    printf("Calculated best im bounds\n")
+    local norm={}
+    norm["bestU"]=0; norm["bestL"]=0; norm["U"]=0; norm["L"]=0
+    for k=1,yModel.numvars do
+        if resb.padBestL[k]>-1e30 and resb.padBestU[k]<1e30 then
+            norm["bestU"] = norm["bestU"] + resb.padBestU[k] * resb.padBestU[k];
+            norm["bestL"] = norm["bestL"] + resb.padBestL[k] * resb.padBestL[k];
+        end
+        if res_lpdata.padL[k]>-1e30 and res_lpdata.padU[k]<1e30 then
+            norm["U"] = norm["U"] + res_lpdata.padU[k] * res_lpdata.padU[k];
+            norm["L"] = norm["L"] + res_lpdata.padL[k] * res_lpdata.padL[k];
+        end        
+    end
+    printf("|L|=%10g, |BestL|=%10g\n",norm.L,norm.bestL)
+    printf("|U|=%10g, |BestU|=%10g\n",norm.U,norm.bestU)
+    res = yModel:modifyLowerBounds(yModel.numvars,varndx,resb.padBestL)
+    yModel:wassert(res)
+    res = yModel:modifyUpperBounds(yModel.numvars,varndx,resb.padBestU)
+    yModel:wassert(res)
+    res = yModel:modifyObjConstant(res_lpdata.pdObjConst)
+    yModel:wassert(res)
+    res = yModel:modifyObjective(yModel.numvars,varndx,res_lpdata.padC)
+    yModel:wassert(res)    
+      
+    return yModel
 end
 
 -- Usage function
@@ -218,21 +255,25 @@ local function usage()
     print()
     print_default_usage()
     print()
-    print("    , --lp                       Solve as lp when finding best bound")
+    print("    , --lp                       Solve as lp when finding best bounds")
+    print("    , --solve                    Solve as tightened model")
 end   
 
 ---
 -- Parse command line arguments
 local long={
 		lp = 0,
+		solve = 0
 	}
 local short = ""
 options, opts, optarg = parse_options(arg,short,long)
+--print_table3(options)
 
 -- parse app specific options
 for i, k in pairs(opts) do
     local v = optarg[i]         
     if k=="lp" then options.solve_as_lp=true end
+    if k=="solve" then options.solve=true end
 end
 
 -- Local copies of options
@@ -240,11 +281,10 @@ local has_cbmip = options.has_cbmip
 local has_cbstd = options.has_cbstd
 local has_cblog = options.has_cblog
 local has_gop   = options.has_gop
-local writeas = options.writeas
 local lindomajor = options.lindomajor
 local lindominor = options.lindominor
 local model_file = options.model_file
-verb = options.verb
+verb = math.max(options.verb and options.verb or 1, 2)
 if not model_file then
 	usage()
 	return
@@ -260,7 +300,7 @@ if seed then
 end
 
 -- New solver instance
-xta:setsolverdll("",8);
+xta:setsolverdll("",8); -- disable loading LINGO
 xta:setlindodll(lindomajor,lindominor)
 solver = xta:solver()
 printf("Created a new solver instance %s\n",solver.version);
@@ -291,24 +331,36 @@ local nErr = pModel:readfile(model_file,0)
 pModel:xassert({ErrorCode = nErr})
 
 -- Calc implied bounds
-ls_calc_im_opt_bounds(pModel)
+local yModel 
+yModel = ls_calc_im_opt_bounds(pModel)
 
-if writeas then
-    pModel:write(writeas)
+
+if options.solve then
+	-- Solve model
+	printf("\n")
+	yModel:setMIPCallback(cbmip)
+	--yModel:setModelIntParameter(pars.LS_IPARAM_MIP_PRINTLEVEL,2)
+	yModel:setModelIntParameter(pars.LS_IPARAM_LP_PRINTLEVEL,2)
+	printf("Solving %s\n",model_file)	
+	local res_opt, res_rng = yModel:solve({has_gop=false,has_rng=false})
+	if res_rng then
+		print_table3(res_rng)
+		if verb>1 then
+			res_rng.padDec:printmat(6,nil,12,nil,'.3e')
+		end
+	end	
+end
+
+if options.writeas then
+	printf("\n")
+	printf("Writing ext '%s'\n",options.writeas)	
+    yModel:write(options)
 end    
-
--- Solve model
-printf("Solving %s\n",model_file)	
-local res_opt, res_rng = pModel:solve({has_gop=false,has_rng=false})
-if res_rng then
-	print_table3(res_rng)
-    if verb>1 then
-        res_rng.padDec:printmat(6,nil,12,nil,'.3e')
-    end
-end	
 
  
 pModel:dispose()
 printf("Disposed model instance %s\n",tostring(pModel))  
+yModel:dispose()
+printf("Disposed model instance %s\n",tostring(yModel))  
 solver:dispose()
 printf("Disposed solver instance %s\n",tostring(solver))  

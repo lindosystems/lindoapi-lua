@@ -1,3 +1,8 @@
+local Lindo = require("llindo")
+local lxp = Lindo.parameters
+local lxe = Lindo.errors
+local lxi = Lindo.info
+local lxs = Lindo.status
 
 local function check_error(pModel, res, allowed, stop_on_err)
     local stop_on_err = stop_on_err    
@@ -51,15 +56,15 @@ TBmpmodel.solve = function(pModel, options)
         res = pModel:optimize()
     end    
     if verb>2 then print_table3(res) end
-    pModel:xassert(res,{2023})
+    pModel:xassert(res,{lxe.LSERR_USER_INTERRUPT})
     -- check status
-    if res.pnMIPSolStatus == 1 or 
-       res.pnSolStatus == 2 or 
-       res.pnSolStatus == 1 or 
-       res.pnGOPSolStatus==1 or 
-       res.pnGOPSolStatus==2 or 
-       res.pnGOPSolStatus==5 or 
-       res.pnGOPSolStatus==8 then
+    if res.pnMIPSolStatus == lxs.LS_STATUS_OPTIMAL or 
+       res.pnSolStatus == lxs.LS_STATUS_BASIC_OPTIMAL or 
+       res.pnSolStatus == lxs.LS_STATUS_OPTIMAL or 
+       res.pnGOPSolStatus==lxs.LS_STATUS_OPTIMAL or 
+       res.pnGOPSolStatus==lxs.LS_STATUS_BASIC_OPTIMAL or 
+       res.pnGOPSolStatus==lxs.LS_STATUS_LOCAL_OPTIMAL or 
+       res.pnGOPSolStatus==lxs.LS_STATUS_FEASIBLE then
         local res_
         if pModel.numint + pModel.numbin + pModel.numsc + pModel.numsets > 0 then
             res_ = pModel:getMIPPrimalSolution()
@@ -93,11 +98,17 @@ TBmpmodel.write = function(pModel, options)
     if writeas=='ltx' then
       local fname = addSuffix2Basename(model_file,suffix,subfolder)        
       res_w = pModel:writeLINDOFile(fname)
-      if pModel.nlpnonz>0 then
-        printf("WARNING: nlpnonz=%d, nonlinear terms are excluded..\n")
+      if pModel.nonznlp>0 then
+        printf("WARNING: nonznlp=%d, nonlinear terms are excluded..\n")
       end      
     elseif writeas=='mps' then
-      if not pModel.nlpnonz or pModel.nlpnonz==0 then
+      local fname = addSuffix2Basename(model_file,suffix,subfolder)        
+      res_w = pModel:writeMPSFile(fname,0) 
+      if pModel.nonznlp>0 then
+        printf("WARNING: nonznlp=%d, nonlinear terms are excluded..\n")
+      end        
+    elseif writeas=='mpssets' then
+      if not pModel.nonznlp or pModel.nonznlp==0 then
         local fname 
         if pModel.numsets==0 and pModel.numsc==0 then
           fname = addSuffix2Basename(model_file,suffix,subfolder)
@@ -118,7 +129,7 @@ TBmpmodel.write = function(pModel, options)
           printf("Error %d: %s\n",res_w.ErrorCode,pModel:errmsg(res_w.ErrorCode) or "N/A")
         end        
       else
-        printf("pModel has nlpnonz=%d > 0, cannot write MPS file\n",pModel.nlpnonz)
+        printf("pModel has nonznlp=%d > 0, cannot write MPS file\n",pModel.nonznlp)
       end   
     elseif writeas=='mpi' then
         if pModel.numinstr==0 then

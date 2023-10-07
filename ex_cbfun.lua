@@ -9,7 +9,7 @@ function myprintlog(pModel, str)
 end
 
 function cbmip(pModel, dobj, pX)
-    printf("mipobj: %g, |X|=%g\n", dobj, pX:norm())
+    printf("new MIP solution: mipobj: %g, |X|=%g\n", dobj, pX:norm())
     local retval = 0
     retval = 0
     if retval>0 then        
@@ -99,7 +99,7 @@ function parse_options(arg,short,long)
         if k=="cblog" then options.has_cblog=tonumber(v) end
         if k=="gop" then options.has_gop=true end
         if k=="rng" then options.has_rng=true end
-        if k=="writeas" or k=="w" then writeas=tonumber(v) end
+        if k=="writeas" or k=="w" then options.writeas=v end
         if k=="lindomajor" or k=="M" then options.lindomajor=tonumber(v) end
         if k=="lindominor" or k=="I" then options.lindominor=tonumber(v) end
         if k=="seed" then options.seed=tonumber(v) end
