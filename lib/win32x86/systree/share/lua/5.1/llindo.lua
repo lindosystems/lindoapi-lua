@@ -6,7 +6,9 @@ Lindo.__mode = 'q'
 local Logclass_ = require('logclass') -- global logger
 assert(Logclass_)
 Lindo.logger = Logclass_:new('LindoLogger','info')
-local logger = Lindo.logger
+glogger = Lindo.logger
+local logger = glogger
+
 require "llindo_helper"
 ---
 -- Entry 
