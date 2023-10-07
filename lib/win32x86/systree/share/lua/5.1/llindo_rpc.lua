@@ -65,7 +65,7 @@ local remote_procedures = {
     
     createEnv = function(args)
       if not solver_ then
-        local vermaj,vermin = args and args[1] or 13, args and args[2] or 0
+        local vermaj,vermin = args and args[1] or 14, args and args[2] or 0
         xta:setlindodll(vermaj,vermin)
         solver_ = xta:solver()
         local flag = true

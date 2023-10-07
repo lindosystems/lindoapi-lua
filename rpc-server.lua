@@ -8,7 +8,7 @@ $ xtarun ztest/rpc-server.lua --rpcserver=localhost
 ]]
 local Lindo = require("llindo_tabox")
 require "alt_getopt"
-local procedures = require("llindo_rcp")
+local procedures = require("llindo_rpc")
 
 local short = "s:h"
 local long = {

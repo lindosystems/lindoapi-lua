@@ -175,9 +175,8 @@ end
 local szEnv
 if cmdOptions.createEnv then
 -- Request the server to invoke the method 'createEnv', with some arguments
-
-      local vermaj,vermin = vermaj or 13,vermin or 0
-      local request = jsonrpc.encode_rpc(jsonrpc.request, "createEnv", {vermaj=vermaj, vermin=vermin})
+      
+      local request = jsonrpc.encode_rpc(jsonrpc.request, "createEnv", {vermaj, vermin})
   
       logger.info("Sending request: %s\n" , request)
       requester:send(request)
