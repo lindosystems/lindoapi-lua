@@ -8,7 +8,7 @@ $ xtarun ztest/rpc-server.lua --rpcserver=localhost
 ]]
 local Lindo = require("llindo_tabox")
 require "alt_getopt"
-
+local procedures = require("llindo_rcp")
 
 local short = "s:h"
 local long = {
@@ -74,8 +74,6 @@ local context = zmq.context()
 local responder, err = context:socket{zmq.REP, bind = url}
 zmq.assert(responder, err)
 
--- Our dummy "remote" procedures
-local procedures = require("rpc-procedures")
 local verb = 1
 -- The "event loop" ...
 while run do
