@@ -1,2 +1,5 @@
-
-print("\n **** Hello Lindo!")
+local Lindo = require("llindo_tabox")
+assert(Lindo)
+print()
+printf("Lindo status codes:\n")
+print_table3(Lindo.status)

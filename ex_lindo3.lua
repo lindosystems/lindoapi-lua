@@ -2,7 +2,7 @@
 -- luatabox unit tests
 --
 -- runlindo
-local Lindo = require("base_lindo")
+local Lindo = require("llindo_tabox")
 local pars = Lindo.parameters
 local errs = Lindo.errors
 local info = Lindo.info

@@ -213,28 +213,28 @@ function getBasename(filePath)
   end
 end
 
-function addSuffix2Basename(model_file, altname, subfolder)
-  -- Find the position of "myfile" in the string
+function addSuffix2Basename(model_file, suffix, subfolder)
+  -- Find the position of "/path/to/myfile.mps" in the string
   local basename = getBasename(model_file)
   local startPos, endPos = string.find(model_file, basename)  
-  --print("basename:",basename)    
+  --print("basename:",basename)    -- 'myfile'
 
   -- Check if "myfile" was found
   if startPos then
       -- Extract the part of the string before "myfile"
-      local prefix = string.sub(model_file, 1, startPos - 1)
+      local prefix = string.sub(model_file, 1, startPos - 1) -- /path/to
       if subfolder then
-        prefix = prefix .. "/" .. subfolder .. "/"
+        prefix = prefix .. "/" .. subfolder .. "/"           -- /path/to/subfolder
         if not paths.dirp(prefix) then
             paths.mkdir(prefix)
         end
       end
       
       -- Extract the part of the string after "myfile"
-      local suffix = string.sub(model_file, endPos + 1)
+      local extname = string.sub(model_file, endPos + 1) -- .mps
 
       -- Create the new string with "myfile_sos2xN" inserted
-      local newModelFile = prefix .. basename .. altname .. suffix
+      local newModelFile = prefix .. basename .. suffix .. extname  -- /path/to/subfolder .. myfile .. suffix .mps
 
       return newModelFile
   else

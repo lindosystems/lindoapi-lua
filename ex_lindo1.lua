@@ -2,10 +2,7 @@
 -- luatabox unit tests
 --
 -- runlindo
-require("base_lindo")
-if (xta==nil) then
-  xta = tabox.env()
-end
+local Lindo = require("llindo_tabox")
 
 local solver
 function myprintlog(pModel,str)
