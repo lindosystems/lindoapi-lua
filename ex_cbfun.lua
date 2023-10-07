@@ -1,5 +1,5 @@
-local szPLATFORM="win32x86"
-package.path = package.path..";./?.lua;./lib/" .. szPLATFORM .. "/systree/share/lua/5.1/?.lua;./lib/" .. szPLATFORM .. "/systree/share/lua/5.1/?/init.lua"
+
+package.path = package.path..";./?.lua;./share/lua/5.1/?.lua;./share/lua/5.1/?/init.lua"
 
 function myprintlog(pModel, str)
     printf("%s", str)

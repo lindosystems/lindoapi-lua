@@ -1,14 +1,15 @@
 --- A dummy JSON-RPC server receiving requests on a ZeroMQ socket
 local usage = [[
-
+Start an instance of RPC server
 Example:
-
-$ xtarun ztest/rpc-server.lua --rpcserver=localhost
-
+    $ lslua rpc-server.lua --rpcserver=localhost
 ]]
-local Lindo = require("llindo_tabox")
 require "alt_getopt"
+local Lindo = require("llindo_tabox")
 local procedures = require("llindo_rpc")
+local zmq  = require("lzmq")
+local timer = require("lzmq.timer")
+local logger = jsonrpc.logger
 
 local short = "s:h"
 local long = {
@@ -41,11 +42,6 @@ local jsonrpc = require('myjson-rpc')
 --local signal = require("posix.signal")
 
 -- ZMQ for the networking
-local zmq   = require("lzmq")
-local timer = require("lzmq.timer")
-
---local log_console = require"logging.console"
-local logger      = jsonrpc.logger
 
 -- Global var to control the run status
 -- Set CTRL-C to stop the running
