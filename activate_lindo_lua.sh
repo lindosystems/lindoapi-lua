@@ -41,9 +41,10 @@ elif [ "${UNAME}" = "Darwin" ]; then
     #   PLATFORM=osx64arm
     #fi
 fi
+export TABOX_LICENSE_FILE
 remove_path /c/dev/c/tabox/trunk/bin/$PLATFORM 
 export PATH=$CURPATH/lib/$PLATFORM/systree/lib/lua/5.1:$PATH
-export LUA_PATH="./?.lua;$CURPATH/lib/$PLATFORM/systree/share/lua/5.1/?.lua;$CURPATH/lib/$PLATFORM/systree/share/lua/5.1/?/init.lua"
+export LUA_PATH="./?.lua;./share/lua/5.1/?.lua;./share/lua/5.1/?/init.lua"
 export LUA_CPATH="$CURPATH/lib/$PLATFORM/systree/lib/lua/5.1/?.dll;$CURPATH/lib/$PLATFORM/systree/lib/lua/5.1/?.so;$CURPATH/lib/$PLATFORM/systree/lib/lua/5.1/?.dylib"
 
 

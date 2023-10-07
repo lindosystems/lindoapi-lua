@@ -1,15 +1,17 @@
 --- A dummy JSON-RPC client using a ZeroMQ socket to communicate with the server
 
 require "alt_getopt"
+local Lindo = require("llindo_tabox")
 local jsonrpc = require("myjson-rpc")
-local logger  = jsonrpc.logger
 local zmq   = require("lzmq")
 local timer = require("lzmq.timer")
-local Lindo = require("llindo_tabox")
+local modStack = require("Stack")
+local logger  = jsonrpc.logger
+
 local pars = Lindo.parameters
 local errs = Lindo.errors
 local info = Lindo.info
-local modStack = require("Stack")
+
 if (xta==nil) then
   xta=tabox.env()
 end
