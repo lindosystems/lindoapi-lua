@@ -5,22 +5,40 @@ local pars = Lindo.parameters
 local errs = Lindo.errors
 local info = Lindo.info
 local logger = Lindo.logger
-
-
+local modStack = require("Stack")
 local envDict = {}
 local modDict = {}
 local solver_
 
-local function get_keys(t)
+local function get_keys(t,stk)
   local keys={}
+  local pos={}  
   for key,_ in pairs(t) do
     table.insert(keys, key)
+    if stk then
+      table.insert(pos,stk:pos(key))
+    end
   end
-  return keys
+  return keys,pos
+end
+
+local function parse_model(args)
+  local szModel
+  if args and args[1] then
+    szModel = args[1]      
+    if string.upper(string.sub(szModel, 1, 2))~="0X" then
+      szModel = modStack:at(tonumber(szModel))
+    end
+  else
+    print_table3(args)
+    logger.error("parse_model: args do not contain a valid model handle\n")
+  end
+  return szModel
 end
 
 function myprintlog2(pModel,str)
   printf("%s",str)
+  local ctx = pModel.umodel.ctx
   if pModel.utable and pModel.utable.ncalls  then
     pModel.utable.ncalls=pModel.utable.ncalls+1
   end
@@ -28,23 +46,21 @@ function myprintlog2(pModel,str)
 end
 
 local remote_procedures = {
-  
-    try1 = function(args)
-        logger.debug("The 'try1()' function was called\n")
-        return true, 42,43,"another ret value"
+      
+    ping1 = function(args)
+        logger.info("Client pinging..Replying 'ALIVE'...\n")
+        return true, "ALIVE"
     end,
 
-    try2 = function(args)
-        logger.debug("The 'try2()' function was called, with the following args:\n")
+    shutdown = function(args)
+        logger.debug("'shutdown()' was called, acting with following args:\n")
         for k,v in pairs(args) do logger.debug("%s = %s\n",k,v) end
-        return true, "success"
+        return true, "ok"
     end,
     
-    try3 = function(args)
-      local result
-      result = {"try3"}
+    verb = function(args)     
       if logger.level=='debug' then print_table3(result) end
-      return true, result
+      return true, tonumber(args[1])
     end,
     
     createEnv = function(args)
@@ -53,7 +69,7 @@ local remote_procedures = {
         xta:setlindodll(vermaj,vermin)
         solver_ = xta:solver()
         local flag = true
-        if solver_ then
+        if solver_ then          
           logger.info("createEnv: solver %s (%s)\n",solver_.handle,tostring(solver_)) 
           envDict[solver_.handle] = solver_
         else
@@ -88,7 +104,7 @@ local remote_procedures = {
       if 0>1 then 
         local JSON = require("JSON")     
         local jstr = JSON:encode_pretty(error_objects)
-        local jfile = "lserr_objects.json"
+        local jfile = "tmp/lserr_objects.json"
         fwritef(jfile,"w","%s",jstr)
       end
       print_table4(error_objects)
@@ -124,7 +140,7 @@ local remote_procedures = {
     end,
 
     showModels = function(args)
-      return true,get_keys(modDict)
+      return true, get_keys(modDict,modStack)
     end,
     
     showEnvs = function(args)
@@ -144,7 +160,19 @@ local remote_procedures = {
       if pModel then
         logger.info("createModel: pModel %s created (%s)\n",pModel.handle,tostring(pModel)) 
         modDict[pModel.handle] = pModel
-        pModel.logfun = myprintlog2
+        modStack:push(pModel.handle)
+        if not pModel.utable then
+          pModel.utable = {}
+        end
+        pModel.logfun = function (pModel,str)
+          --printf("\nmylog: %s",str:sub(2,-1))
+          printf("%s",str)
+          if pModel.utable.ncalls  then
+            pModel.utable.ncalls=pModel.utable.ncalls+1
+          end
+          --print_table3(pModel.utable)
+        end
+        
         return true,pModel.handle
       else
         return false,-2
@@ -152,22 +180,27 @@ local remote_procedures = {
     end,
     
     deleteModel = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local pModel = modDict[szModel]
       if not pModel then
-        logger.warn("deleteModel: model '%s' does not exist\n",szModel);
+        logger.warn("deleteModel: Model '%s' does not exist\n",szModel);
         return false, -1
       end
       
       pModel:dispose()
       modDict[szModel]=nil
+      local pos = modStack:pos(szModel)
+      if pos then 
+        modStack:remove(pos)
+        logger.info("deleteModel: Removed model from stack pos '%d'\n",pos)
+      end
       local flag=true      
-      logger.info("deleteModel: pModel %s disposed\n",szModel) 
+      logger.info("deleteModel: pModel %s disposed, stack left:%d\n",szModel,modStack:getn()) 
       return flag,0
     end,  
     
     optimize = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local pModel = modDict[szModel]
       if not pModel then
         logger.warn("optimize: pModel '%s' does not exist\n",szModel);
@@ -199,7 +232,7 @@ local remote_procedures = {
     end,  
     
     loadLPData = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local pModel = modDict[szModel]
       if not pModel then
         logger.warn("loadLPData: model '%s' does not exist\n",szModel);
@@ -233,7 +266,7 @@ local remote_procedures = {
     end,   
     
     getPrimalSolution = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local pModel = modDict[szModel]
       if not pModel then
         logger.warn("getPrimalSolution: model '%s' does not exist\n",szModel);
@@ -250,7 +283,7 @@ local remote_procedures = {
     end,   
     
     getDualSolution = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local pModel = modDict[szModel]
       if not pModel then
         logger.warn("getDualSolution: model '%s' does not exist\n",szModel);
@@ -267,7 +300,7 @@ local remote_procedures = {
     end,   
     
     getReducedCosts = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local pModel = modDict[szModel]
       if not pModel then
         logger.warn("getReducedCosts: model '%s' does not exist\n",szModel);
@@ -284,7 +317,7 @@ local remote_procedures = {
     end,   
     
     getSlacks = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local pModel = modDict[szModel]
       if not pModel then
         logger.warn("getSlacks: model '%s' does not exist\n",szModel);
@@ -301,7 +334,7 @@ local remote_procedures = {
     end,   
     
     getInfo = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local pModel = modDict[szModel]
       if not pModel then
         logger.warn("getInfo: model '%s' does not exist\n",szModel);
@@ -325,7 +358,7 @@ local remote_procedures = {
     end,    
     
     freeSolutionMemory = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local pModel = modDict[szModel]
       if not pModel then
         logger.warn("freeSolutionMemory: model '%s' does not exist\n",szModel);
@@ -337,7 +370,7 @@ local remote_procedures = {
     end,
     
     freeSolverMemory = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local pModel = modDict[szModel]
       if not pModel then
         logger.warn("freeSolverMemory: model '%s' does not exist\n",szModel);
@@ -349,7 +382,7 @@ local remote_procedures = {
     end,
     
     setModelParameter = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local iparam = args[2]
       local value = args[3]
       local pModel = modDict[szModel]
@@ -368,7 +401,7 @@ local remote_procedures = {
     end,
     
     getModelParameter = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local iparam = args[2]
       local pModel = modDict[szModel]
       if not pModel then
@@ -386,7 +419,7 @@ local remote_procedures = {
     end,
     
     modifyLowerBounds = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local nVars = args[2]
       local paiVars = args[3]
       local padL = args[4]
@@ -411,7 +444,7 @@ local remote_procedures = {
     end,
     
     modifyUpperBounds = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local nVars = args[2]
       local paiVars = args[3]
       local padU = args[4]
@@ -436,7 +469,7 @@ local remote_procedures = {
     end,
     
     modifyRHS = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local nCons = args[2]
       local paiCons = args[3]
       local padB = args[4]
@@ -461,7 +494,7 @@ local remote_procedures = {
     end,   
     
     modifyAj = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local jCol = args[2]
       local nRows = args[3]
       local paiCons = args[4]
@@ -488,7 +521,7 @@ local remote_procedures = {
     end, 
     
     deleteAj = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local jCol = args[2]
       local nRows = args[3]
       local paiCons = args[4]
@@ -514,7 +547,7 @@ local remote_procedures = {
     
     
     modifyObjective = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local nVars = args[2]
       local paiVars = args[3]
       local padC = args[4]
@@ -540,7 +573,7 @@ local remote_procedures = {
     
 
     modifyObjConstant = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local dVal = args[2]
       local pModel = modDict[szModel]
       if not pModel then
@@ -562,7 +595,7 @@ local remote_procedures = {
     
     
     modifyConstraintType = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local nCons = args[2]
       local paiCons = args[3]
       local szConTypes = args[4]
@@ -587,7 +620,7 @@ local remote_procedures = {
     end,
     
     addConstraints = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local pModel = modDict[szModel]
       if not pModel then
         logger.warn("addConstraints: model '%s' does not exist\n",szModel);
@@ -624,7 +657,7 @@ local remote_procedures = {
         
 
     addVariables = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local pModel = modDict[szModel]
       if not pModel then
         logger.warn("addVariables: model '%s' does not exist\n",szModel);
@@ -665,7 +698,7 @@ local remote_procedures = {
     end,
     
     deleteConstraints = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local nItems = args[2]
       local paiItems = args[3]
       local pModel = modDict[szModel]
@@ -691,7 +724,7 @@ local remote_procedures = {
     end,   
     
     deleteVariables = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local nItems = args[2]
       local paiItems = args[3]
       local pModel = modDict[szModel]
@@ -718,7 +751,7 @@ local remote_procedures = {
     
     
     loadBasis = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local pModel = modDict[szModel]
       if not pModel then
         logger.warn("loadBasis: model '%s' does not exist\n",szModel);
@@ -744,7 +777,7 @@ local remote_procedures = {
     end,     
     
     loadVarType = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local pModel = modDict[szModel]
       if not pModel then
         logger.warn("loadBasis: model '%s' does not exist\n",szModel);
@@ -768,7 +801,7 @@ local remote_procedures = {
     end,     
         
     setProbAllocSizes = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local pModel = modDict[szModel]
       if not pModel then
         logger.warn("setProbAllocSizes: model '%s' does not exist\n",szModel);
@@ -803,7 +836,7 @@ local remote_procedures = {
     
     
     addEmptySpacesAcolumns = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local pModel = modDict[szModel]
       if not pModel then
         logger.warn("addEmptySpacesAcolumns: model '%s' does not exist\n",szModel);
@@ -826,7 +859,7 @@ local remote_procedures = {
     end,
     
     solveMIP = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local pModel = modDict[szModel]
       if not pModel then
         logger.warn("solveMIP: pModel '%s' does not exist\n",szModel);
@@ -860,7 +893,7 @@ local remote_procedures = {
     end,
     
     solveGOP = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local pModel = modDict[szModel]
       if not pModel then
         logger.warn("solveGOP: pModel '%s' does not exist\n",szModel);
@@ -894,7 +927,7 @@ local remote_procedures = {
     end,
     
     loadMIPVarStartPoint = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local pModel = modDict[szModel]
       if not pModel then
         logger.warn("loadMIPVarStartPoint: model '%s' does not exist\n",szModel);
@@ -918,7 +951,7 @@ local remote_procedures = {
     end,   
     
     loadVarStartPoint = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local pModel = modDict[szModel]
       if not pModel then
         logger.warn("loadVarStartPoint: model '%s' does not exist\n",szModel);
@@ -942,7 +975,7 @@ local remote_procedures = {
     end,   
     
     loadVarStartPointPartial = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local nVars = args[2]
       local paiVars = args[3]
       local padVals = args[4]
@@ -967,7 +1000,7 @@ local remote_procedures = {
     end,     
     
     loadMIPVarStartPointPartial = function(args)
-      local szModel = args[1]
+      local szModel = parse_model(args)
       local nVars = args[2]
       local paiVars = args[3]
       local padVals = args[4]

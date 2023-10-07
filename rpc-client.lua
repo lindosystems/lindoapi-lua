@@ -1,6 +1,5 @@
 --- A dummy JSON-RPC client using a ZeroMQ socket to communicate with the server
 
-require ("rpc-helper")
 require "alt_getopt"
 local jsonrpc = require("myjson-rpc")
 local logger  = jsonrpc.logger
@@ -10,11 +9,11 @@ local Lindo = require("llindo_tabox")
 local pars = Lindo.parameters
 local errs = Lindo.errors
 local info = Lindo.info
-
+local modStack = require("Stack")
 if (xta==nil) then
   xta=tabox.env()
 end
-local vermaj,vermin = 13,0 --xta_get_config('solver_major_version'),xta_get_config('solver_minor_version')
+local vermaj,vermin = 14,0 --xta_get_config('solver_major_version'),xta_get_config('solver_minor_version')
 
 local getSerializedLPData = Lindo.getSerializedLPData
 
@@ -35,12 +34,13 @@ local long = {
   getModelParameter = 1,
   setModelParameter = 1,
 
-  itry = 1,
+  ping = 1,   --bitmask
   rpcserver = 1,  
   showModels = 0,
   showEnvs = 0,
   dump_error_objects = 0,
   parValue = 1,
+  verb=1
 }
 
 local opts, optind, optarg = alt_getopt.get_ordered_opts(arg, short, long)
@@ -51,11 +51,13 @@ if 0>1 then
 end
 
 local cmdOptions={}
-cmdOptions.itry = 0
+cmdOptions.ping = 0
+if #arg==0 then cmdOptions.ping=1; end  
+
 for i, k in pairs(opts) do
   local v = optarg[i]
   if k=='rpcserver' then cmdOptions.rpcserver=v
-  elseif k=='itry' then cmdOptions.itry = tonumber(v)
+  elseif k=='ping' then cmdOptions.ping = tonumber(v)
   elseif k=='parValue' then cmdOptions.parValue = tonumber(v) 
   elseif k=='mpsfile' then cmdOptions.mpsfile = v
     
@@ -72,6 +74,9 @@ for i, k in pairs(opts) do
   elseif k=='freeSolverMemory' then cmdOptions.freeSolverMemory = true
   elseif k=='setModelParameter' then cmdOptions.setModelParameter = tonumber(v) or pars[v]
   elseif k=='getModelParameter' then cmdOptions.getModelParameter = tonumber(v) or pars[v]
+  elseif k=='showModels' then cmdOptions.showModels = true
+  elseif k=='showEnvs' then cmdOptions.showEnvs = true
+  elseif k=='verb' then cmdOptions.verb = tonumber(v)
 
   else cmdOptions[k] = true
   end
@@ -89,51 +94,53 @@ local requester, err = context:socket{zmq.REQ,
 }
 zmq.assert(requester, err)
 
-local itry = cmdOptions.itry
-if hasbit(itry,bit(1)) then
+local ping = cmdOptions.ping
+if hasbit(ping,bit(1)) then -- ping=+1
 -- Request the server to invoke the method 'try1'
-  for request_nbr = 0,2 do
-      local request = jsonrpc.encode_rpc(jsonrpc.request, "try1")
+  for request_nbr = 0,0 do
+      local request = jsonrpc.encode_rpc(jsonrpc.request, "ping1")
   
-      logger.info("Sending request: %s \n", request)
+      logger.info("Pinging server %s\n", server_url)
       requester:send(request)
   
       local response = requester:recv()
-      logger.info("Received response: %s \n" , response )
+      local jnode = jsonrpc.decode(response).result
+      logger.info("Server %s responseded '%s' \n" , server_url,jnode )      
   
       timer.sleep(500) -- in ms
   end
 end
 
-if hasbit(itry,bit(2)) then
+if hasbit(ping,bit(2)) then -- ping=+2
 -- Request the server to invoke the method 'try2', with some arguments
   for request_nbr = 0,2 do
-      local request = jsonrpc.encode_rpc(jsonrpc.request, "try2", {arg1=1, arg2=2})
+      local request = jsonrpc.encode_rpc(jsonrpc.request, "shutdown", {arg1=1, arg2=2})
   
-      logger.info("Sending request: %s\n" , request)
+      logger.info("Sending shutdown request: %s\n" , request)
       requester:send(request)
-  
+      return 
+  --[[
       local response = requester:recv()
       logger.info("Received response: %s\n" , response )
-  
+  ]]
       timer.sleep(500) -- in ms
+  
   end
 end
 
-if hasbit(itry,bit(3)) then
+if hasbit(ping,bit(3)) then -- ping=+4
 -- Now request a non-available method
-  local request = jsonrpc.encode_rpc(jsonrpc.request, "not-available", {"foo"})
+  local request = jsonrpc.encode_rpc(jsonrpc.request, "verb", {1})
   logger.info("Sending request: %s\n" , request)
   requester:send(request)
   local response = requester:recv()
-  logger.info("Received response: %s\n" , response )
-  
+  logger.info("Received response: %s\n" , response )  
 end
 
-if hasbit(itry,bit(4)) then
+if hasbit(ping,bit(4)) then -- ping=+8
 -- Request the server to invoke the method 'try3', with some arguments
   for request_nbr = 0,2 do
-      local request = jsonrpc.encode_rpc(jsonrpc.request, "try3", {arg1=1, arg2=2})
+      local request = jsonrpc.encode_rpc(jsonrpc.request, "ping4", {arg1=1, arg2=2})
   
       logger.info("Sending request: %s\n" , request)
       requester:send(request)
@@ -154,6 +161,15 @@ if hasbit(itry,bit(4)) then
   
       timer.sleep(500) -- in ms
   end
+end
+
+if cmdOptions.verb then -- 
+  -- Now request a non-available method
+    local request = jsonrpc.encode_rpc(jsonrpc.request, "verb", {cmdOptions.verb})
+    logger.info("Sending request: %s\n" , request)
+    requester:send(request)
+    local response = requester:recv()
+    logger.info("Received response: %s\n" , response )  
 end
 
 local szEnv
@@ -217,30 +233,37 @@ if cmdOptions.createModel then
       local response = requester:recv()
       logger.info("Received response: %s\n" , response )
       szModel = response.result
+      modStack:push(modStack) 
           
       timer.sleep(500) -- in ms
 end
 
 if cmdOptions.deleteModel then
 -- Request the server to invoke the method 'deleteModel', with some arguments
-      szModel = cmdOptions.deleteModel
+      szModel = cmdOptions.deleteModel or modStack:at(-1) 
+      assert(szModel,"\nError: --deleteModel=<id> is required\n")
       local request = jsonrpc.encode_rpc(jsonrpc.request, "deleteModel", {szModel})
   
       logger.info("Sending request: %s\n" , request)
       requester:send(request)
   
       local response = requester:recv()
-      logger.info("Received response: %s\n" , response )      
+      logger.info("Received response: %s\n" , response )
+      local pos = modStack:pos(szModel)
+      if pos then 
+        modStack:remove(pos) 
+      end
           
       timer.sleep(500) -- in ms
 end
 
 
 if cmdOptions.loadLPData then
-   assert(cmdOptions.szModel,"\nError: --szModel is required\n") 
+   szModel = cmdOptions.szModel or modStack:at(-1)
+   assert(szModel,"\nError: --szModel is required\n") 
    local mpsfile = cmdOptions.mpsfile or sprintf("%s\\lp\\mps\\netlib\\afiro.mps.gz",os.getenv("LS_PROB_PATH")) 
    local arg={}
-   arg[1] = cmdOptions.szModel
+   arg[1] = szModel
    arg[2] = getSerializedLPData(mpsfile)
    if not (arg[2]) then
       logger.error("Failed to serialize '%s'\n",mpsfile)       
@@ -260,9 +283,10 @@ if cmdOptions.loadLPData then
 end
 
 if cmdOptions.optimize then
-   assert(cmdOptions.szModel,"\nError: --szModel is required\n")
+   szModel = cmdOptions.szModel or modStack:at(-1)
+   assert(szModel,"\nError: --szModel is required\n")
    local arg={}
-   arg[1]=cmdOptions.szModel
+   arg[1]=szModel
    arg[2]=cmdOptions.optimize
    
     -- Request the server to invoke the method 'optimize', with some arguments
@@ -271,16 +295,19 @@ if cmdOptions.optimize then
     logger.info("Sending request: %s\n" , request)
     requester:send(request)
 
+    --do
     local response = requester:recv()
-    logger.info("Received response: %s\n" , response )      
-        
+    logger.info("Received response: %s\n" , response )            
+    --end
+    
     timer.sleep(500) -- in ms   
 end
 
 if cmdOptions.solveMIP then
-   assert(cmdOptions.szModel,"\nError: --szModel is required\n")
+   szModel = cmdOptions.szModel or modStack:at(-1)
+   assert(szModel,"\nError: --szModel is required\n")
    local arg={}
-   arg[1]=cmdOptions.szModel
+   arg[1]=szModel
    
     -- Request the server to invoke the method 'optimize', with some arguments
     local request = jsonrpc.encode_rpc(jsonrpc.request, "solveMIP", arg)
@@ -295,9 +322,10 @@ if cmdOptions.solveMIP then
 end
 
 if cmdOptions.solveGOP then
-   assert(cmdOptions.szModel,"\nError: --szModel is required\n")
+   szModel = cmdOptions.szModel or modStack:at(-1)
+   assert(szModel,"\nError: --szModel is required\n")
    local arg={}
-   arg[1]=cmdOptions.szModel
+   arg[1]=szModel
    
     -- Request the server to invoke the method 'optimize', with some arguments
     local request = jsonrpc.encode_rpc(jsonrpc.request, "solveGOP", arg)
@@ -312,9 +340,10 @@ if cmdOptions.solveGOP then
 end
 
 if cmdOptions.freeSolutionMemory  then
-   assert(cmdOptions.szModel,"\nError: --szModel is required\n")
+   szModel = cmdOptions.szModel or modStack:at(-1)
+   assert(szModel,"\nError: --szModel is required\n")
    local arg={}
-   arg[1]=cmdOptions.szModel
+   arg[1]=szModel
    
     -- Request the server to invoke the method 'freeSolutionMemory', with some arguments
     local request = jsonrpc.encode_rpc(jsonrpc.request, "freeSolutionMemory", arg)
@@ -329,9 +358,10 @@ if cmdOptions.freeSolutionMemory  then
 end
 
 if cmdOptions.freeSolverMemory then
-   assert(cmdOptions.szModel,"\nError: --szModel is required\n")
+   szModel = cmdOptions.szModel or modStack:at(-1)
+   assert(szModel,"\nError: --szModel is required\n")
    local arg={}
-   arg[1]=cmdOptions.szModel
+   arg[1]=szModel
    
     -- Request the server to invoke the method 'freeSolverMemory', with some arguments
     local request = jsonrpc.encode_rpc(jsonrpc.request, "freeSolverMemory", arg)
@@ -347,9 +377,10 @@ end
 
 
 if cmdOptions.getSolution then
-   assert(cmdOptions.szModel,"\nError: --szModel is required\n")
+   szModel = cmdOptions.szModel or modStack:at(-1)
+   assert(szModel,"\nError: --szModel is required\n")
    local arg={}
-   arg[1]=cmdOptions.szModel
+   arg[1]=szModel
    local solutionId = cmdOptions.getSolution
    
     -- Request the server to invoke the method 'optimize', with some arguments
@@ -397,8 +428,17 @@ if cmdOptions.showModels then
   
       local response = requester:recv()
       logger.debug("Received response: %s\n" , response )
-      print_table3(jsonrpc.decode(response))
-      
+      local jnode = jsonrpc.decode(response)
+      if #jnode.result[2]>0 then
+        for k,v in spairs(jnode.result[2],stackpos) do
+          local szModel_ = jnode.result[1][k]
+          local pos = jnode.result[2][k]
+          logger.info("pModel '%s' is at pos %d\n",szModel_,pos)
+        end      
+      else
+        if logger.level == 'debug' then print_table3(jnode) end
+        logger.warn("Model list is empty!\n")
+      end
       timer.sleep(500) -- in ms
 end
 
@@ -419,9 +459,10 @@ end
 
 if cmdOptions.getInfo then
 -- Request the server to invoke the method 'showModels', with some arguments
-   assert(cmdOptions.szModel,"\nError: --szModel is required\n")
+   szModel = cmdOptions.szModel or modStack:at(-1)
+   assert(szModel,"\nError: --szModel is required\n")
    local arg={}
-   arg[1]=cmdOptions.szModel
+   arg[1]=szModel
    arg[2]=cmdOptions.getInfo
    
     local request = jsonrpc.encode_rpc(jsonrpc.request, "getInfo", arg)
@@ -438,9 +479,10 @@ end
 
 if cmdOptions.getModelParameter then
 -- Request the server to invoke the method 'getModelParameter', with some arguments
-   assert(cmdOptions.szModel,"\nError: --szModel is required\n")
+   szModel = cmdOptions.szModel or modStack:at(-1)
+   assert(szModel,"\nError: --szModel is required\n")
    local arg={}
-   arg[1]=cmdOptions.szModel
+   arg[1]=szModel
    arg[2]=cmdOptions.getModelParameter
 
    
@@ -458,9 +500,10 @@ end
 
 if cmdOptions.setModelParameter then
 -- Request the server to invoke the method 'setModelParameter', with some arguments
-   assert(cmdOptions.szModel,"\nError: --szModel is required\n")
+   szModel = cmdOptions.szModel or modStack:at(-1)
+   assert(szModel,"\nError: --szModel is required\n")
    local arg={}
-   arg[1]=cmdOptions.szModel
+   arg[1]=szModel
    arg[2]=cmdOptions.setModelParameter
    arg[3]=cmdOptions.parValue   
    

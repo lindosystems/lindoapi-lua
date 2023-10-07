@@ -6,12 +6,9 @@ Example:
 $ xtarun ztest/rpc-server.lua --rpcserver=localhost
 
 ]]
-require ("rpc-helper")
+local Lindo = require("llindo_tabox")
 require "alt_getopt"
 
-if (xta==nil) then
-  xta=tabox.env()
-end
 
 local short = "s:h"
 local long = {
@@ -27,6 +24,8 @@ if 0>1 then
 end
 
 local cmdOptions={}
+cmdOptions.rpcserver='localhost'
+
 for i, k in pairs(opts) do
   local v = optarg[i]
   if     k=='rpcserver' then cmdOptions.rpcserver=v   
@@ -57,19 +56,16 @@ local run = true
 --end)
 
 
--- Our dummy "remote" procedures
-local procedures = require("rpc-procedures")
-
 if 2>1 then
-local error_objects = require("lserr_objects")
-if error_objects then
-  --print_table3(error_objects)
-  for k,v in pairs(error_objects) do
-    --print_table3(v)       
-    jsonrpc.add_error_object(k,v)
-  end         
-  logger.info("Loaded error objects to RPC..\n")   
-end
+  local error_objects = require("lserr_objects")
+  if error_objects then
+    --print_table3(error_objects)
+    for k,v in pairs(error_objects) do
+      --print_table3(v)       
+      jsonrpc.add_error_object(k,v)
+    end         
+    logger.info("Loaded error objects to RPC..\n")   
+  end
 end
 
 -- Set up the socket
@@ -78,13 +74,30 @@ local context = zmq.context()
 local responder, err = context:socket{zmq.REP, bind = url}
 zmq.assert(responder, err)
 
+-- Our dummy "remote" procedures
+local procedures = require("rpc-procedures")
+local verb = 1
 -- The "event loop" ...
 while run do
     local req, err = responder:recv()
-    if err == false then        
+    print("received: " .. req)
+    if err == false then              
         local res = jsonrpc.server_response(procedures, req)
+        if verb>0 then
+          print_table3(res) 
+        end
+
+        if req:find("verb") and res.result then
+          verb=res.result
+        end
+
+        if req:find("shutdown") and res.result=='ok' then
+          run=false
+        end
+
         res = jsonrpc.encode(res)
         zmq.assert(responder:send(res))
+        print("sent: " .. res)
     else
         logger:error("'recv()' failed: " .. tostring(err))
         timer.sleep(100) -- in ms
@@ -94,8 +107,6 @@ print("exiting...")
 
 responder:close(0)
 context:shutdown(0)
-
-
 
 
 

@@ -9,6 +9,52 @@ printf = function(fmt, ...)
 end
 
 ---
+-- Same as printf with optional prefixes 
+-- @remark requires 'xta.loglevel>0' to print
+printf2 = function(fmt, ...)   
+	if xta.loglevel>0 then
+    io.stdout:flush() 
+    local ts    
+    local sbuf
+    if hasbit(xta.printmode,xta.const.print_prefxlog) then
+      ts=xta_epoch()    
+      local dt,tm = xta:unixsecinv(ts) 
+      sbuf = sprintf("XTL%02d|%08d-%06d| ",xta.loglevel,dt,tm)
+    elseif hasbit(xta.printmode,xta.const.print_prefxlogts) then
+      ts=xta_epoch()    
+      sbuf = sprintf("XTL%02d|%10d| ",xta.loglevel,ts) 
+    else
+      sbuf=""
+    end    
+    if 0>1 then
+      sbuf = sbuf .. string.format(fmt, ...)
+		  io.write(sbuf) 
+		  io.stdout:flush()
+		else
+		  glogger.info(fmt,...)
+		end 
+	end
+end 
+
+printf3 = function(fmt, ...)   
+  if xta.loglevel>0 then
+    io.stdout:flush() 
+    local ts=xta_epoch()    
+    local sbuf
+    if hasbit(xta.printmode,xta.const.print_prefxlog) then
+      local dt,tm = xta:unixsecinv(ts) 
+      sbuf = sprintf("XTL%02d|%08d-%06d| ",xta.loglevel,dt,tm)
+    elseif hasbit(xta.printmode,xta.const.print_prefxlogts) then
+      sbuf = sprintf("XTL%02d|%10d| ",xta.loglevel,ts)    
+    else
+      sbuf = ""
+    end
+    io.write(sbuf,string.format(fmt, ...)) 
+    io.stdout:flush() 
+  end
+end 
+
+---
 --
 sprintf = function(fmt, ...)  
     local s=string.format(fmt, ...)
@@ -308,4 +354,103 @@ function generateUniqueRandomIntegers(min, max, count)
   end
 
   return randomIntegers
+end
+
+
+local portmap = {luna=40117, fuji=40245, jazz=40139, bobcat=40135, localhost=7791, ['tabox.de']=40139, planet=40245}
+
+---
+-- Callback function to in stack order
+--
+function stackpos(t, a, b)  
+    return t[a]>t[b]
+end 
+
+---
+-- Callback function to order pairs in t
+-- @param t Lua table
+-- @param a An item in t
+-- @param b Another item in t
+function keyorder(t, a, b)
+  if tonumber(a) and tonumber(b) then
+    return tonumber(a)<tonumber(b)
+  elseif tonumber(a) and not tonumber(b) then
+    return true
+  elseif not tonumber(a) and tonumber(b) then
+    return false
+  else
+    return a<b
+  end
+end
+
+---
+-- Sorted pairs iterator
+-- @param t Lua table
+-- @param order callback function to order pairs
+function spairs(t, order)
+  local order = order or keyorder
+  -- collect the keys
+  local keys = {}
+  for k in pairs(t) do keys[#keys+1] = k end
+
+  -- if order function given, sort by it by passing the table and keys a, b,
+  -- otherwise just sort the keys
+  if order then
+    table.sort(keys, function(a,b) return order(t, a, b) end)
+  else
+    table.sort(keys)
+  end
+
+  -- return the iterator function
+  local i = 0
+  return function()
+    i = i + 1
+    if keys[i] then
+      return keys[i], t[keys[i]]
+    end
+  end
+end
+
+---
+-- 
+--
+function gethostname()
+  if xta.platformid==xta.const.win32x86 or xta.platformid==xta.const.win64x86 then
+    return string.lower(os.getenv("COMPUTERNAME"))
+  else
+    return string.lower(os.getenv("HOSTNAME") or gethostname2())
+  end  
+end
+
+---
+-- 
+--
+function gethostname2()
+    local f = io.popen ("/bin/hostname")
+    local hostname = f:read("*a") or ""
+    f:close()
+    hostname =string.gsub(hostname, "\n$", "")
+    return hostname
+end
+
+---
+--
+function get_zmq_server_url(server)
+  local server = server or gethostname()
+  local rpcport = portmap[server]
+  assert(rpcport,sprintf("\nError: no ports for server %s in portmap[]\n",server))
+  local url = sprintf("tcp://*:%d",rpcport)  
+  printf2("RPC server at url: %s\n",url)
+  return rpcport,url,server
+end
+
+---
+--
+function get_zmq_client_url(server)  
+  local server = server or "localhost"
+  local rpcport = portmap[server]
+  assert(rpcport,sprintf("\nError: no ports for server %s in portmap[]\n",server))
+  local url = sprintf("tcp://%s:%d",server,rpcport)
+  printf2("RPC client to url: %s\n",url)
+  return rpcport,url
 end

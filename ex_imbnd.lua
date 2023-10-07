@@ -7,7 +7,6 @@ local info = Lindo.info
 -- config
 require 'ex_cbfun'
 
-
 local options, opts, optarg
 local solver
 local model_file
