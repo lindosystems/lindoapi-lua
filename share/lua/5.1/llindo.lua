@@ -9,7 +9,6 @@ Lindo.logger = Logclass_:new('LindoLogger','info')
 glogger = Lindo.logger
 local logger = glogger
 
-require "llindo_helper"
 ---
 -- Entry 
 Lindo._TABOX_HOME = os.getenv("TABOX_HOME")

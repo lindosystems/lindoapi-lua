@@ -161,6 +161,8 @@ require 'tabox_ext.tbasset'
 require 'tabox_ext.tbann'
 require 'tabox_ext.tbmpmodel'
 
+require "llindo_helper"
+
 local Lindo = require("llindo")
 
 return Lindo

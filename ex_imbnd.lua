@@ -13,6 +13,7 @@ local model_file
 local verb=1
 local szerrmsg
 
+--
 function im_optimize(yModel,kidx,objsense)
 	if not options.solve_as_lp then   
 		yModel:setModelDouParameter(pars.LS_DPARAM_MIP_TIMLIM,1000)
@@ -46,6 +47,7 @@ function im_optimize(yModel,kidx,objsense)
 	end	
 	return res, resx
 end
+
 --
 --
 function ls_calc_im_opt_bounds(pModel)    
