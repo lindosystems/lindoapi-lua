@@ -10,6 +10,8 @@
 local class = require ('middleclass')
 
 local logclass = class('logclass')
+local paths = require('paths')
+assert(paths)
 local round = function(x, increment)
   increment = increment or 1
   x = x / increment
@@ -33,13 +35,18 @@ end
 
 
 local modes = {
-  { name = "trace", color = "\27[34m", },
-  { name = "debug", color = "\27[36m", },
-  { name = "info",  color = "\27[32m", },
-  { name = "capi",  color = "\27[38;5;225m", },
-  { name = "warn",  color = "\27[33m", },
+  { name = "trace", color = "\27[34m", },       --blue
+  { name = "debug3", color = "\27[38;5;79m", }, --cyanish3
+  { name = "debug2", color = "\27[38;5;87m", }, --cyanish2
+  { name = "debug", color = "\27[36m", },       --cyan
+  { name = "info3",  color = "\27[38;5;44m", }, --greenish3
+  { name = "info2",  color = "\27[38;5;40m", }, --greenish2
+  { name = "info",  color = "\27[32m", },       --green
+  { name = "capi", color = "\27[38;5;225m", },
+  { name = "warn",  color = "\27[33m", },  
   { name = "error", color = "\27[31m", },
   { name = "fatal", color = "\27[35m", },  
+  { name = "critc", color = "\27[48;5;238m\27[38;5;202m", }, -- gray background with light gray text  
 }
 
 ---
@@ -49,8 +56,9 @@ local modes = {
 function logclass:initialize(name,loglevel,msdos)
   self.name = name or 'unnamed'
   self.usecolor = not msdos
-  
-  -- self.usecolor = true --override
+  if paths.is_msdos and paths.is_msdos() then self.usecolor=false end
+
+  --self.usecolor = true --override
   
   self.outfile = nil
   self.level = loglevel or "info"
@@ -62,7 +70,7 @@ function logclass:initialize(name,loglevel,msdos)
   end    
 
   for i, x in ipairs(modes) do
-    local nameupper = x.name:upper()
+    local nameupper = x.name:upper()    
     self[x.name] = function(fmt,...)      
       -- Return early if we're below the log level
       if i < levels[self.level] then
@@ -113,7 +121,7 @@ function logclass:initialize(name,loglevel,msdos)
         fp:close()
       end
     end
-  end      
+  end        
 end
 
 return logclass

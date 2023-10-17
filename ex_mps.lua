@@ -36,7 +36,7 @@ if options.seed then
     math.randomseed(options.seed)
   else
     math.randomseed(os.time())
-    printf("Initialized random seed with %d (time)\n",os.time())
+    glogger.info("Initialized random seed with %d (time)\n",os.time())
   end    
 end
 
@@ -44,24 +44,50 @@ end
 xta:setsolverdll("",8);
 xta:setlindodll(options.lindomajor,options.lindominor)
 solver = xta:solver()
-printf("Created a new solver instance %s\n",solver.version);
+glogger.info("Created a new solver instance %s\n",solver.version);
 local ymd,hms = xta:datenow(),xta:timenow() 
 local jsec = xta:jsec(ymd,hms)
-printf("Timestamp: %06d-%06d jsec:%d\n",ymd,hms,jsec)
+glogger.info("Timestamp: %06d-%06d jsec:%d\n",ymd,hms,jsec)
 local res
+if 0>1 then
+    res = solver:setXSolverLibrary(94,"j:\\usr2\\LINGO\\64_20\\MyUser.dll")
+    solver:xassert(res)
+end    
 
 -- New model instance
 local pModel = solver:mpmodel()
-printf("Created a new model instance\n");
+glogger.info("Created a new model instance\n");
+pModel.usercalc=xta.const.size_max
 if options.has_cblog>0 then    
 	pModel.logfun = myprintlog
-	printf("Set a new log function for the model instance\n");
+	glogger.info("Set a new log function for the model instance\n");
 end	
 
 -- Read model from file	
-printf("Reading %s\n",options.model_file)
+glogger.info("Reading %s\n",options.model_file)
 local nErr = pModel:readfile(options.model_file,0)
 pModel:xassert({ErrorCode=nErr})
+
+local res_lp= pModel:getLPData() 
+if 2>1 then
+    --print_table3(res_lp)    
+    if 0>1 then
+        res_lp.padU:printmat(20)
+        res_lp.padL:printmat(20)
+    end
+    local d = res_lp.padU- res_lp.padL
+    printf("min |u-l|=%g\n",d.min)
+    printf("max |u-l|=%g\n",d.max)
+    local ld = xta:LOG10(d)
+    local h = ld:histogram()
+    h:print()
+    local idx = d:find(0)
+    if idx then
+        idx:printmat()
+    end
+    solver:dispose()
+    return
+end
 
 -- Set callback or logback
 if options.has_cbmip>0 then 
@@ -73,10 +99,14 @@ end
 if options.parfile then
     res = pModel:readModelParam(options.parfile)
     pModel:wassert(res)
-end    
+end 
+
 
 -- Solve model
-local res_opt, res_rng = pModel:solve(options)
+local res_opt, res_rng 
+if options.solve then 
+    res_opt, res_rng = pModel:solve(options)
+end    
 
 if res_rng then
 	if options.verb>2 then print_table3(res_rng) end
@@ -92,7 +122,7 @@ if res_opt then
             res_opt.padPrimal:printmat(6,nil,12,nil,'.3e')
         end
     else
-        printf("No primal solution\n")
+        glogger.info("No primal solution\n")
     end
 end	
 
@@ -101,6 +131,6 @@ if options.writeas then
 end    
  
 pModel:dispose()
-printf("Disposed model instance %s\n",tostring(pModel))  
+glogger.info("Disposed model instance %s\n",tostring(pModel))  
 solver:dispose()
-printf("Disposed solver instance %s\n",tostring(solver))  
+glogger.info("Disposed solver instance %s\n",tostring(solver))  

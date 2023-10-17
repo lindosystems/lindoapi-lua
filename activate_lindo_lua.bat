@@ -1,4 +1,6 @@
 @echo off
+set PLATFORM=win32x86
+
 set LUADIR=C:\usr2\Lua
 @call %LUADIR%\luadirs.bat
 set PATH=%LUADIR%\bin;%PATH%
@@ -18,14 +20,13 @@ rem set LUA_PATH=.\?.lua;c:\usr2\Lua\luarocks\systree\share\lua\5.1\?.lua;c:\usr
 rem set LUA_CPATH=c:\usr2\Lua\luarocks\systree\lib\lua\5.1\?.dll
 
 set "CURPATH=%~dp0"
-set LUA_PATH=%CURPATH%\systree\share\lua\5.1\?.lua;%CURPATH%\systree\share\lua\5.1\?\init.lua;%LUA_PATH%
-set LUA_CPATH=%CURPATH%\systree\lib\lua\5.1\?.dll
+set LUA_PATH=.\?.lua;%CURPATH%\share\lua\5.1\?.lua;%CURPATH%\share\lua\5.1\?\init.lua;%LUA_PATH%
+set LUA_CPATH=%CURPATH%\lib\%PLATFORM%\systree\lib\lua\5.1\?.dll
 
 set TABOX_LICENSE_FILE=%TABOX_HOME%\license\tabox.lic
 rem echo %TABOX_LICENSE_FILE%
 
 rem Note that the %APPDATA% element in the paths above is user specific and it MUST be replaced by its actual value.
 rem For the current user that value is: C:\Users\mka\AppData\Roaming.
-set PLATFORM=win32x86
 @echo Set variable PLATFORM=%PLATFORM% (by %0)
 setenv-vcpkg-x86

@@ -101,7 +101,7 @@ function ls_calc_im_opt_bounds(pModel)
 		print("Press Enter")
 		io.read()
 	end
-    resb = res
+    local resb = res
     --print_table3(resb)
     
 	local check_gin = false	
@@ -140,7 +140,7 @@ function ls_calc_im_opt_bounds(pModel)
     objndx = xta:izeros(n_objs)
     objval = xta:zeros(n_objs)    
     for k=1,n_objs do objndx[k] = k-1 end
-    varndx = objndx:copy()
+    local varndx = objndx:copy()
     
     res = yModel:modifyObjective(n_objs,objndx,objval)
     yModel:xassert(res,{2009})
@@ -291,9 +291,9 @@ if not model_file then
 	return
 end	
 
-if seed then
-  if seed~=0 then
-    math.randomseed(seed)
+if options.seed then
+  if options.seed~=0 then
+    math.randomseed(options.seed)
   else
     math.randomseed(os.time())
     printf("Initialized random seed with %d (time)\n",os.time())

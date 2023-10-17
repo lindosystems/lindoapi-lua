@@ -105,3 +105,42 @@ local closeds_by_key = function(env,key)
   end
 end
 tabox.closeds_by_key = closeds_by_key
+
+tabox.DBL_EPSILON = 2.2204460492503131e-16
+
+local function check_error(xta, res, allowed, stop_on_err)
+  local stop_on_err = stop_on_err    
+  -- Check if res is in the allowed table              
+  if res == 0 then
+      return
+  end        
+  local allowed = allowed or {0}
+  local isContinue = false    
+  for i, code in ipairs(allowed) do
+      if res == code then
+          isContinue = true   -- white error for the call
+          break
+      end
+  end
+
+  -- If the error code is not allowed, trigger an assert
+  if not isContinue then
+      local errMsg = string.format("\nError %d: %s", res, xta:errmsg(res))        
+      if stop_on_err then
+          error(errMsg)  -- This will terminate the program and print the error message        
+      end
+  else
+      local errMsg = string.format("Error %d: %s", res, xta:errmsg(res))        
+      printf("\nIGNORE %s",errMsg);        
+  end    
+end    
+
+tabox.xassert = function(xta,res, allowed)
+  local res = res or xta.lasterr
+  check_error(xta, res, allowed, true)
+end
+
+tabox.wassert = function(xta,res, allowed)
+  local res = res or xta.lasterr
+  check_error(xta, res, allowed, false)
+end

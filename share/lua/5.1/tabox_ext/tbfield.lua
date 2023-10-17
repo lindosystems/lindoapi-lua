@@ -165,15 +165,31 @@ end
 TBfield.printmat = function(txf,numcols,gstrbuf,width,delim,dfmt)
   local delim = delim or ""
   local dfmt = dfmt or '.4f'
+  local efmt = efmt or '.4e'
   local numcols = numcols or 10
   local width = width or 12
   local strbuf = gstrbuf or stringBuffer()
+  local isdouble = txf.type=='double'
   if txf:isfield() then
     addString(strbuf,"\n")
     local fmt = field_type_to_format(txf,width,dfmt)
     fmt = fmt .. delim .. " "
+    -- alt fmt for exponents
+    local xfmt 
+    if isdouble then
+        xfmt = field_type_to_format(txf,width,efmt)
+        xfmt = xfmt .. delim .. " "
+    end        
     for k=1,txf.len do
-      addString(strbuf,fmt,txf[k])
+      if not isdouble  then
+        addString(strbuf,fmt,txf[k])
+      else
+        if txf[k]<1e8 then
+            addString(strbuf,fmt,txf[k])        
+        else
+            addString(strbuf,xfmt,txf[k])
+        end      
+      end
       if k%numcols==0 then addString(strbuf,"\n") end
     end
     addString(strbuf,"\n")
@@ -211,3 +227,33 @@ TBfield.data2set = function(f)
   end    
   return dataset
 end 
+
+
+
+---
+-- Map index
+TBfield.find = function(f1,val)
+  assert(f1:isfield())
+  assert(f1.type~='string')
+  local val = val or 1 -- find logical one, e.g. f = A>B where A,B are double valued fields
+  local eps = math.sqrt(xta.DBL_EPSILON)/10
+  local fidx = xta:field(0,'index','int')
+  if f1.type=='double' then
+      for k=1,f1.len do 
+         if math.abs(f1[k]-val)<eps then
+            fidx:add(k)
+         end
+      end   
+  else
+      for k=1,f1.len do 
+         if f1[k]==val then
+            fidx:add(k)
+         end
+      end 
+  end  
+  if fidx.len==0 then  
+    fidx:dispose()
+    fidx = nil
+  end  
+  return fidx  
+end
