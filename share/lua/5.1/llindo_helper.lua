@@ -1,104 +1,6 @@
 local paths = require('paths')
 
----
--- Std C-printf with auto flush
-printf = function(fmt, ...)    
-    io.stdout:flush()   
-    io.write(string.format(fmt, ...)) 
-    io.stdout:flush()     
-end
-
----
--- Same as printf with optional prefixes 
--- @remark requires 'xta.loglevel>0' to print
-printf2 = function(fmt, ...)   
-	if xta.loglevel>0 then
-    io.stdout:flush() 
-    local ts    
-    local sbuf
-    if hasbit(xta.printmode,xta.const.print_prefxlog) then
-      ts=xta_epoch()    
-      local dt,tm = xta:unixsecinv(ts) 
-      sbuf = sprintf("XTL%02d|%08d-%06d| ",xta.loglevel,dt,tm)
-    elseif hasbit(xta.printmode,xta.const.print_prefxlogts) then
-      ts=xta_epoch()    
-      sbuf = sprintf("XTL%02d|%10d| ",xta.loglevel,ts) 
-    else
-      sbuf=""
-    end    
-    if 0>1 then
-      sbuf = sbuf .. string.format(fmt, ...)
-		  io.write(sbuf) 
-		  io.stdout:flush()
-		else
-		  glogger.info(fmt,...)
-		end 
-	end
-end 
-
-printf3 = function(fmt, ...)   
-  if xta.loglevel>0 then
-    io.stdout:flush() 
-    local ts=xta_epoch()    
-    local sbuf
-    if hasbit(xta.printmode,xta.const.print_prefxlog) then
-      local dt,tm = xta:unixsecinv(ts) 
-      sbuf = sprintf("XTL%02d|%08d-%06d| ",xta.loglevel,dt,tm)
-    elseif hasbit(xta.printmode,xta.const.print_prefxlogts) then
-      sbuf = sprintf("XTL%02d|%10d| ",xta.loglevel,ts)    
-    else
-      sbuf = ""
-    end
-    io.write(sbuf,string.format(fmt, ...)) 
-    io.stdout:flush() 
-  end
-end 
-
----
---
-sprintf = function(fmt, ...)  
-    local s=string.format(fmt, ...)
-    return s 
-end
-
----
--- @param t
--- @param name
--- @param lvl
---
-function print_table3(t, name, depth)
-    depth  = depth or 1
-    --if #t==0 then return end
-    local tab = string.rep("   ", depth)
-    local tokey = tostring
-    --tokey = keystr
-    if name then
-       io.write(string.format("%s\n",tab..tokey(name) .. " = {"))
-       --io.write(string.format("%s\n",tab..name .. " = {"))
-    else
-       io.write(string.format("%s\n","{"))
-    end
-    for k, v in pairs(t) do
-        if(type(v) == "table") then
-            if k~="Assets"  then
-              print_table3(v, k, depth+1)
-            else
-              io.write(string.format("%s\n",tab..tab..tokey(k).." = "..tostring(v)..","))
-            end
-        elseif(type(v) == "userdata") then
-            io.write(string.format("%s\n",tab..tab..tokey(k).." = "..tostring(v)..","))
-        else
-            io.write(string.format("%s\n",tab..tab..tokey(k).." = "..tostring(v)..","))
-        end
-    end        
-    if depth>1 then
-        --printf("%s\n",tab..tab.."Data".." = ".."nil")
-        io.write(string.format("%s\n",tab.."},"))
-    else
-        io.write(string.format("%s\n",tab.."}"))
-    end
-    io.stdout:flush()
-end
+require('ftamod_print')
 
 --
 --
@@ -168,67 +70,7 @@ function bitand(a, b)
     return result
 end
 
---[[
--- Rudimentary string buffer
--- https://www.lua.org/pil/11.6.html
--- Usage:
-    local s = stringBuffer()
-    for line in io.lines() do
-      addString(s, line .. "\n")
-    end
-    s = toString(s)
-]]
-function stringBuffer ()
-  return {""}   -- starts with an empty string
-end
 
----
--- Format and add
-function addString (stack, fmt, ...)
-  local s=string.format(fmt, ...)
-  table.insert(stack, s)    -- push 's' into the the stack
-  if 2>1 then
-    for i=table.getn(stack)-1, 1, -1 do
-      if string.len(stack[i]) > string.len(stack[i+1]) then
-        break
-      end
-      stack[i] = stack[i] .. table.remove(stack)
-    end
-  end
-end
-
----
--- No formats
-function addStringx (stack, s)
-  table.insert(stack, s)    -- push 's' into the the stack
-  if 2>1 then
-    for i=table.getn(stack)-1, 1, -1 do
-      if string.len(stack[i]) > string.len(stack[i+1]) then
-        break
-      end
-      stack[i] = stack[i] .. table.remove(stack)
-    end
-  end
-end
-
---- func desc
----@param stack any
----@param delim any
-function toString(stack,delim)
-  local delim = delim or ""
-  local s = table.concat(stack, delim) .. delim
-  return s
-end
-
---- func desc
----@param stack any
-function stringBufferLen(stack)
-  if #stack==1 and stack[1]=="" then
-    return 0
-  else
-    return #stack
-  end
-end
 
 -- Function to compress and remove nil elements from an array
 function compressArray(arr)
@@ -243,12 +85,36 @@ function compressArray(arr)
   return result
 end
 
+---
+-- Checks if a file exists.
+-- @param file The file path to check.
+-- @return True if the file exists, false otherwise.
 function file_exist(file)
   local f = io.open(file, "rb")
   if f then f:close() end
   return f ~= nil
 end
 
+-- open and read file
+function read_file(path)
+  local file = io.open(path, 'rb') -- r read mode and b binary mode
+  if not file then return nil end
+  local content = file:read '*a' -- *a or *all reads the whole file
+  file:close()
+  return content
+end
+
+-- read lines from a file
+function lines_from(file)
+  if not file_exists(file) then return {} end
+  local lines = {}
+  for line in io.lines(file) do 
+    lines[#lines + 1] = line
+  end
+  return lines
+end
+
+-- get basename from path
 function getBasename(filePath)
   local basename = string.match(filePath, "([^\\/]-%.?([^%.\\/]*))$")
   if basename then
@@ -259,8 +125,8 @@ function getBasename(filePath)
   end
 end
 
-function addSuffix2Basename(model_file, suffix, subfolder)
-  -- Find the position of "/path/to/myfile.mps" in the string
+-- Find the position of "/path/to/myfile.mps" in the string
+function addSuffix2Basename(model_file, suffix, subfolder)  
   local basename = getBasename(model_file)
   local startPos, endPos = string.find(model_file, basename)  
   --print("basename:",basename)    -- 'myfile'
@@ -289,6 +155,32 @@ function addSuffix2Basename(model_file, suffix, subfolder)
   end
 end
 
+-- Change the extension of "/path/to/myfile.mps" 
+function changeFileExtension(model_file, newextn)  
+  local basename = getBasename(model_file)
+  local startPos, endPos = string.find(model_file, basename)  
+  --print("basename:",basename)    -- 'myfile'
+
+  -- Check if "myfile" was found
+  if startPos then
+      -- Extract the part of the string before "myfile"
+      local prefix = string.sub(model_file, 1, startPos - 1) -- /path/to
+      
+      -- Create the new string with "myfile_sos2xN" inserted
+      local newModelFile = prefix .. basename .. newextn  -- /path/to/subfolder .. myfile .. suffix 
+
+      return newModelFile
+  else
+      -- "myfile" not found, return the original string
+      return nil
+  end
+end
+
+-- Generates an array of 'count' random integers between 'xmin' and 'xmax'.
+-- @param xmin The minimum value of the range (inclusive).
+-- @param xmax The maximum value of the range (inclusive).
+-- @param count The number of random integers to generate.
+-- @return An array of 'count' random integers between 'xmin' and 'xmax'.
 function generateRandomIntegers(xmin, xmax, count)
   local randomIntegers = {}
   
@@ -300,6 +192,11 @@ function generateRandomIntegers(xmin, xmax, count)
   return randomIntegers
 end
 
+-- Generates an array of 'count' unique random integers between 'min' and 'max', with a higher probability of selecting smaller integers.
+-- @param min The minimum value of the range (inclusive).
+-- @param max The maximum value of the range (inclusive).
+-- @param count The number of random integers to generate.
+-- @return An array of 'count' unique random integers between 'min' and 'max', or nil if there are not enough unique integers in the range.
 function generateLeftSkewedRandomIntegers(min, max, count)
   if count > max - min + 1 then
       return nil  -- Not enough unique integers in the range
@@ -331,6 +228,12 @@ function generateLeftSkewedRandomIntegers(min, max, count)
   return randomIntegers
 end
 
+-- Generates a table of unique random integers within a given range.
+-- @param min The minimum value of the range (inclusive).
+-- @param max The maximum value of the range (inclusive).
+-- @param count The number of unique random integers to generate.
+-- @return A table of unique random integers within the given range, or nil if there are not enough unique integers in the range.
+-- @usage local randomIntegers = generateUniqueRandomIntegers(1, 10, 5)
 function generateUniqueRandomIntegers(min, max, count)
   if count > max - min + 1 then
       return nil  -- Not enough unique integers in the range
@@ -357,6 +260,14 @@ function generateUniqueRandomIntegers(min, max, count)
 end
 
 
+-- Maps server names to their corresponding port numbers.
+-- @field luna The port number for the 'luna' server.
+-- @field fuji The port number for the 'fuji' server.
+-- @field jazz The port number for the 'jazz' server.
+-- @field bobcat The port number for the 'bobcat' server.
+-- @field localhost The port number for the 'localhost' server.
+-- @field tabox.de The port number for the 'tabox.de' server.
+-- @field planet The port number for the 'planet' server.
 local portmap = {luna=40117, fuji=40245, jazz=40139, bobcat=40135, localhost=7791, ['tabox.de']=40139, planet=40245}
 
 ---
@@ -454,3 +365,4 @@ function get_zmq_client_url(server)
   printf2("RPC client to url: %s\n",url)
   return rpcport,url
 end
+

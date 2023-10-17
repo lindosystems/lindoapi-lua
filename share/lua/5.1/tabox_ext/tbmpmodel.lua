@@ -21,13 +21,13 @@ local function check_error(pModel, res, allowed, stop_on_err)
 
     -- If the error code is not allowed, trigger an assert
     if not isContinue then
-        local errMsg = string.format("Error %d: %s", res.ErrorCode, pModel:errmsg(res.ErrorCode))        
+        local errMsg = string.format("\nError %d: %s", res.ErrorCode, pModel:errmsg(res.ErrorCode))        
         if stop_on_err then
             error(errMsg)  -- This will terminate the program and print the error message        
         end
     else
         local errMsg = string.format("Error %d: %s", res.ErrorCode, pModel:errmsg(res.ErrorCode))        
-        printf("IGNORE %s\n",errMsg);        
+        printf("\nIGNORE %s",errMsg);        
     end    
 end    
 

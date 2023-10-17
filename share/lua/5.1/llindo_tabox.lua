@@ -159,6 +159,7 @@ require 'tabox_ext.tbsim'
 require 'tabox_ext.tbparam'
 require 'tabox_ext.tbasset'
 require 'tabox_ext.tbann'
+require 'tabox_ext.tbsolver'
 require 'tabox_ext.tbmpmodel'
 
 require "llindo_helper"

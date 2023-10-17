@@ -1,5 +1,7 @@
 
 package.path = package.path..";./?.lua;./share/lua/5.1/?.lua;./share/lua/5.1/?/init.lua"
+package.cpath = package.cpath..";./lib/win32x86/systree/lib/lua/5.1/?.dll;./lib/win32x86/systree/lib/lua/5.1/?.so;./lib/win32x86/systree/lib/lua/5.1/?.dylib"
+
 
 function myprintlog(pModel, str)
     printf("%s", str)
@@ -26,6 +28,7 @@ end
 function print_default_usage()
     print("Options:")
     print("  -h, --help                     Show this help message")
+    print("  -s, --solve=INTEGER            Specify whether to solve the model or not (1/0)")
     print("  -m, --model=STRING             Specify the model file name")
     print("  -p, --parfile=STRING           Specify the parameter file name")
     print("  -v, --verb=INTEGER             Set print/verbose level")    
@@ -44,7 +47,9 @@ end
 require 'alt_getopt'
 
 local long_default = {       
+    help = 0,
     model = "m",
+    solve = "s",
     parfile = "p",
     help = "h",
     verb = "v",
@@ -58,7 +63,7 @@ local long_default = {
     lindominor = 1,
     seed = 1,
 }
-local short_default = "m:hv:w:M:I:p:"
+local short_default = "m:hv:w:M:I:p:s:f:"
 
 function parse_options(arg,short,long)
     local short = short
@@ -73,7 +78,8 @@ function parse_options(arg,short,long)
     end
     local opts,optind,optarg = alt_getopt.get_ordered_opts(arg, short, long)
 
-    options = {}
+    local options = {}
+    options.help = false
     options.parfile = nil
     options.has_cbmip = 0
     options.has_cbstd = 0
@@ -83,15 +89,19 @@ function parse_options(arg,short,long)
     options.writeas = nil
     options.lindomajor = 14
     options.lindominor = 0
+    options.solve = 1
     options.model_file = nil
+    options.input_file = nil
     options.verb = 1
     options.seed = 0
     -- read and parse config file if specified
     for i, k in pairs(opts) do
         local v = optarg[i] 
         --print(i,k,v)
-        if k=="help" or k=="h" then usage(); os.exit(1); end    
+        if k=="help" or k=="h" then options.help=true end    
         if k=="model" or k=="m" then options.model_file = v end   
+        if k=="file" or k=="f" then options.input_file = v end
+        if k=="solve" or k=="s" then options.solve = tonumber(v) end   
         if k=="parfile" or k=="p" then options.parfile = v end   
         if k=="verb" or k=="v" then options.verb = tonumber(v) end
         if k=="cbmip" then options.has_cbmip=tonumber(v) end
