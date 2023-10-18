@@ -1,8 +1,15 @@
 local Lindo = require("llindo_tabox")
 assert(Lindo)
+local pars = Lindo.parameters
+local errs = Lindo.errors
+local info = Lindo.info
+local status = Lindo.status
 require "ex_cbfun"
-print()
 
+
+
+-- MAIN
+print()
 local short=""
 local long={}
 local options, opts, optarg = parse_options(arg,short,long)

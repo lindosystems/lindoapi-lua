@@ -4,6 +4,11 @@ local lxe = Lindo.errors
 local lxi = Lindo.info
 local lxs = Lindo.status
 
+--- Checks the result object 'res' with respect to Lindo API's error base.
+-- @param pModel The model object.
+-- @param res The result object.
+-- @param allowed A table containing the error codes that are allowed to continue without triggering an assert.
+-- @param stop_on_err A boolean indicating whether to stop the program and print the error message if the error code is not allowed.
 local function check_error(pModel, res, allowed, stop_on_err)
     local stop_on_err = stop_on_err    
     -- Check if res.ErrorCode is in the allowed table              
@@ -31,16 +36,35 @@ local function check_error(pModel, res, allowed, stop_on_err)
     end    
 end    
 
-TBmpmodel.xassert = function(pModel,res, allowed)
+--- Defines a function to check the result object 'res' with respect to Lindo API's error base and trigger an assert if the error code is not allowed.
+-- @param pModel The model object.
+-- @param res The result object.
+-- @param allowed A table containing the error codes that are allowed to continue without triggering an assert.
+-- @param stop_on_err A boolean indicating whether to stop the program and print the error message if the error code is not allowed.
+TBmpmodel.xassert = function(pModel, res, allowed)
     check_error(pModel, res, allowed, true)
 end
 
-TBmpmodel.wassert = function(pModel,res, allowed)
+--- Defines a function to trigger a warning message if the error code is not allowed.
+-- @param pModel The model object.
+-- @param res The result object.
+-- @param allowed A table containing the error codes that are allowed to continue without triggering a warning.
+TBmpmodel.wassert = function(pModel, res, allowed)
     check_error(pModel, res, allowed, false)
 end
 
 ---
 --
+
+--- Solves the given model using Lindo API.
+-- @param pModel The model to solve.
+-- @param options A table containing the following fields:
+--   - has_gop (boolean, optional): Whether the model has global optimization. Defaults to false.
+--   - has_rng (boolean, optional): Whether to compute bound ranges. Defaults to false.
+--   - verb (number, optional): The level of verbosity. Defaults to 0.
+--   - model_file (string, optional): The name of the file to solve. If not specified, the current model is used.
+-- @return res The result of solving the model.
+-- @return res_rng The result of computing bound ranges, if has_rng is true.
 TBmpmodel.solve = function(pModel, options)
     local has_gop = options and options.has_gop
     local has_rng = options and options.has_rng
@@ -86,6 +110,19 @@ TBmpmodel.solve = function(pModel, options)
     return res, res_rng
 end
 
+
+--- Writes the model to a file in the specified format.
+-- @param pModel The model to write.
+-- @param options A table containing the following fields:
+--   - writeas (string, optional): The format to write the model in. Defaults to 'mps'.
+--   - suffix (string, optional): The suffix to add to the filename. Defaults to '_tmp'.
+--   - model_file (string, optional): The name of the file to write the model to. If not specified, the current model is used.
+--   - addsets_mask (number, optional): A mask indicating which sets to include in the output. Defaults to 0.
+--   - nsets (number, optional): The number of sets to include in the output. Defaults to 0.
+--   - settype (number, optional): The type of sets to include in the output. Defaults to 0.
+--   - subfolder (string, optional): The subfolder to write the file to. Defaults to nil.
+-- @return res_w The result of writing the model to a file.
+-- @usage res_w = TBmpmodel.write(pModel, {writeas='mps', suffix='_tmp', model_file='my_model', addsets_mask=0, nsets=0, settype=0, subfolder=nil})
 TBmpmodel.write = function(pModel, options)
     local writeas = options.writeas or 'mps'
     local suffix = options.suffix or '_tmp'
@@ -141,6 +178,8 @@ TBmpmodel.write = function(pModel, options)
     return res_w
 end    
 
+--- Serialize the model instance to a table.
+-- @param pModel The model to serialize.
 TBmpmodel.serialize = function(pModel)
     local res = pModel:getLPData()
     pModel:wassert(res)
@@ -179,6 +218,10 @@ local model_keys = {"modeltype","numvars","numcons","nonz","numint","numbin","nu
 local sol_keys = {"simiters","nlpiters","bariters","mipsimiters","mipnlpiters","mipbariters","gopsimiters","gopnlpiters","gopbariters","branches","pobj","dobj","suminf","mipobj","gopobj","mipbnd","gopbnd"}
 local other_keys = {"utable"}
 
+--- Displays statistics for the given model.
+-- @param pModel The model to display statistics for.
+-- @return None.
+-- @usage pModel:dispstats()
 TBmpmodel.dispstats = function(pModel)
     local res
     --res = pModel:getIntInfo(info.LS_IINFO_NUM_CONS)

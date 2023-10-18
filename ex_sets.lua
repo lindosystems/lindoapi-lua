@@ -1,4 +1,8 @@
--- runlindo
+-- File: ex_sets.lua
+-- Description: Example of adding SETS to models.
+-- Author: [Your Name Here]
+-- Date: [Date Here]
+
 local Lindo = require("llindo_tabox")
 local pars = Lindo.parameters
 local errs = Lindo.errors

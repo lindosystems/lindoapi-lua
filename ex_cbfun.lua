@@ -1,8 +1,13 @@
-
+-- File: ex_cbfun.lua
+-- Description: Example of using callback functions with the Lindo API
+-- Author: [Your Name Here]
+-- Date: [Date Here]
 package.path = package.path..";./?.lua;./share/lua/5.1/?.lua;./share/lua/5.1/?/init.lua"
 package.cpath = package.cpath..";./lib/win32x86/systree/lib/lua/5.1/?.dll;./lib/win32x86/systree/lib/lua/5.1/?.so;./lib/win32x86/systree/lib/lua/5.1/?.dylib"
 
-
+--- Callback function for logging messages from  with respect to Lindo API
+-- @param pModel Pointer to the model instance
+-- @param str String to be printed
 function myprintlog(pModel, str)
     printf("%s", str)
     if string.len(str)<-2 then
@@ -10,6 +15,10 @@ function myprintlog(pModel, str)
 	end
 end
 
+--- Callback function that gets called everytime a new MIP solution is found
+-- @param pModel Pointer to the model instance
+-- @param dobj Objective value of the new MIP solution
+-- @param pX Pointer to the new MIP solution
 function cbmip(pModel, dobj, pX)
     printf("new MIP solution: mipobj: %g, |X|=%g\n", dobj, pX:norm())
     local retval = 0
@@ -20,11 +29,17 @@ function cbmip(pModel, dobj, pX)
     return retval
 end
 
+--- General callback function that gets called from various localtions in the Lindo API
+-- @param pModel Pointer to the model instance
+-- @param iLoc Location code
 function cbstd(pModel, iLoc)
     printf("loc: %d\n", iLoc)
     return 0
 end
 
+
+--- Display standard usage, applicable to all examples
+--@note This function is called by all examples
 function print_default_usage()
     print("Options:")
     print("  -h, --help                     Show this help message")
@@ -47,11 +62,10 @@ end
 require 'alt_getopt'
 
 local long_default = {       
-    help = 0,
+    help = "h",
     model = "m",
     solve = "s",
     parfile = "p",
-    help = "h",
     verb = "v",
     cbmip = 1,
     cblog = 1,
@@ -65,6 +79,11 @@ local long_default = {
 }
 local short_default = "m:hv:w:M:I:p:s:f:"
 
+--- Parses command line options using the alt_getopt library
+-- @param arg The command line arguments
+-- @param short The short options string
+-- @param long The long options table
+-- @return A table containing the parsed options
 function parse_options(arg,short,long)
     local short = short
     local long = long

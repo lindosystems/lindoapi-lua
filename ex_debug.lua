@@ -1,4 +1,8 @@
--- runlindo
+-- File: ex_debug.lua
+-- Description: Example of debugging a model via IIS finder
+-- Author: [Your Name Here]
+-- Date: [Date Here]
+
 local Lindo = require("llindo_tabox")
 local pars = Lindo.parameters
 local errs = Lindo.errors
@@ -14,11 +18,11 @@ local function usage()
     print()
     print("Read a model from a file and optimize or debug.")
     print()
+    print_default_usage()
+    print()
     print("Usage: lua ex_debug.lua [options]")
     print("Example:")
     print("\t lua ex_debug.lua -m model.mps [options]")
-    print()
-    print_default_usage()
     print()
 end   
 
@@ -93,12 +97,14 @@ if options.solve then
     res_opt, res_rng = pModel:solve(options)
 end    
 
--- solve NLPs as LP
-if 2>1 then
-    print_table3(pModel:setModelDouParameter(pars.LS_IPARAM_IIS_USE_EFILTER,1))
+if 0>1 then
+    -- solve NLPs as LP
+    print_table3(pModel:setModelIntParameter(pars.LS_IPARAM_IIS_USE_EFILTER,2))
 end    
 
-print_table3(status)
+res=pModel:setModelIntParameter(pars.LS_IPARAM_IIS_METHOD,6)
+pModel:xassert(res)
+
 local removed = {}
 while true do
     if res_opt.pnSolStatus==status.LS_STATUS_OPTIMAL or 
@@ -115,18 +121,37 @@ while true do
         res = pModel:getIIS()
         pModel:xassert(res)
         print_table3(res)
-        local paiCons = res.paiCons
-        pModel:modifyConstraintType(1,paiCons,"N")
-        printf("Removed constraint %d\n",paiCons[1] or -1)
-        removed[#removed+1] = paiCons[1]
-        if 0>1 then
-            printf("Press enter to reoptimize")
-            io.read()        
-        end            
-        res_opt, res_rng = pModel:solve(options)        
+        if res.paiCons then
+            local paiCons = res.paiCons
+            pModel:modifyConstraintType(1,paiCons,"N")
+            printf("Removed constraint %d\n",paiCons[1] or -1)
+            removed[#removed+1] = paiCons[1]
+            if 2>1 then
+                printf("Press enter to reoptimize or q to quit\n")
+                local q = io.read()        
+                if q=='q' then
+                    break
+                end
+            end            
+            res_opt, res_rng = pModel:solve(options)        
+        else
+            break
+        end
     end
 end    
 print_table3(removed)
+if 2>1 then
+    for k=1,#removed do
+        res = pModel:getConstraintDatai(removed[k])
+        print_table3(res)
+    end
+    res = pModel:writeMPIFile("c:\\tmp\\prob\\debug.mpi")
+    pModel:xassert(res)
+end
+if 0>1 then
+    res = pModel:getLPVariableDataj(0)
+    print_table3(res)
+end
 
 
 -- Write model
