@@ -1,8 +1,9 @@
---
--- Cluster analysis of input file using Self-organizing map
---
+-- File: ex_cluster.lua
+-- Description: Cluster analysis of input file using Self-organizing map
+-- Author: [Your Name Here]
+-- Date: [Date Here]
 -- $Id: ex_cluster.lua 570 2015-10-03 19:32:31Z lindo $
--- runlindo
+
 local Lindo = require("llindo_tabox")
 local pars = Lindo.parameters
 local errs = Lindo.errors
@@ -220,13 +221,8 @@ local function usage()
     print()
     print("Perform cluster analysis of specified model.")
     print()
-    print("Usage: lua ex_cluster.lua [options]")
-    print("Example:")
-    print("\t lua ex_imbnd.lua -m model.mps [options]")
-    print()
     print_default_usage()
     print()
-
     print("Options:")
     print("    , --somboxwidth=INTEGER      Set the somboxwidth (default: 12)")
     print("    , --outpath=STRING           Specify the output path (default: './tmp/')")
@@ -237,7 +233,7 @@ local function usage()
     print("    , --ilim=INTEGER             Set the ilim (default: 5000)")
     print("    , --dist=INTEGER             Set the distmetric (default: 1)")
     print("    , --maxiters=INTEGER         Set the maxiters (default: 10000)")
-
+    print()
     print("Extra Options:")
     print("    , --nx=INTEGER           Set the value for 'nx'")
     print("    , --ny=INTEGER           Set the value for 'ny'")
@@ -245,10 +241,8 @@ local function usage()
     print("    , --neigh=INTEGER        Set the value for 'neigh'")
     print("    , --topol=STRING         Specify the 'topol'")
     print("    , --init=STRING          Specify the 'init'")
+    print()          
     print()
-          
-    print()
-
     print [[
       Remark: Possible values for 'distance' parameter
       dist=='e': Euclidean distance
@@ -259,7 +253,12 @@ local function usage()
       dist=='x': absolute uncentered correlation
       dist=='s': Spearman's rank correlation
       dist=='k': Kendall's tau      
-    ]]
+      ]]      
+    print()
+    print("Usage: lua ex_cluster.lua [options]")
+    print("Example:")
+    print("\t lslua ex_cluster.lua -m tmp/Rset0-1.txt --maxiters=5000 --nx=20 --ny=20")
+    print()
 
 end
 
@@ -356,6 +355,7 @@ R.exdat.name="SomData"
 --R.exdat:print('tmp/a.csv')
 printf("Read data from file: %s\n",R.exdat.name)
 printf("Number of rows: %d\n",R.exdat.nrows)
+printf("Number of cols: %d\n",R.exdat.ncols)
 
 R.nx = options.nx
 R.ny = options.ny

@@ -1,5 +1,8 @@
---
--- luatabox unit tests
+-- File: ex_solu2sol.lua
+-- Description: Convert Lingo solution file to a solution file for a related MPI model.
+-- Author: [Your Name Here]
+-- Date: [Date Here]
+
 package.path = package.path..";./?.lua;./systree/share/lua/5.1/?.lua;./systree/share/lua/5.1/?/init.lua"
 
 local solver

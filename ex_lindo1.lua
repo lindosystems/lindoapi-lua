@@ -1,7 +1,7 @@
---
--- luatabox unit tests
---
--- runlindo
+-- File: ex_lindo3.lua
+-- Description: Example of using the Lindo API to solve a linear programming problem
+-- Author: [Your Name Here]
+-- Date: [Date Here]
 local Lindo = require("llindo_tabox")
 
 local solver

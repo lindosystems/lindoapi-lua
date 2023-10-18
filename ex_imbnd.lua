@@ -1,4 +1,8 @@
--- runlindo
+-- File: ex_imbnd.lua
+-- Description: Example of computing best implied bounds for a model.
+-- Author: [Your Name Here]
+-- Date: [Date Here]
+
 local Lindo = require("llindo_tabox")
 local pars = Lindo.parameters
 local errs = Lindo.errors
@@ -250,14 +254,14 @@ local function usage()
     print()
     print("Read a model and compute tightest possible bounds.")
     print()
-    print("Usage: lua ex_imbnd.lua [options]")
-    print("Example:")
-    print("\t lua ex_imbnd.lua -m model.mps [options]")
-    print()
     print_default_usage()
     print()
     print("    , --lp                       Solve as lp when finding best bounds")
     print("    , --solve                    Solve as tightened model")
+    print()
+    print("Usage: lua ex_imbnd.lua [options]")
+    print("Example:")
+    print("\t lua ex_imbnd.lua -m /path/to/model.mps [options]")
 end   
 
 ---

@@ -1,4 +1,8 @@
--- runlindo
+-- File: ex_mps.lua
+-- Description: Example of reading a model from an MPS file and optimizing it.
+-- Author: [Your Name Here]
+-- Date: [Date Here]
+
 local Lindo = require("llindo_tabox")
 local pars = Lindo.parameters
 local errs = Lindo.errors
@@ -14,11 +18,11 @@ local function usage()
     print()
     print("Read a model from an MPS file and optimize or modify.")
     print()
+    print_default_usage()
+    print()
     print("Usage: lua ex_mps.lua [options]")
     print("Example:")
-    print("\t lua ex_mps.lua -m model.mps [options]")
-    print()
-    print_default_usage()
+    print("\t lua ex_mps.lua -m /path/to/model.mps [options]")
     print()
 end   
 
@@ -68,8 +72,9 @@ glogger.info("Reading %s\n",options.model_file)
 local nErr = pModel:readfile(options.model_file,0)
 pModel:xassert({ErrorCode=nErr})
 
-local res_lp= pModel:getLPData() 
-if 2>1 then
+local res_lp 
+-- res_lp = pModel:getLPData() 
+if res_lp and 0>1 then
     --print_table3(res_lp)    
     if 0>1 then
         res_lp.padU:printmat(20)
@@ -78,13 +83,20 @@ if 2>1 then
     local d = res_lp.padU- res_lp.padL
     printf("min |u-l|=%g\n",d.min)
     printf("max |u-l|=%g\n",d.max)
-    local ld = xta:LOG10(d)
-    local h = ld:histogram()
-    h:print()
-    local idx = d:find(0)
-    if idx then
-        idx:printmat()
+    local eps = math.pow(10,-15)
+    if d.min<eps then
+        d=d+eps
     end
+    local ld = xta:LOG10(d)
+    local h 
+    h = ld:histogram()
+    if h then
+        h:print()
+        local idx = d:find(0)
+        if idx then
+            idx:printmat()
+        end
+    end    
     solver:dispose()
     return
 end
