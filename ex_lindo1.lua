@@ -1,5 +1,6 @@
--- File: ex_lindo3.lua
--- Description: Example of using the Lindo API to solve a linear programming problem
+-- File: ex_lindo1.lua
+-- Description: Example of using the Lindo API to read a model file and 
+ --             perform various solver operations
 -- Author: [Your Name Here]
 -- Date: [Date Here]
 local Lindo = require("llindo_tabox")
