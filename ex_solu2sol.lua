@@ -29,6 +29,7 @@ function lingo_scalarized_name(name)
     name2 = name2:gsub(",","_")
     return name2
 end
+
 -- Function to parse a fixed-width text file with two columns
 function parseFixedWidthFile(lines)
     local data = {}  -- Store variables with native Lingo names
@@ -42,8 +43,10 @@ function parseFixedWidthFile(lines)
         --printf("'%s' = %s\n",key2,value)
     end       
     if options.verb>3 then print_table3(data) end
+    return data
 end
 
+-- Function to parse a fixed-width text file with two columns delimited with '='
 function parseScalarizedInitFile(lines)
     local data = {}  -- Store variables with native Lingo names
     for _, line in ipairs(lines) do        
@@ -70,7 +73,7 @@ local function usage()
     print()
     print_default_usage()
     print()
-    print("    , --solve                    Solve as tightened model")
+    print("    , --solve                    Solve last state of model")
 end  
 ---
 -- Parse command line arguments
@@ -116,37 +119,50 @@ glogger.info("Reading %s\n",options.model_file)
 local nErr = pModel:readfile(options.model_file,0)
 pModel:xassert({ErrorCode=nErr})
 
-local lines = lines_from(options.input_file)
-local t_solu = parseFixedWidthFile(lines)
-local lines2 = lines_from(changeFileExtension(options.input_file,".init"))
-local t_init = parseScalarizedInitFile(lines2)
+local solu_file
+local lines_solu, lines_init
+local t_solu, t_init
+if 0>1 then
+    -- non-scalar solution file
+    solu_file = changeFileExtension(options.input_file,".init")
+else    
+    -- scalarized solution file
+    solu_file = options.input_file
+end
+printf("Reading solution file '%s'\n",solu_file) 
+lines_solu = lines_from(solu_file)
+t_solu = parseFixedWidthFile(lines_solu)
+if solu_file:find(".init") then
+    lines_init = lines_from(solu_file)
+    t_init = parseScalarizedInitFile(lines_init)
+end
 local szsol = ""
 local nfound = 0
-for j=1,pModel.numvars do
-    local res = pModel:getVariableNamej(j-1)
-    pModel:xassert(res)
-    local name = res.pachVarName
-    local value     
-    if 1>0 then 
-        -- use .init file
+if 2>1 then
+    for j=1,pModel.numvars do
+        local res = pModel:getVariableNamej(j-1)
+        pModel:xassert(res)
+        local name = res.pachVarName
+        local value     
         local name2 = lingo_scalarized_name(name)
-        value = t_init[name2]
-        if not value then
-            printf("Warning: value for '%s' (%s) is *not* found.\n",name,name2)
-            os.exit(1)
+        if t_init then 
+            -- use .init file        
+            value = t_init[name2]
         else
-            nfound = nfound + 1
+            -- use t_sol
+            value = t_solu[name2]
         end
-    else
-        -- use t_sol
-        value = t_solu[name]    
+        if value then
+            --pModel:setvar(j,value)
+            szsol = szsol .. sprintf("%60s %22.9e\n",name,value)
+            nfound = nfound + 1
+        else        
+            printf("Warning: value for '%s' ~ '%s' is *not* found.\n",name,name2)
+            os.exit(1)
+        end    
     end
-    if value then
-        --pModel:setvar(j,value)
-        szsol = szsol .. sprintf("%60s %22.9e\n",name,value)
-    end    
+    printf("Found %d values.\n",nfound)    
 end
-printf("Found %d values.\n",nfound)
 local outfile = changeFileExtension(options.model_file,".sol~")
 fwritef(outfile,"w","%s",szsol)
 printf("Wrote solution to '%s'\n",outfile)
