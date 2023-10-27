@@ -132,6 +132,8 @@ TBmpmodel.write = function(pModel, options)
     local settype = options.settype
     local subfolder = options.subfolder
     local res_w
+    assert(model_file,"model_file not specified")
+    assert(writeas=="mps" or writeas=="ltx" or writeas=="mpssets" or writeas=="mpi","writeas must be 'mps' or 'ltx' or 'mpssets' or 'mpi'")
     if writeas=='ltx' then
       local fname = addSuffix2Basename(model_file,suffix,subfolder)        
       res_w = pModel:writeLINDOFile(fname)
