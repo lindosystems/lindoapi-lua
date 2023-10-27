@@ -37,13 +37,38 @@ function cbstd(pModel, iLoc)
     return 0
 end
 
+--- Pretty options displayer
+function print_table_dots(tbl)
+    local max_key_length = 0
+    local max_value_length = 0
+    print()
+    printf("Options:\n")
+    -- Find the maximum length of the keys and values in the table
+    for key, value in pairs(tbl) do
+        local key_length = string.len(tostring(key))
+        local value_length = string.len(tostring(value))
+        if key_length > max_key_length then
+            max_key_length = key_length
+        end
+        if value_length > max_value_length then
+            max_value_length = value_length
+        end
+    end
+
+    -- Print each key-value pair in the table
+    for key, value in pairs(tbl) do
+        local row = string.format("%-"..max_key_length.."s.........: %s", tostring(key), tostring(value))
+        print(row)
+    end
+    print()
+end
 
 --- Display standard usage, applicable to all examples
 --@note This function is called by all examples
 function print_default_usage()
     print("Options:")
     print("  -h, --help                     Show this help message")
-    print("  -s, --solve=INTEGER            Specify whether to solve the model or not (1/0)")
+    print("  -s, --solve=solverId           Solve model with 'solverId'")
     print("  -m, --model=STRING             Specify the model file name")
     print("  -p, --parfile=STRING           Specify the parameter file name")
     print("  -v, --verb=INTEGER             Set print/verbose level")    
@@ -108,11 +133,16 @@ function parse_options(arg,short,long)
     options.writeas = nil
     options.lindomajor = 14
     options.lindominor = 0
-    options.solve = 1
+    options.solve = nil
     options.model_file = nil
     options.input_file = nil
     options.verb = 1
     options.seed = 0
+    for k,v in pairs(long) do
+        if not options[k] then 
+            options[k] = nil
+        end
+    end
     -- read and parse config file if specified
     for i, k in pairs(opts) do
         local v = optarg[i] 
@@ -140,5 +170,11 @@ function parse_options(arg,short,long)
         printf("Initialized with seed %d\n",options.seed)
     end
     math.randomseed(options.seed)     
+    if options.verb>2 then 
+        print_table_dots(options)
+        print_table_dots(opts)
+        print_table_dots(optarg)
+    end
+    
     return options, opts, optarg
 end
