@@ -69,7 +69,7 @@ TBmpmodel.solve = function(pModel, options)
     local has_gop = options and options.has_gop
     local has_rng = options and options.has_rng
     local verb = options and options.verb or 0
-    local res    
+    local res, res_rng    
 
     if verb>0 then printf("Solving %s\n",options and options.model_file or 'current model') end
     if has_gop then
@@ -102,9 +102,11 @@ TBmpmodel.solve = function(pModel, options)
             end            
         end
         res.padPrimal = res_.padPrimal
-        printf("pobj: %.7f\n", pModel.pobj and pModel.pobj or pModel.mipobj or -99)
-        if pModel.pobj then
-            printf("dobj: %.7f\n", pModel.dobj and pModel.dobj or -99)
+        if verb>1 then
+            printf("\npobj: %.7f\n", pModel.pobj and pModel.pobj or pModel.mipobj or -99)
+            if pModel.pobj then
+                printf("dobj: %.7f\n", pModel.dobj and pModel.dobj or -99)
+            end
         end
     end
     return res, res_rng
