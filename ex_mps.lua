@@ -79,14 +79,20 @@ if options.xuserdll then
     solver:xassert(res)
 end
 
-local kpass = 4
-while kpass>=0 do
+if options.xsolver>0 then
+    local xdll = options.xdll 
+    res = solver:setXSolverLibrary(options.xsolver,xdll)
+    solver:xassert(res)
+end
+
+local kpass = 1
+while kpass > 0 do
     kpass = kpass-1
     -- New model instance
     local pModel = solver:mpmodel()
     glogger.info("Created a new model instance\n");
     pModel.usercalc=xta.const.size_max
-    if options.has_cblog>0 and not (options.has_cbmip or options.has_cbstd) then    
+    if options.has_cblog>0 and not (options.has_cbmip~=0 or options.has_cbstd~=0) then    
         pModel.logfun = myprintlog
         glogger.info("Set a new log function for the model instance\n");
     end	
@@ -96,27 +102,7 @@ while kpass>=0 do
     pModel.utable.counter = 0
 
     -- Set the new parameters
-    pModel:setModelIntParameter(pars.LS_DPARAM_MIP_CUTOFFOBJ, options.mipcutoff)
-    pModel:setModelIntParameter(pars.LS_IPARAM_MIP_SYM, options.mipsym)
-    pModel:setModelDouParameter(pars.LS_DPARAM_MIP_OBJTHRESH, options.mipobjthr)
-    pModel:setModelDouParameter(pars.LS_DPARAM_LBIGM, options.lbigm)
-    pModel:setModelIntParameter(pars.LS_IPARAM_SAVEROOT, options.saveroot and 1 or 0)
-    pModel:setModelIntParameter(pars.LS_IPARAM_LOADROOT, options.loadroot and 1 or 0)
-    pModel:setModelIntParameter(pars.LS_IPARAM_MIP_SOLLIM, options.mipsollim)
-    pModel:setModelIntParameter(pars.LS_IPARAM_ILIMIT, options.ilim)
-    pModel:setModelDouParameter(pars.LS_DPARAM_TLIMIT, options.tlim)
-    pModel:setModelDouParameter(pars.LS_IPARAM_MIP_BRANCH_LIMIT, options.branlim)
-
-      if (options.pftol) then pModel:setModelDouParameter(prob,LS_DPARAM_NLP_FEASTOL,pftol) end
-      if (pftol) then pModel:setModelDouParameter(prob,LS_DPARAM_GA_TOL_PFEAS,pftol) end
-      if (dftol) then pModel:setModelDouParameter(prob,LS_DPARAM_NLP_REDGTOL,dftol) end
-      if (aoptol) then pModel:setModelDouParameter(prob,LS_DPARAM_MIP_ABSOPTTOL,aoptol) end
-      if (roptol) then pModel:setModelDouParameter(prob,LS_DPARAM_MIP_RELOPTTOL,roptol) end
-      if (poptol) then pModel:setModelDouParameter(prob,LS_DPARAM_MIP_PEROPTTOL,poptol) end
-
-      if (aoptol) then pModel:setModelDouParameter(prob,LS_DPARAM_GOP_ABSOPTTOL,aoptol) end
-      if (roptol) then pModel:setModelDouParameter(prob,LS_DPARAM_GOP_RELOPTTOL,roptol) end
-      if (poptol) then pModel:setModelDouParameter(prob,LS_DPARAM_GOP_PEROPTTOL,poptol) end
+    pModel:parse_options(options)    
 
     -- Read model from file	
     glogger.info("Reading %s\n",options.model_file)
@@ -201,15 +187,15 @@ while kpass>=0 do
     if options.solve then 
         local npasses = options.solve
         while npasses>0 do
-            res_opt, res_rng = pModel:solve(options)
             npasses = npasses-1
+            res_opt, res_rng = pModel:solve(options)            
             if options.verb>0 then
                 print("\n")
             end
             if options.verb>1 then            
                 res_opt.padPrimal:printmat(6,nil,12,nil,'.3e')
             end
-            if options.verb>0 then
+            if options.verb>0 and res_opt.padPrimal then
                 local dgst = xta:digest(res_opt.padPrimal:ser())
                 printf("x.digest: %s\n", dgst)
             end
@@ -219,7 +205,7 @@ while kpass>=0 do
     if res_rng then
         if options.verb>2 then print_table3(res_rng) end
         if options.verb>1 then
-        res_rng.padDec:printmat(6,nil,12,nil,'.3e')
+            res_rng.padDec:printmat(6,nil,12,nil,'.3e')
         end
     end	
 
@@ -236,7 +222,7 @@ while kpass>=0 do
 
     if options.writeas then
         pModel:write(options.writeas)
-    end    
+    end
     
     pModel:dispose()
     glogger.info("Disposed model instance %s\n",tostring(pModel))  

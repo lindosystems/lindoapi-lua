@@ -244,3 +244,108 @@ TBmpmodel.dispstats = function(pModel)
     return
 end
 
+--- Parse command line arguments.
+---@param pModel The model to parse options for.
+---@param options A table containing the following fields:
+---@field mipcutoff (number, optional): The MIP cutoff value.
+---@field mipsym (number, optional): The MIP symmetry mode.
+---@field mipobjthr (number, optional): The MIP objective threshold.
+---@field lbigm (number, optional): The big-M value.
+---@field saveroot (number, optional): Whether to save the root node.
+---@field loadroot (number, optional): Whether to load the root node.
+---@field mipsollim (number, optional): The MIP solution limit.
+---@field ilim (number, optional): The iteration limit.
+---@field tlim (number, optional): The time limit.
+---@field branlim (number, optional): The branch limit.
+---@field pftol (number, optional): The primal feasibility tolerance.
+---@field dftol (number, optional): The dual feasibility tolerance.
+---@field aoptol (number, optional): The absolute optimality tolerance.
+---@field roptol (number, optional): The relative optimality tolerance.
+---@field poptol (number, optional): The percentage optimality tolerance.
+---@return None.
+TBmpmodel.parse_options = function(pModel, options)
+    local pars = lxp
+    local res
+    if options.mipcutoff ~= nil then
+        res = pModel:setModelIntParameter(pars.LS_DPARAM_MIP_CUTOFFOBJ, options.mipcutoff)
+    end
+
+    if options.mipsym ~= nil then
+        res = pModel:setModelIntParameter(pars.LS_IPARAM_MIP_SYMMETRY_MODE, options.mipsym)
+    end
+
+    if options.mipobjthr ~= nil then
+        res = pModel:setModelDouParameter(pars.LS_DPARAM_MIP_OBJ_THRESHOLD, options.mipobjthr)
+    end
+
+    if options.lbigm ~= nil then
+        res = pModel:setModelDouParameter(pars.LS_DPARAM_MIP_LBIGM, options.lbigm)
+    end
+
+    if options.saveroot ~= nil then
+        res = pModel:update_bistmask_on(pars.LS_IPARAM_LP_XMODE, options.saveroot)
+    end
+
+    if options.loadroot ~= nil then
+        res = pModel:update_bistmask_on(pars.LS_IPARAM_LP_XMODE, options.loadroot)
+    end
+
+    if options.mipsollim ~= nil then
+        res = pModel:setModelIntParameter(pars.LS_IPARAM_MIP_SOLLIM, options.mipsollim)
+    end
+
+    if options.ilim ~= nil then
+        res = pModel:setModelDouParameter(pars.LS_DPARAM_GOP_ITRLIM,options.ilim)
+        res = pModel:setModelDouParameter(pars.LS_DPARAM_MIP_ITRLIM,options.ilim)
+        res = pModel:setModelIntParameter(pars.LS_IPARAM_LP_ITRLMT,options.ilim)
+        res = pModel:setModelIntParameter(pars.LS_IPARAM_NLP_ITRLMT,options.ilim)
+    end
+
+    if options.tlim ~= nil then
+        res = pModel:setModelDouParameter(pars.LS_DPARAM_MIP_TIMLIM,options.tlim)
+        res = pModel:setModelDouParameter(pars.LS_DPARAM_GOP_TIMLIM,options.tlim)
+        res = pModel:setModelDouParameter(pars.LS_DPARAM_SOLVER_TIMLMT,options.tlim);
+    end
+
+    if options.branlim ~= nil then
+        res = pModel:setModelIntParameter(pars.LS_IPARAM_MIP_BRANCH_LIMIT, options.branlim)
+        pModel:wassert(res)
+    end
+
+    if options.pftol then
+        res = pModel:setModelDouParameter(pars.LS_DPARAM_NLP_FEASTOL, options.pftol)
+        res = pModel:setModelDouParameter(pars.LS_DPARAM_GA_TOL_PFEAS, options.pftol)
+    end
+    
+    if options.dftol then
+        res = pModel:setModelDouParameter(pars.LS_DPARAM_NLP_REDGTOL, options.dftol)
+    end
+    
+    if options.aoptol then
+        res = pModel:setModelDouParameter(pars.LS_DPARAM_MIP_ABSOPTTOL, options.aoptol)
+    end
+    
+    if options.roptol then
+        res = pModel:setModelDouParameter(pars.LS_DPARAM_MIP_RELOPTTOL, options.roptol)
+    end
+    
+    if options.poptol then
+        res = pModel:setModelDouParameter(pars.LS_DPARAM_MIP_PEROPTTOL, options.poptol)
+    end
+
+    if options.aoptol then 
+        res = pModel:setModelDouParameter(pars.LS_DPARAM_GOP_ABSOPTTOL,options.aoptol) 
+    end
+    
+    if options.roptol then 
+        res = pModel:setModelDouParameter(pars.LS_DPARAM_GOP_RELOPTTOL,options.roptol) 
+    end
+    
+    if options.poptol then 
+        res = pModel:setModelDouParameter(pars.LS_DPARAM_GOP_PEROPTTOL,options.poptol)
+    end
+
+    if options.xsolver>0 then
+        res = pModel:setModelIntParameter(pars.LS_IPARAM_SPLEX_USE_EXTERNAL,options.xsolver)
+    end
+end
