@@ -156,6 +156,8 @@ function print_default_usage()
     print("Options:")
     print("  -h, --help                     Show this help message")
     print("  -s, --solve=solverId           Solve model with 'solverId'")
+    print("  -x, --xsolver=INTEGER          Set external solver to 'INTEGER' (default: 0)")
+    printf("   , --xdll=STRING              Set external solver dll to 'STRING' (default: nil)")
     print("    , --max                      Set objective sense to maximize (default: minimize)")
     print("  -m, --model=STRING             Specify the model file name")
     print("  -p, --parfile=STRING           Specify the parameter file name")
@@ -169,7 +171,26 @@ function print_default_usage()
     print("  -M, --lindomajor=INTEGER       Lindo api major version to use")
     print("  -I, --lindominor=INTEGER       Lindo api minor version to use")    
     print("    , --seed=INTEGER             Set random number generator 'seed'")
+    print("    , --max                      Set objective sense to maximize (default: minimize)")
     print()    
+    -- Additional options    
+    print("      --ilim=<value>             Set ilim value")
+    print("    , --tlim=<value>             Set tlim value")
+    print("    , --branlim=<value>          Set branlim value")
+    print("    , --mipsollim=<value>        Set mipsollim value")
+    print("    , --mipcutoff=<value>        Set mipcutoff value")
+    print("    , --mipsym=<value>           Set mipsym value")
+    print("    , --saveroot                 Use saveroot")
+    print("    , --loadroot                 Use loadroot")
+    print("    , --lbigm=<value>            Set lbigm value")
+    print("    , --mipobjthr=<value>        Set mipobjthr value")
+    print("    , --ainttol=<value>          Set ainttol value")
+    print("    , --rinttol=<value>          Set rinttol value")
+    print("    , --pftol=<value>            Set pftol value")
+    print("    , --dftol=<value>            Set dftol value")
+    print("    , --aoptol=<value>           Set aoptol value")
+    print("    , --ropttol=<value>          Set ropttol value")
+    print("    , --popttol=<value>          Set popttol value")    
 end    
 
 require 'alt_getopt'
@@ -178,6 +199,8 @@ local long_default = {
     help = "h",
     model = "m",
     solve = "s",
+    xsolver = "x",
+    xdll = 1,
     parfile = "p",
     verb = "v",
     cbmip = 1,
@@ -189,9 +212,27 @@ local long_default = {
     lindomajor = 1, 
     lindominor = 1,
     seed = 1,
-    max = 0
+    max = 0,
+    -- Additional options
+    ilim = 1,
+    tlim = 1,
+    branlim = 1,
+    mipsollim = 1,
+    mipcutoff = 1,
+    mipsym = 1,
+    saveroot = 0,
+    loadroot = 0,
+    lbigm = 1,
+    mipobjthr = 1,
+    ainttol = 1,
+    rinttol = 1,
+    pftol = 1,
+    dftol = 1,
+    aoptol = 1,
+    ropttol = 1,
+    popttol = 1    
 }
-local short_default = "m:hv:w:M:I:p:s:f:"
+local short_default = "m:hv:w:M:I:p:s:f:x:"
 
 --- Parses command line options using the alt_getopt library
 -- @param arg The command line arguments
@@ -222,7 +263,9 @@ function parse_options(arg,short,long)
     options.writeas = nil
     options.lindomajor = 14
     options.lindominor = 0
-    options.solve = nil
+    options.solve = 1
+    options.xsolver = 0
+    options.xdll = nil
     options.model_file = nil
     options.input_file = nil
     options.verb = 1
@@ -290,6 +333,11 @@ function parse_options(arg,short,long)
         elseif k == "aoptol" then options.aoptol = tonumber(v)
         elseif k == "ropttol" then options.ropttol = tonumber(v)
         elseif k == "popttol" then options.popttol = tonumber(v)
+        elseif k=="xsolver" or k=="x" then options.xsolver=tonumber(v)
+        elseif k=="xdll" then options.xdll=v
+        else
+            printf("Unknown option '%s'\n",k)
+            options.help=true
         end        
     end
     if options.seed==0 then
