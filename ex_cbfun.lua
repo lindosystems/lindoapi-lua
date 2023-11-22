@@ -11,16 +11,47 @@ local errs = Lindo.errors
 local info = Lindo.info
 local status = Lindo.status
 
+--- Compute SHA1/2 hash of a string
+---@param str String to be hashed
+function SHA2(str) 
+    local sha2_
+    if 2>1 then
+        sha2_ = xta:digest(str)
+    else
+        sha2_ = xta:sha(str,256)        
+    end 
+    if 0>1 and string.len(str)<128 then
+        printf("DIGEST: '%s' '%s'\n",sha2_,str)       
+    end
+    return sha2_
+end    
+
 --- Callback function for logging messages from  with respect to Lindo API
 -- @param pModel Pointer to the model instance
 -- @param str String to be printed
 function myprintlog(pModel, str)
+    if str:find("Processed") then
+        str="\nProcessed ..."
+    end
     printf("%s", str)
     if string.len(str)<-2 then
 		io.read()
 	end
+    if pModel.utable.ktrylogfp then
+        fprintf(pModel.utable.ktrylogfp,"%s",str)
+        if not pModel.utable.ktrylogsha then
+            pModel.utable.ktrylogsha = ""
+        end
+        pModel.utable.ktrylogsha = SHA2(pModel.utable.ktrylogsha..str)
+    end
 end
 
+--- MIP Callback function progress line getter
+function lsi_pdline(p)
+    local sline = sprintf("%6s:%8u %8u %8u %14e %14e %14e %8u %6u",
+    "(NEW)",p.iter,p.bncnt,p.lpcnt+p.mipcnt,p.pfeas,p.bestbnd,p.pobj,p.accnt,p.status);
+    return sline
+end    
 
 --- Callback function that gets called everytime a new MIP solution is found
 -- @param pModel Pointer to the model instance
@@ -40,39 +71,17 @@ function cbmip(pModel, dobj, pX, udata)
     counter = counter + 1
     pModel.utable.counter = counter
 
-    res = pModel:getProgressInfo(iLoc,info.LS_IINFO_CUR_ITER)
-    iter = res and res.pValue or 0
-
-    res = pModel:getProgressInfo(iLoc,info.LS_IINFO_CUR_STATUS)
-    status = res and res.pValue or 0    
-
-    res = pModel:getProgressInfo(iLoc,info.LS_IINFO_CUR_LP_COUNT)
-    lpcnt = res and res.pValue or 0    
-    
-    res = pModel:getProgressInfo(iLoc,info.LS_IINFO_CUR_BRANCH_COUNT)
-    bncnt = res and res.pValue or 0    
-    
-    res = pModel:getProgressInfo(iLoc,info.LS_IINFO_CUR_MIP_COUNT)
-    mipcnt = res and res.pValue or 0    
-
-    res = pModel:getProgressInfo(iLoc,info.LS_DINFO_SUB_PINF)
-    pfeas = res and res.pValue or 0    
-    
-    res = pModel:getProgressInfo(iLoc,info.LS_DINFO_CUR_BEST_BOUND)
-    bestbnd = res and res.pValue or 0    
-    
-    res = pModel:getProgressInfo(iLoc,info.LS_DINFO_CUR_OBJ)
-    pobj = res and res.pValue or 0    
-
-    res = pModel:getProgressInfo(iLoc,info.LS_IINFO_CUR_ACTIVE_COUNT)
-    accnt = res and res.pValue or 0    
-    
-    res = pModel:getProgressInfo(iLoc,info.LS_IINFO_CUR_STATUS)
-    curtime = res and res.pValue or 0    
-
+    local p = pModel:getProgressData()
+    local normx = pX:norm(2)
     szerr = "" --pModel:errmsg(res.ErrorCode) or "N/A"
-    printf("\n%6s:%8u %8u %8u %14e %14e %14e %8u %6u %8.2f %10g %s",
-    "(NEW)",iter,bncnt,lpcnt+mipcnt,pfeas,bestbnd,pobj,accnt,status,curtime,pX:norm(2),szerr);
+    local line = lsi_pdline(p,normx,szerr)
+    printf("\n%s %8.2f %10g %s",line,p.curtime,normx,szerr) 
+    if pModel.utable.lines==nil then
+        pModel.utable.lines = {}
+    end
+    if line ~= pModel.utable.lines[#pModel.utable.lines] then
+        pModel.utable.lines[#pModel.utable.lines+1] = line
+    end        
     
     retval = 0
     if retval>0 then        
@@ -114,12 +123,12 @@ function cbstd(pModel, iLoc,udata)
     res = pModel:getProgressInfo(iLoc,info.LS_IINFO_CUR_ACTIVE_COUNT)
     accnt = res and res.pValue or 0    
     
-    res = pModel:getProgressInfo(iLoc,info.LS_IINFO_CUR_STATUS)
+    res = pModel:getProgressInfo(iLoc,info.LS_DINFO_CUR_TIME)
     curtime = res and res.pValue or 0    
 
     szerr = "" -- pModel:errmsg(res.ErrorCode) or "N/A"
     printf("\n%6s:%8u %8u %8u %14e %14e %14e %8u %6u %8.2f %s",
-    "(NEW)",iter,bncnt,lpcnt+mipcnt,pfeas,bestbnd,pobj,accnt,status,curtime,szerr);
+    "(CB)",iter,bncnt,lpcnt+mipcnt,pfeas,bestbnd,pobj,accnt,status,curtime,szerr);
 
     return 0
 end
@@ -157,11 +166,16 @@ function print_default_usage()
     print("  -h, --help                     Show this help message")
     print("  -s, --solve=solverId           Solve model with 'solverId'")
     print("  -x, --xsolver=INTEGER          Set external solver to 'INTEGER' (default: 0)")
-    printf("   , --xdll=STRING              Set external solver dll to 'STRING' (default: nil)")
+    print("    , --ktrymod=INTEGER          Set ktrymod to 'INTEGER' (default: 1)")
+    print("    , --ktryenv=INTEGER          Set ktryenv to 'INTEGER' (default: 1)")
+    print("    , --ktrysolv=INTEGER         Set ktrysolv to 'INTEGER' (default: 1)")
+    print("    , --ktrylogf=STRING          Set logfile file basename to 'STRING' (default: nil)")
+    print("    , --xdll=STRING              Set external solver dll to 'STRING' (default: nil)")
     print("    , --max                      Set objective sense to maximize (default: minimize)")
     print("  -m, --model=STRING             Specify the model file name")
     print("  -p, --parfile=STRING           Specify the parameter file name")
     print("  -v, --verb=INTEGER             Set print/verbose level")    
+    print("    , --print=INTEGER            Set print/verbose level for solver")
     print("    , --cbmip=VALUE              User mip-callback on/off (1/0)")
     print("    , --cblog=VALUE              User log-callback on/off (1/0)")
     print("    , --cbstd=VALUE              User std-callback on/off (1/0)")
@@ -191,6 +205,10 @@ function print_default_usage()
     print("    , --aoptol=<value>           Set aoptol value")
     print("    , --ropttol=<value>          Set ropttol value")
     print("    , --popttol=<value>          Set popttol value")    
+    print("    , --pivttol=<value>          Set pivtol value")    
+    print("    , --pre_root=<value>         Set pre_root value")
+    print("    , --pre_lp=<value>           Set pre_lp value")
+    print("    , --heulevel=<value>         Set heulevel value")
 end    
 
 require 'alt_getopt'
@@ -203,6 +221,7 @@ local long_default = {
     xdll = 1,
     parfile = "p",
     verb = "v",
+    print = 1,
     cbmip = 1,
     cblog = 1,
     cbstd = 1,
@@ -230,7 +249,16 @@ local long_default = {
     dftol = 1,
     aoptol = 1,
     ropttol = 1,
-    popttol = 1    
+    popttol = 1,
+    pivtol = 1,
+    pre_root = 1,
+    pre_lp = 1,    
+    ktrymod = 1,
+    ktryenv = 1,
+    ktrysolv = 1,
+    heulevel = 1,
+    prtfg = 1,
+    ktrylogf = 1,
 }
 local short_default = "m:hv:w:M:I:p:s:f:x:"
 
@@ -269,6 +297,7 @@ function parse_options(arg,short,long)
     options.model_file = nil
     options.input_file = nil
     options.verb = 1
+    options.print = nil
     options.seed = 0
     options.max = false
     options.branlim = nil
@@ -290,7 +319,15 @@ function parse_options(arg,short,long)
     options.rinttol = nil
     options.ropttol = nil
     options.popttol = nil
-
+    options.pivotol = nil
+    options.pre_root = nil
+    options.pre_lp = nil
+    options.ktrymod = 1
+    options.ktryenv = 1
+    options.ktrysolv = 1
+    options.heulevel = nil
+    options.prtfg = nil
+    options.ktrylogf = nil
     for k,v in pairs(long) do
         if not options[k] then 
             options[k] = nil
@@ -303,9 +340,14 @@ function parse_options(arg,short,long)
         if k=="help" or k=="h" then options.help=true    
         elseif k=="model" or k=="m" then options.model_file = v   
         elseif k=="file" or k=="f" then options.input_file = v
+        elseif k=="ktrymod" then options.ktrymod = tonumber(v)
+        elseif k=="ktryenv" then options.ktryenv = tonumber(v)
+        elseif k=="ktrysolv" then options.ktrysolv = tonumber(v)
+        elseif k=="ktrylogf" then options.ktrylogf = v
         elseif k=="solve" or k=="s" then options.solve = tonumber(v)   
         elseif k=="parfile" or k=="p" then options.parfile = v   
         elseif k=="verb" or k=="v" then options.verb = tonumber(v)
+        elseif k=="print" then options.print = tonumber(v)
         elseif k=="cbmip" then options.has_cbmip=tonumber(v)
         elseif k=="cbstd" then options.has_cbstd=tonumber(v)
         elseif k=="cblog" then options.has_cblog=tonumber(v)
@@ -333,8 +375,13 @@ function parse_options(arg,short,long)
         elseif k == "aoptol" then options.aoptol = tonumber(v)
         elseif k == "ropttol" then options.ropttol = tonumber(v)
         elseif k == "popttol" then options.popttol = tonumber(v)
+        elseif k == "pivtol" then options.pivtol = tonumber(v) 
         elseif k=="xsolver" or k=="x" then options.xsolver=tonumber(v)
         elseif k=="xdll" then options.xdll=v
+        elseif k=="pre_root" then options.pre_root=tonumber(v)
+        elseif k=="pre_lp" then options.pre_lp=tonumber(v)
+        elseif k=="heulevel" then options.heulevel=tonumber(v)  
+        elseif k=="prtfg" then options.prtfg=tonumber(v)          
         else
             printf("Unknown option '%s'\n",k)
             options.help=true

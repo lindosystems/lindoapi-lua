@@ -70,7 +70,15 @@ function bitand(a, b)
     return result
 end
 
-
+--- Convert table to string (depth 1)
+---@param tbl any
+function tableToString(tbl)
+  local result = ""
+  for _, v in pairs(tbl) do
+      result = result .. ":" .. tostring(v)
+  end
+  return result
+end
 
 -- Function to compress and remove nil elements from an array
 function compressArray(arr)

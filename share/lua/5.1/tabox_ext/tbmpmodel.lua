@@ -80,9 +80,11 @@ TBmpmodel.solve = function(pModel, options)
         res = pModel:optimize()
     end    
     if verb>2 then print_table3(res) end
-    pModel:xassert(res,{lxe.LSERR_USER_INTERRUPT})
+    pModel:wassert(res)
     -- check status
     if res.pnMIPSolStatus == lxs.LS_STATUS_OPTIMAL or 
+       res.pnMIPSolStatus == lxs.LS_STATUS_FEASIBLE or 
+       res.pnMIPSolStatus==lxs.LS_STATUS_LOCAL_OPTIMAL or
        res.pnSolStatus == lxs.LS_STATUS_BASIC_OPTIMAL or 
        res.pnSolStatus == lxs.LS_STATUS_OPTIMAL or 
        res.pnGOPSolStatus==lxs.LS_STATUS_OPTIMAL or 
@@ -90,16 +92,16 @@ TBmpmodel.solve = function(pModel, options)
        res.pnGOPSolStatus==lxs.LS_STATUS_LOCAL_OPTIMAL or 
        res.pnGOPSolStatus==lxs.LS_STATUS_FEASIBLE then
         local res_
-        if pModel.numint + pModel.numbin + pModel.numsc + pModel.numsets > 0 then
+        if res.pnMIPSolStatus then
             res_ = pModel:getMIPPrimalSolution()
-        else
+        elseif res.pnSolStatus then
             res_ = pModel:getPrimalSolution()
             if has_rng and not has_gop then
                 res_rng = pModel:getBoundRanges()
                 if verb>2 then
                     print_table3(res_rng)
                 end
-            end            
+            end
         end
         res.padPrimal = res_.padPrimal
         if verb>1 then
@@ -245,7 +247,7 @@ TBmpmodel.dispstats = function(pModel)
 end
 
 --- Parse command line arguments.
----@param pModel The model to parse options for.
+---@param pModel The model to parse and set options for.
 ---@param options A table containing the following fields:
 ---@field mipcutoff (number, optional): The MIP cutoff value.
 ---@field mipsym (number, optional): The MIP symmetry mode.
@@ -263,9 +265,15 @@ end
 ---@field roptol (number, optional): The relative optimality tolerance.
 ---@field poptol (number, optional): The percentage optimality tolerance.
 ---@return None.
-TBmpmodel.parse_options = function(pModel, options)
+TBmpmodel.set_params_user = function(pModel, options)
     local pars = lxp
     local res
+    
+    -- user data as Lua table
+    pModel.utable = {}
+    pModel.utable.counter = 0
+    pModel.utable.options = options
+
     if options.mipcutoff ~= nil then
         res = pModel:setModelIntParameter(pars.LS_DPARAM_MIP_CUTOFFOBJ, options.mipcutoff)
     end
@@ -345,7 +353,89 @@ TBmpmodel.parse_options = function(pModel, options)
         res = pModel:setModelDouParameter(pars.LS_DPARAM_GOP_PEROPTTOL,options.poptol)
     end
 
+    if options.pivtol then 
+        res = pModel:setModelDouParameter(pars.LS_DPARAM_LP_PIV_ZEROTOL,options.pivtol)
+    end
+
     if options.xsolver>0 then
         res = pModel:setModelIntParameter(pars.LS_IPARAM_SPLEX_USE_EXTERNAL,options.xsolver)
+    end
+
+    if options.pre_lp then
+        res = pModel:setModelIntParameter(pars.LS_IPARAM_LP_PRELEVEL,options.pre_lp)
+    end
+
+    if options.pre_root then
+        res = pModel:setModelIntParameter(pars.LS_IPARAM_MIP_PRELEVEL,options.pre_root)
+    end
+
+    if options.heulevel then
+        res = pModel:setModelIntParameter(pars.LS_IPARAM_MIP_HEULEVEL,options.heulevel)
+    end
+
+    if options.print then
+        res = pModel:setModelIntParameter(pars.LS_IPARAM_MIP_PRINTLEVEL,options.print)
+        res = pModel:setModelIntParameter(pars.LS_IPARAM_LP_PRINTLEVEL,options.print)
+    end
+
+    if options.prtfg then
+        res = pModel:setModelIntParameter(pars.LS_IPARAM_LP_PRTFG,options.prtfg)
+    end
+end
+
+--- Gets the progress data for the given model.
+---@param pModel The model to get progress data for.
+---@param iLoc The location to get progress data for. Defaults to 11.
+TBmpmodel.getProgressData = function(pModel,iLoc)
+    local iLoc = iLoc or 11
+    local p = {}
+    local res
+    res = pModel:getProgressInfo(iLoc,lxi.LS_IINFO_CUR_ITER)
+    p.iter = res and res.pValue or 0
+
+    res = pModel:getProgressInfo(iLoc,lxi.LS_IINFO_CUR_STATUS)
+    p.status = res and res.pValue or 0    
+
+    res = pModel:getProgressInfo(iLoc,lxi.LS_IINFO_CUR_LP_COUNT)
+    p.lpcnt = res and res.pValue or 0    
+    
+    res = pModel:getProgressInfo(iLoc,lxi.LS_IINFO_CUR_BRANCH_COUNT)
+    p.bncnt = res and res.pValue or 0    
+    
+    res = pModel:getProgressInfo(iLoc,lxi.LS_IINFO_CUR_MIP_COUNT)
+    p.mipcnt = res and res.pValue or 0    
+
+    res = pModel:getProgressInfo(iLoc,lxi.LS_DINFO_SUB_PINF)
+    p.pfeas = res and res.pValue or 0    
+    
+    res = pModel:getProgressInfo(iLoc,lxi.LS_DINFO_CUR_BEST_BOUND)
+    p.bestbnd = res and res.pValue or 0    
+    
+    res = pModel:getProgressInfo(iLoc,lxi.LS_DINFO_CUR_OBJ)
+    p.pobj = res and res.pValue or 0    
+
+    res = pModel:getProgressInfo(iLoc,lxi.LS_IINFO_CUR_ACTIVE_COUNT)
+    p.accnt = res and res.pValue or 0    
+    
+    res = pModel:getProgressInfo(iLoc,lxi.LS_DINFO_CUR_TIME)
+    p.curtime = res and res.pValue or 0    
+
+    return p
+end
+
+--- Delete the given model and its user table.
+TBmpmodel.delete = function(pModel)
+    if pModel then
+        if pModel.utable.ktrylogfp then
+            io.close(pModel.utable.ktrylogfp)
+            glogger.info("Closed log file %s, sha:%s\n",pModel.utable.ktrylogf,pModel.utable.ktrylogsha)
+            local options = pModel.utable.options
+            local shafile = sprintf("tmp/%s.sha",options.ktrylogf)
+            glogger.info("Writing sha to %s\n",shafile)
+            fwritef(shafile,"a","Closed log file %s, sha:%s\n",pModel.utable.ktrylogf,pModel.utable.ktrylogsha)
+        end
+        -- INSERT OTHER TASKS on utable
+        pModel:dispose()
+        glogger.info("Deleted model instance %s\n",tostring(pModel))          
     end
 end

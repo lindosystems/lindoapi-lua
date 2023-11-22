@@ -1134,7 +1134,7 @@
 
 !Simplex pivot zero tolerance. Possible values are (0,inf).
 !Default is 1e-008.
-!LS_DPARAM_LP_PIV_ZEROTOL                   = 1e-008
+LS_DPARAM_LP_PIV_ZEROTOL                   = 1e-006
 
 
 !Simplex maximum pivot tolerance. Possible values are (0,inf).
