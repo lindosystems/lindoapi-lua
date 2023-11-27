@@ -117,7 +117,8 @@ while ktryenv>0 do
         end	
 
         -- Set the new parameters
-        pModel:set_params_user(options)    
+        pModel:set_params_user(options)   
+        pModel:disp_params_non_default()
 
         if options.ktrylogf then
             pModel.utable.ktrylogf = sprintf("tmp/ktrylogf_%s_m%02d_e%02d.log",options.ktrylogf,ktrymod,ktryenv)
