@@ -76,12 +76,21 @@ function cbmip(pModel, dobj, pX, udata)
     szerr = "" --pModel:errmsg(res.ErrorCode) or "N/A"
     local line = lsi_pdline(p,normx,szerr)
     printf("\n%s %8.2f %10g %s",line,p.curtime,normx,szerr) 
+    if pModel.utable.ktrylogfp then
+        local str = sprintf("\n%s %8.2f %10g %s",line,-99,normx,szerr)
+        fprintf(pModel.utable.ktrylogfp,"%s",str) 
+        if not pModel.utable.ktrylogsha then
+            pModel.utable.ktrylogsha = ""
+        end
+        pModel.utable.ktrylogsha = SHA2(pModel.utable.ktrylogsha..str)
+    end    
+
     if pModel.utable.lines==nil then
         pModel.utable.lines = {}
     end
     if line ~= pModel.utable.lines[#pModel.utable.lines] then
         pModel.utable.lines[#pModel.utable.lines+1] = line
-    end        
+    end
     
     retval = 0
     if retval>0 then        
@@ -209,6 +218,7 @@ function print_default_usage()
     print("    , --pre_root=<value>         Set pre_root value")
     print("    , --pre_lp=<value>           Set pre_lp value")
     print("    , --heulevel=<value>         Set heulevel value")
+    print("    , --strongb=<value>          Set strong-branch level")
 end    
 
 require 'alt_getopt'
@@ -259,6 +269,7 @@ local long_default = {
     heulevel = 1,
     prtfg = 1,
     ktrylogf = 1,
+    strongb = 1
 }
 local short_default = "m:hv:w:M:I:p:s:f:x:"
 
@@ -328,6 +339,7 @@ function parse_options(arg,short,long)
     options.heulevel = nil
     options.prtfg = nil
     options.ktrylogf = nil
+    options.strongb = nil
     for k,v in pairs(long) do
         if not options[k] then 
             options[k] = nil
@@ -382,6 +394,7 @@ function parse_options(arg,short,long)
         elseif k=="pre_lp" then options.pre_lp=tonumber(v)
         elseif k=="heulevel" then options.heulevel=tonumber(v)  
         elseif k=="prtfg" then options.prtfg=tonumber(v)          
+        elseif k=="strongb" then options.strongb=tonumber(v)
         else
             printf("Unknown option '%s'\n",k)
             options.help=true

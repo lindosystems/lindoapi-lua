@@ -246,6 +246,39 @@ TBmpmodel.dispstats = function(pModel)
     return
 end
 
+--- Displays the given model's parameter and default
+local function disp_param(pModel, k,v)
+    local res 
+    --printf("k=%s, v=%s\n",k,v)
+    if k:match("LS_DPARAM") then
+        res = pModel:getModelDouParameter(v)
+    elseif k:match("LS_IPARAM") then
+        res = pModel:getModelIntParameter(v)
+    else
+        return
+    end
+    if res then        
+        if res.pValue ~= res.pDefaultValue and res.pDefaultValue>xta.const.nai then
+            --print_table3(res)
+            printf("%-40s: %g (default: %g)\n",k,res.pValue,res.pDefaultValue)
+        end
+    else
+        printf("Parameter %s not found in pModel\n",k)
+    end
+    return res
+end
+
+TBmpmodel.disp_params_non_default = function(pModel)
+    local res
+    printf("\n")
+    printf("Non-default parameters:\n")
+    for k,v in pairs(lxp) do        
+        res = disp_param(pModel, k,v)        
+    end
+    printf("\n")
+    return
+end
+
 --- Parse command line arguments.
 ---@param pModel The model to parse and set options for.
 ---@param options A table containing the following fields:
@@ -380,6 +413,10 @@ TBmpmodel.set_params_user = function(pModel, options)
 
     if options.prtfg then
         res = pModel:setModelIntParameter(pars.LS_IPARAM_LP_PRTFG,options.prtfg)
+    end
+
+    if options.strongb then
+        res = pModel:setModelIntParameter(pars.LS_IPARAM_MIP_STRONGBRANCHLEVEL,options.strongb)
     end
 end
 
