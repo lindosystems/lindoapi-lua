@@ -247,9 +247,9 @@ while ktryenv>0 do
         end	
 
         if res_opt then
-            if options.verb>3 then print_table3(res_opt) end
+            if options.verb>2 then print_table3(res_opt) end
             if res_opt.padPrimal then
-                if options.verb>2 then
+                if options.verb>1 then
                     res_opt.padPrimal:printmat(6,nil,12,nil,'.3e')
                 end
             else
