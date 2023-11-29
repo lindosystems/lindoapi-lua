@@ -4,8 +4,10 @@
 -- 
 -- $Id$
 
-local TABOX_HOME = os.getenv("TABOX_HOME")
-assert(TABOX_HOME,"\nError: TABOX_HOME environment variable is not set!\n")
+local LINDOAPI_LUA = os.getenv("LINDOAPI_LUA")
+if not LINDOAPI_LUA then
+  LINDOAPI_LUA="."
+end
 --
 getos_name = function()
   local BinaryFormat = package.cpath:match("%p[\\|/]?%p(%a+)")
@@ -106,11 +108,11 @@ end
 
 
 --[[
-package.path = package.path .. ";;" .. TABOX_HOME .. "/apps/lua/?.lua"
-package.path = package.path .. ";;" .. TABOX_HOME .. "/apps/lua/dataViz/?.lua"
-package.path = package.path .. ";;" .. TABOX_HOME .. "/apps/lua/modules/?.lua"
-package.path = package.path .. ";;" .. TABOX_HOME .. "/apps/lua/3rdparty/?.lua"
-package.path = package.path .. ";;" .. TABOX_HOME .. "/apps/lua/3rdparty/?/init.lua"
+package.path = package.path .. ";;" .. LINDOAPI_LUA .. "/apps/lua/?.lua"
+package.path = package.path .. ";;" .. LINDOAPI_LUA .. "/apps/lua/dataViz/?.lua"
+package.path = package.path .. ";;" .. LINDOAPI_LUA .. "/apps/lua/modules/?.lua"
+package.path = package.path .. ";;" .. LINDOAPI_LUA .. "/apps/lua/3rdparty/?.lua"
+package.path = package.path .. ";;" .. LINDOAPI_LUA .. "/apps/lua/3rdparty/?/init.lua"
 ]]
 local arch_path
 local raw_os_name, raw_os_arch, raw_require_name, uname
@@ -123,7 +125,7 @@ if raw_os_name=="Windows" then
   else
     arch_path = 'win32x86'
   end
-  package.cpath =  package.cpath .. ";" .. TABOX_HOME ..  string.format("/lib/%s",arch_path) .. "/systree/lib/lua/5.1/?.dll" .. ";" ..  TABOX_HOME ..  string.format("/bin/%s/?.dll",arch_path)
+  package.cpath =  package.cpath .. ";" .. LINDOAPI_LUA ..  string.format("/lib/%s",arch_path) .. "/systree/lib/lua/5.1/?.dll" .. ";" ..  LINDOAPI_LUA ..  string.format("/bin/%s/?.dll",arch_path)
 else -- non-windows
   if raw_os_name == "Linux" then
     if (raw_os_arch or ""):match"64" then
@@ -131,23 +133,30 @@ else -- non-windows
     else
         arch_path = 'linux32x86'            
     end
-    package.cpath =  package.cpath .. ";" .. TABOX_HOME ..  string.format("/lib/%s",arch_path) .. "/systree/lib/lua/5.1/?.so" .. ";" ..  TABOX_HOME ..  string.format("/bin/%s/?.so",arch_path)
+    package.cpath =  package.cpath .. ";" .. LINDOAPI_LUA ..  string.format("/lib/%s",arch_path) .. "/systree/lib/lua/5.1/?.so" .. ";" ..  LINDOAPI_LUA ..  string.format("/bin/%s/?.so",arch_path)
   elseif raw_os_name == "Darwin" then
     if (raw_os_arch or ""):match"64" then
         arch_path = 'osx64x86'
     else
         arch_path = 'osx32x86'
     end
-    package.cpath =  package.cpath .. ";" .. TABOX_HOME ..  string.format("/lib/%s",arch_path) .. "/systree/lib/lua/5.1/?.so" .. ";" ..  TABOX_HOME ..  string.format("/bin/%s/?.dylib",arch_path) 
+    package.cpath =  package.cpath .. ";" .. LINDOAPI_LUA ..  string.format("/lib/%s",arch_path) .. "/systree/lib/lua/5.1/?.so" .. ";" ..  LINDOAPI_LUA ..  string.format("/bin/%s/?.dylib",arch_path) 
   else
     error("OS ".. raw_os_name .. " not supported!")
   end
 end
-package.path = package.path .. ";;" .. TABOX_HOME .. string.format("/lib/%s",arch_path) .. "/systree/share/lua/5.1/?.lua"
-package.path = package.path .. ";;" .. TABOX_HOME .. string.format("/lib/%s",arch_path) .. "/systree/share/lua/5.1/?/init.lua"
+package.path = package.path .. ";;" .. LINDOAPI_LUA .. string.format("/lib/%s",arch_path) .. "/systree/share/lua/5.1/?.lua"
+package.path = package.path .. ";;" .. LINDOAPI_LUA .. string.format("/lib/%s",arch_path) .. "/systree/share/lua/5.1/?/init.lua"
 require (raw_require_name)
-
-xta = tabox.env()
+local szkey=[[
+  bnKf9IC6VzkK1XFPSs7ymoHigvi1hTGS4xj2P8k/Uh1YBNYOK54qabTHPPt8ng9J
+  rL4U40/ZX4AfLjYJKMQwbu2Crlke7WHNv3qlNkDcGM4Mg8rhP6AwrOgup0PjAZHA
+  9fOJGkVr8YzXVXrG5fDLu06Hi84yrswATAVG+G6QnOsaZl5aV8c04rcX0vfNKrhd
+  H8hQ3MkA2pPZRJw6ftDKKcMm23JwIolCUlXnHxiRb4HZE1ybO54/Yj0mVbLimbXz
+  Qzmcl637ngRbKEjArbY5EmwhVcL1v3fBNYhsd9AHxzdYAXO3sd/iXOYizlv3jPbg
+  Cyu4K6bJMwRJFNP9wzIEvw==
+]]
+xta = tabox.env(szkey)
 assert(xta,"\n\nError: failed to create a tabox environment.\n")
 
 ---
