@@ -29,17 +29,15 @@ On Unix-like systems
 
         $ source activate_lindo_lua.sh linux64
 
-Subsequently, depending on the operating system bit size, the user can run the "lslua" command for 32-bit systems or "lslua64" for 64-bit systems to execute the desired examples. For instance, to run the "ex_mps.lua" example, the user can utilize the following command line:
+Subsequently, depending on the operating system bit size, the user can run the "lslua" command to execute the desired examples. For instance, to run the "ex_mps.lua" example, the user can utilize the following command line:
 
 On Windows
 
-        > lslua64.exe ex_mps.lua -m c:/path/to/myfile.mps
+        > lslua ex_mps.lua -m c:/path/to/myfile.mps
 
 On Unix-like systems
 
-        $ lslua64.lnx64 ex_mps.lua -m /path/to/myfile.mps
-
-**Note:** Currently only Windows versions are available. Open a request for other platforms.
+        $ lslua ex_mps.lua -m /path/to/myfile.mps
 
 ## Examples
 
