@@ -1,7 +1,7 @@
 -- File: ex_lindo2.lua
 -- Description: Example of using the Lindo API to setup and solve a model with Lua tables
--- Author: [Your Name Here]
--- Date: [Date Here]
+-- Author: mka
+-- Date: 2019-07-01
 local Lindo = require("llindo_tabox")
 local pars = Lindo.parameters
 local errs = Lindo.errors

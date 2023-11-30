@@ -6,8 +6,8 @@
 --  4. set up another model using first model's data
 --  5. solve the second model
 --  6. sample calls to get/set parameters
--- Author: [Your Name Here]
--- Date: [Date Here]
+-- Author: mka
+-- Date: 2019-07-01
 
 local Lindo = require("llindo_tabox")
 local pars = Lindo.parameters
