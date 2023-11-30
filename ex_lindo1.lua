@@ -1,8 +1,8 @@
 -- File: ex_lindo1.lua
 -- Description: Example of using the Lindo API to read a model file and 
  --             perform various solver operations
--- Author: [Your Name Here]
--- Date: [Date Here]
+-- Author: mka
+-- Date: 2019-07-01
 local Lindo = require("llindo_tabox")
 
 local solver
