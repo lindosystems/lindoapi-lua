@@ -156,7 +156,7 @@ local szkey=[[
   Qzmcl637ngRbKEjArbY5EmwhVcL1v3fBNYhsd9AHxzdYAXO3sd/iXOYizlv3jPbg
   Cyu4K6bJMwRJFNP9wzIEvw==
 ]]
-xta = tabox.env()
+xta = tabox.env(szkey)
 assert(xta,"\n\nError: failed to create a tabox environment.\n")
 
 ---
