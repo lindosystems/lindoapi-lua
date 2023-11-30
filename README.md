@@ -4,13 +4,6 @@
 
 The use of scripting languages, such as Lua, can greatly facilitate the prototyping of ideas and the exploration of different parameter settings for optimization tasks. Scripting languages offer a flexible and dynamic environment for quickly implementing and testing algorithms, without the need for time-consuming compilations or complex build processes. In the context of mathematical programming tasks, the lindoapi-lua binding provides a powerful tool for interfacing with the LINDO API optimization library directly within the Lua programming language. This seamless integration allows for rapid experimentation with different parameter configurations and algorithmic approaches, enabling practitioners to efficiently explore and evaluate various optimization strategies. By leveraging scripting languages like Lua in conjunction with specialized optimization libraries, researchers and practitioners can streamline the process of testing and refining parameter adjustments, ultimately leading to more effective and efficient optimization solutions.
 
-## Table of Contents
-
-- [Installation](#installation)
-- [Documentation](#documentation)
-- [Contributing](#contributing)
-- [License](#license)
-
 ## Installation
 
 To use **lindoapi-lua**, you need to have the LINDO API installed on your system. If you haven't already, follow the installation instructions for LINDO API user manual.
@@ -86,6 +79,3 @@ In the event that there are logs or solutions that differ from one another, the 
 
 Contributions are welcome! If you find any issues with **lindoapi-lua** or have ideas for improvements, please open an issue or submit a pull request.
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
