@@ -14,9 +14,7 @@ To use **lindoapi-lua**, you need to have the LINDO API installed on your system
 
 ## Documentation
 
-For more detailed information, please refer to the official LINDO API documentation and Lua documentation.
-
-- [LINDO API Documentation](https://www.lindo.com/doc/online_help/9_0/)
+For more detailed information on LINDO API, please refer to the official LINDO API user-manual and Appendix on Lua.
 
 
 ## Running lindoapi-lua
@@ -33,7 +31,7 @@ On Unix-like systems
         $ source activate_lindo_lua.sh linux64
         $ lslua64.lnx64 ex_mps.lua -m /path/to/myfile.mps
 
-** Note ** Currently only Windows versions is available. Open a request for other platforms.
+**Note:** Currently only Windows versions is available. Open a request for other platforms.
 
 ## Examples
 
