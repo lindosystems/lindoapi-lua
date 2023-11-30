@@ -1,7 +1,7 @@
 -- File: ex_imbnd.lua
 -- Description: Example of computing best implied bounds for a model.
--- Author: [Your Name Here]
--- Date: [Date Here]
+-- Author: mka
+-- Date: 2019-07-01
 
 local Lindo = require("llindo_tabox")
 local pars = Lindo.parameters
@@ -10,14 +10,14 @@ local info = Lindo.info
 
 -- config
 require 'ex_cbfun'
-
+require 'llindo_usage'
 local options, opts, optarg
 local solver
 local model_file
 local verb=1
 local szerrmsg
 
---
+-- Optimize a subproblems with MIP or LP solver, maximizing or minimizing a variable
 function im_optimize(yModel,kidx,objsense)
 	if not options.solve_as_lp then   
 		yModel:setModelDouParameter(pars.LS_DPARAM_MIP_TIMLIM,1000)
@@ -68,7 +68,7 @@ function ls_calc_im_opt_bounds(pModel)
         print_table3(res)    
     end
     res = yModel:dispstats()
-    res_lpdata = yModel:getLPData()
+    local res_lpdata = yModel:getLPData()
     --[[
 {
       pdObjConst = 576,

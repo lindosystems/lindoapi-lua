@@ -1,7 +1,8 @@
 -- File: ex_mps.lua
 -- Description: Example of reading a model from an MPS file and optimizing it.
--- Author: [Your Name Here]
--- Date: [Date Here]
+-- Author: mka
+-- Date: 2019-07-01
+
 
 local Lindo = require("llindo_tabox")
 local pars = Lindo.parameters
@@ -9,7 +10,7 @@ local errs = Lindo.errors
 local info = Lindo.info
 local status = Lindo.status
 require 'ex_cbfun'
-
+require 'llindo_usage'
 local solver
 ---
 -- Parse command line arguments

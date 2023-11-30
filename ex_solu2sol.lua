@@ -1,9 +1,7 @@
 -- File: ex_solu2sol.lua
 -- Description: Convert Lingo solution file to a solution file for a related MPI model.
--- Author: [Your Name Here]
--- Date: [Date Here]
-
-package.path = package.path..";./?.lua;./systree/share/lua/5.1/?.lua;./systree/share/lua/5.1/?/init.lua"
+-- Author: mka
+-- Date: 2019-07-01
 
 local solver
 local options, opts, optarg
@@ -15,6 +13,8 @@ local errs = Lindo.errors
 local info = Lindo.info
 local status = Lindo.status
 require 'ex_cbfun'
+require 'llindo_usage'
+
 if (xta==nil) then
   xta = tabox.env()
 end

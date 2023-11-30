@@ -6,6 +6,7 @@ Example:
 ]]
 require "alt_getopt"
 local Lindo = require("llindo_tabox")
+local jsonrpc = require("myjson-rpc")
 local procedures = require("llindo_rpc")
 local zmq  = require("lzmq")
 local timer = require("lzmq.timer")
@@ -34,9 +35,6 @@ for i, k in pairs(opts) do
   end
 end
 --print_table3(cmdOptions)
-
--- JSON and RPC
-local jsonrpc = require('myjson-rpc')
 
 -- Signal handling requires luaposix
 --local signal = require("posix.signal")

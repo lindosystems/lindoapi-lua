@@ -1,7 +1,7 @@
 -- File: ex_debug.lua
 -- Description: Example of debugging a model via IIS finder
--- Author: [Your Name Here]
--- Date: [Date Here]
+-- Author: mka
+-- Date: 2019-07-01
 
 local Lindo = require("llindo_tabox")
 local pars = Lindo.parameters
@@ -9,7 +9,7 @@ local errs = Lindo.errors
 local info = Lindo.info
 local status = Lindo.status
 require 'ex_cbfun'
-
+require 'llindo_usage'
 local solver
 
 ---

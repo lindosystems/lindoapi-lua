@@ -1,7 +1,7 @@
 -- File: ex_cluster.lua
 -- Description: Cluster analysis of input file using Self-organizing map
--- Author: [Your Name Here]
--- Date: [Date Here]
+-- Author: mka
+-- Date: 2019-07-01
 -- $Id: ex_cluster.lua 570 2015-10-03 19:32:31Z lindo $
 
 local Lindo = require("llindo_tabox")
@@ -11,7 +11,7 @@ local info = Lindo.info
 local GNUPLOT = 'gnuplot -p '
 -- config
 require 'ex_cbfun'
-
+require 'llindo_usage'
 ModuleName='ex_cluster.lua'
 
 local options, opts, optarg
