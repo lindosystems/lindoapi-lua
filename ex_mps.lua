@@ -3,7 +3,6 @@
 -- Author: mka
 -- Date: 2019-07-01
 
-
 local Lindo = require("llindo_tabox")
 local pars = Lindo.parameters
 local errs = Lindo.errors
@@ -65,6 +64,7 @@ end
 xta:setsolverdll("",8);
 xta:setlindodll(options.lindomajor,options.lindominor)
 local lines_digests = {}
+local sol_digests = {}
 local ktryenv = options.ktryenv
 while ktryenv>0 do
     ktryenv = ktryenv-1
@@ -235,6 +235,13 @@ while ktryenv>0 do
                     if res_opt.padPrimal then
                         local dgst = SHA2(res_opt.padPrimal:ser())
                         printf("x.digest: %s\n", dgst)
+                        if sol_digests == nil then
+                            sol_digests = {}
+                        end
+                        if not sol_digests[dgst] then
+                            sol_digests[dgst] = 0
+                        end
+                        sol_digests[dgst] = sol_digests[dgst] + 1
                     end                    
                 end
             end    
@@ -268,5 +275,10 @@ while ktryenv>0 do
     solver:dispose()
     glogger.info("Disposed solver instance %s\n",tostring(solver))  
 end -- ktryenv    
+printf("\n")
+printf("log.digests:\n")
 print_table3(lines_digests)
+printf("\n")
+printf("solution.digests:\n")
+print_table3(sol_digests)
 
