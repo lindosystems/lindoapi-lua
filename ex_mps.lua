@@ -268,3 +268,4 @@ while ktryenv>0 do
     glogger.info("Disposed solver instance %s\n",tostring(solver))  
 end -- ktryenv    
 print_table3(lines_digests)
+
