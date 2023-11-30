@@ -1,8 +1,8 @@
 # lindoapi-lua
 
-**lindoapi-lua** is a Lua binding for the LINDO API. It allows you to interface with the LINDO API optimization library in the Lua programming language. This can be particularly useful if you want to perform complex mathematical optimization and linear programming tasks in your Lua applications.
+**lindoapi-lua** is a Lua binding for the LINDO API. It allows you to interface with the LINDO API optimization library in the Lua programming language. This can be particularly useful if you want to perform complex mathematical optimization tasks in your Lua applications.
 
-The use of scripting languages, such as Lua, can greatly facilitate the prototyping of ideas and the exploration of different parameter settings for optimization tasks. Scripting languages offer a flexible and dynamic environment for quickly implementing and testing algorithms, without the need for time-consuming compilations or complex build processes. In the context of mathematical programming tasks, the lindoapi-lua binding for the LINDO API provides a powerful tool for interfacing with the LINDO API optimization library directly within the Lua programming language. This seamless integration allows for rapid experimentation with different parameter configurations and algorithmic approaches, enabling practitioners to efficiently explore and evaluate various optimization strategies. By leveraging scripting languages like Lua in conjunction with specialized optimization libraries, researchers and practitioners can streamline the process of testing and refining parameter adjustments, ultimately leading to more effective and efficient optimization solutions.
+The use of scripting languages, such as Lua, can greatly facilitate the prototyping of ideas and the exploration of different parameter settings for optimization tasks. Scripting languages offer a flexible and dynamic environment for quickly implementing and testing algorithms, without the need for time-consuming compilations or complex build processes. In the context of mathematical programming tasks, the lindoapi-lua binding provides a powerful tool for interfacing with the LINDO API optimization library directly within the Lua programming language. This seamless integration allows for rapid experimentation with different parameter configurations and algorithmic approaches, enabling practitioners to efficiently explore and evaluate various optimization strategies. By leveraging scripting languages like Lua in conjunction with specialized optimization libraries, researchers and practitioners can streamline the process of testing and refining parameter adjustments, ultimately leading to more effective and efficient optimization solutions.
 
 ## Table of Contents
 
@@ -28,7 +28,7 @@ For more detailed information, please refer to the official LINDO API documentat
 
 ## Examples
 
-In addition to the lindoapi-lua binding for the LINDO API, there are several illustrative examples that showcase the versatility and utility of using Lua for mathematical optimization tasks. 
+lindoapi-lua binding for the LINDO API has several illustrative examples that showcase the versatility and utility of using Lua for mathematical optimization tasks. 
 
 - The "ex_mps" example mimics the functionality of the "runlindo" command, demonstrating how Lua can be used to interface with the LINDO API for solving optimization problems encoded in the MPS or other portable file formats.
 - The "ex_sets" example highlights the ability to add arbitrary Special Ordered Sets (SOS) constraints to a model, showcasing Lua's flexibility in manipulating and customizing optimization models.
@@ -37,7 +37,7 @@ In addition to the lindoapi-lua binding for the LINDO API, there are several ill
 - The "ex_sort" example illustrates Lua's potential for sorting a vector using math programming techniques, showcasing its applicability beyond traditional optimization tasks.
 - The "ex_cluster" example showcases Lua's ability to perform cluster analysis using LINDO API's extension libraries, highlighting its potential for advanced data analysis and optimization-related tasks. These examples collectively underscore the diverse applications and advantages of using Lua and the **lindoapi-lua** binding for mathematical optimization and related tasks.
 
-## Detailed Use Case
+## Testing Reproducibility - A Detailed Use Case
 
 The "ex_mps" example not only mimics the functionality of the "runlindo" command, but also offers special command-line options such as --ktryenv=<NUMBER>, --ktrymod=<NUMBER>, and --ktrysolv=<NUMBER> which are suitable for testing the reproducibility of solutions (when available) with back-to-back runs under the same parameter configuration. These options allow the user to identify the number of times an environment, model, and solver-invocation will be tried, providing a robust mechanism for verifying the consistency and reliability of optimization solutions across multiple runs with the same parameter settings. 
 
