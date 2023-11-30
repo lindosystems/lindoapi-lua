@@ -5,7 +5,7 @@ local errs = Lindo.errors
 local info = Lindo.info
 local status = Lindo.status
 require "ex_cbfun"
-
+require 'llindo_usage'
 
 
 -- MAIN

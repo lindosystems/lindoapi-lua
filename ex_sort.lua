@@ -1,8 +1,13 @@
--- File: ex_lindo1.lua
--- Description: Example of using the Lindo API to read a model file and 
- --             perform various solver operations
--- Author: [Your Name Here]
--- Date: [Date Here]
+-- File: ex_sort.lua
+-- Description: Example of using the Lindo API to sort a vector
+--              over an affine transformation
+-- Remarks:
+--   - Solving as an MILP is difficult
+--   - Solving as an NLP is easy
+-- 
+-- Author: mka
+-- Date: 2019-07-01
+
 local Lindo = require("llindo_tabox")
 local pars = Lindo.parameters
 local errs = Lindo.errors
@@ -10,7 +15,7 @@ local info = Lindo.info
 local GNUPLOT = 'gnuplot -p '
 -- config
 require 'ex_cbfun'
-
+require 'llindo_usage'
 local solver
 local options, opts, optarg
 

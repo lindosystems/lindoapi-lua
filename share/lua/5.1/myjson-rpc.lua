@@ -254,7 +254,7 @@ local function server_response(methods, request)
   elseif #req == 0 then
     return response_error(req, 'invalid_request', req)
   else
-    res = {}
+    local res = {}
     for i, r in pairs(req) do
       local lres = handle_request(methods, r)
       if type(lres) == 'table' then

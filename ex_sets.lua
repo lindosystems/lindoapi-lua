@@ -1,15 +1,15 @@
 -- File: ex_sets.lua
--- Description: Example of adding SETS to models.
--- Author: [Your Name Here]
--- Date: [Date Here]
+-- Description: Example of adding (randomized) SETS (sos1/sos2/sos3) to models.
+-- Author: mka
+-- Date: 2019-07-01
 
 local Lindo = require("llindo_tabox")
 local pars = Lindo.parameters
 local errs = Lindo.errors
 local info = Lindo.info
 local status = Lindo.status
-
 require 'ex_cbfun'
+require 'llindo_usage'
 local solver
 
 ---
