@@ -41,7 +41,25 @@ lindoapi-lua binding for the LINDO API has several illustrative examples that sh
 
 The "ex_mps" example not only mimics the functionality of the "runlindo" command, but also offers special command-line options such as --ktryenv=<NUMBER>, --ktrymod=<NUMBER>, and --ktrysolv=<NUMBER> which are suitable for testing the reproducibility of solutions (when available) with back-to-back runs under the same parameter configuration. These options allow the user to identify the number of times an environment, model, and solver-invocation will be tried, providing a robust mechanism for verifying the consistency and reliability of optimization solutions across multiple runs with the same parameter settings. 
 
-In addition, the "--ktrylogf=<keyword>" option in the "ex_mps" example enables the export of the log of each run to a file, with <keyword> serving as the basename for the log files. This feature provides a convenient means of capturing and documenting the reproducible details of each optimization run, like i) branch-counts, ii) #LPs solved, iii) iteration-counts, iv) active nodes etc. Furthermore, to ensure the reproducibility of runs, the "--cbmip=1 --cblog=0" options should be enabled, where the former (--cbmip=1) activates progress logging at new-integer solution epochs, while the latter (--cblog=0) disables the standard MIP log containing non-reproducible components such as time-elapsed information. Subsequently, the log files are subjected to SHA1 or MD5 hashing to verify their identicalness, thereby establishing a robust framework for validating the consistency and reproducibility of optimization runs conducted under the same parameter configuration.
+In addition, the "--ktrylogf=<keyword>" option in the "ex_mps" example enables the export of the log of each run to a file, with <keyword> serving as the basename for the log files. This feature provides a convenient means of capturing and documenting the reproducible details of each optimization run, like i) branch-counts, ii) #LPs solved, iii) iteration-counts, iv) active nodes etc. 
+
+To ensure the reproducibility of runs, time-limits should not be turned on and the "--cbmip=1 --cblog=0" options should be enabled. The former (--cbmip=1) activates progress logging at new-integer solution epochs, while the latter (--cblog=0) disables the standard MIP log containing non-reproducible components such as time-elapsed information. Subsequently, the log files are subjected to SHA1 or MD5 hashing to verify their identicalness, thereby establishing a robust framework for validating the consistency and reproducibility of optimization runs conducted under the same parameter configuration.
+
+Typical test run for reproducibility can be initiated as follows
+
+        $ lslua ex_mps.lua -m /usr/lindoapi/14.0/samples/data/bm23.mps --ktrymod=10  --ktrylogf=bm23 --cblog=0 --cbmip=1
+
+A report displaying the hash of the logs and primal solution vector will be displayed.
+
+        log.digests:
+        {
+              ccb5a7c3d41c4d72 = true,
+           }
+
+        solution.digests:
+        {
+              2b69668ddde265aa = 10,
+           }
 
 ## Contributing
 
