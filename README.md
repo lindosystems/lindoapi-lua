@@ -59,13 +59,13 @@ The "ex_mps" example not only mimics the functionality of the "runlindo" command
 
 In addition, the `--ktrylogf=<keyword>` option in the "ex_mps" example enables the export of the log of each run to a file, with `<keyword>` serving as the basename for the log files. This feature provides a convenient means of capturing and documenting the reproducible details of each optimization run, like (i) branch-counts, (ii) #LPs solved, (iii) iteration-counts, (iv) active nodes etc. Note, time-elapsed log entries are specifically ignored as these entries are not deterministic (i.e. can vary from log to log)
 
-Note, to ensure the reproducibility of runs, time-limits should *not* be turned. To ensure reproducibility of logs, `--cbmip=1 --cblog=0` options need to be used. The former (--cbmip=1) activates progress logging only at new-integer solution epochs, while the latter (--cblog=0) disables the standard MIP log containing non-reproducible components such as time-elapsed information. Subsequently, the log files are subjected to SHA1 or MD5 hashing to verify their identicalness, thereby establishing a robust framework for validating the consistency and reproducibility of optimization runs conducted under the same parameter configuration.
+Note, to ensure the reproducibility of runs, time-limits should *not* be turned. To ensure reproducibility of logs, `--cbmip=1 --cblog=0` options need to be used. The former (--cbmip=1) activates progress logging only at new-integer solution epochs, while the latter (--cblog=0) disables the standard MIP log containing non-reproducible components such as time-elapsed information. Subsequently, the log strings are concatenated and subjected to SHA1 or MD5 hashing to verify their identicalness, thereby establishing a robust framework for validating the consistency and reproducibility of optimization runs conducted under the same parameter configuration.
 
 A typical test run for reproducibility can be initiated as follows
 
         $ lslua ex_mps.lua -m /usr/lindoapi/14.0/samples/data/bm23.mps --ktrymod=10  --ktrylogf=bm23 --cblog=0 --cbmip=1
 
-A report will be generated to display the hash of the logs and primal solution vector. The log.digests table will showcase the hash values of the logs, with each entry indicating a unique hash value for a specific log file. For instance:
+A report will be generated to display the hash of the log strings and primal solution vector. The log.digests table will showcase the hash values of the logs, with each entry indicating a unique hash value for a specific log file. For instance:
 
         log.digests:
         {
