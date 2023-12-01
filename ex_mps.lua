@@ -68,7 +68,7 @@ local sol_digests = {}
 local ktryenv = options.ktryenv
 while ktryenv>0 do
     ktryenv = ktryenv-1
-    solver = xta:solver()
+    solver = xta:solver()    
     assert(solver,"\n\nError: failed create a solver instance.\n")
     printf("\n")
     glogger.info("Created a new solver instance %s\n",solver.version);
