@@ -465,11 +465,11 @@ TBmpmodel.delete = function(pModel)
     if pModel then
         if pModel.utable.ktrylogfp then
             io.close(pModel.utable.ktrylogfp)
-            glogger.info("Closed log file %s, sha:%s\n",pModel.utable.ktrylogf,pModel.utable.ktrylogsha)
+            glogger.info("Closed log file %s, sha:%s\n",pModel.utable.ktrylogf,pModel.utable.ktrylogsha or "N/A")
             local options = pModel.utable.options
             local shafile = sprintf("tmp/%s.sha",options.ktrylogf)
             glogger.info("Writing sha to %s\n",shafile)
-            fwritef(shafile,"a","Closed log file '%s' (sha:%s)\n",pModel.utable.ktrylogf,pModel.utable.ktrylogsha)
+            fwritef(shafile,"a","Closed log file '%s' (sha:%s)\n",pModel.utable.ktrylogf,pModel.utable.ktrylogsha or "N/A")
         end
         -- INSERT OTHER TASKS on utable
         pModel:dispose()
