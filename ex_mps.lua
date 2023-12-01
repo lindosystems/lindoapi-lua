@@ -60,6 +60,11 @@ if options.seed then
   end    
 end
 
+if not options.ktrylogf then
+    if options.ktryenv or options.ktrymod or options.ktrysolv then
+        options.ktrylogf = getBasename(options.model_file)
+    end
+end
 -- New solver instance
 xta:setsolverdll("",8);
 xta:setlindodll(options.lindomajor,options.lindominor)
