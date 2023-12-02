@@ -65,6 +65,15 @@ if not options.ktrylogf then
         options.ktrylogf = getBasename(options.model_file)
     end
 end
+
+if options.ktryenv or options.ktrymod or options.ktrysolv then
+    glogger.info("Invoking back-to-back runs with ..\n")
+    glogger.info("ktryenv: %s\n",options.ktryenv or "N/A")
+    glogger.info("ktrymod: %s\n",options.ktrymod or "N/A")
+    glogger.info("ktrysolv: %s\n",options.ktrysolv or "N/A")
+    glogger.info("ktrylogf: %s\n",options.ktrylogf)
+end
+
 -- New solver instance
 xta:setsolverdll("",8);
 xta:setlindodll(options.lindomajor,options.lindominor)
@@ -132,7 +141,7 @@ while ktryenv>0 do
         end
     
         -- Read model from file	
-        glogger.info("Reading %s\n",options.model_file)
+        glogger.info("Reading '%s'\n",options.model_file)
         local nErr = pModel:readfile(options.model_file,0)
         pModel:xassert({ErrorCode=nErr})
         if options.max then    
@@ -224,16 +233,20 @@ while ktryenv>0 do
                     if pModel.utable.lines then
                         local str = table.concat(pModel.utable.lines)
                         local last_line = lsi_pdline(pd)  
-                        printf("\n")                  
-                        printf("lines.digest: %s (last:%s)\n",SHA2(str),SHA2(last_line))
+                        local dgst = SHA2(str)
+                        printf("\n")
+                        printf("lines.digest: %s (last:%s)\n",dgst,SHA2(last_line))
                         if lines_digests == nil then
                             lines_digests = {}
-                        end 
-                        lines_digests[SHA2(str)] = true
-                    end        
-                    if options.verb>2 then                        
-                        print_table3(pd)                                            
-                    end                                
+                        end
+                        if not lines_digests[dgst] then
+                            lines_digests[dgst] = 0
+                        end
+                        lines_digests[dgst] = true
+                    end
+                    if options.verb>2 then
+                        print_table3(pd)
+                    end
                     if options.verb>2 then            
                         res_opt.padPrimal:printmat(6,nil,12,nil,'.3e')
                     end
