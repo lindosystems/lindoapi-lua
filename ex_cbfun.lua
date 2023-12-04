@@ -69,7 +69,7 @@ function cbmip(pModel, dobj, pX, udata)
     end
     counter = counter + 1
     pModel.utable.counter = counter
-
+    
     local p = pModel:getProgressData()
     local normx = pX:norm(2)
     szerr = "" --pModel:errmsg(res.ErrorCode) or "N/A"

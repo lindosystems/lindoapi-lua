@@ -20,7 +20,7 @@ local platform_name = {
 }
 
 local function get_tmp_base()
-    local temp_base = sprintf("tmp/%s",platform_name[xta.platformid] or "unknown")
+    local temp_base = sprintf("tmp/%s/",platform_name[xta.platformid] or "unknown")
     if not paths.dirp(temp_base) then
         paths.mkdir(temp_base)
     end
