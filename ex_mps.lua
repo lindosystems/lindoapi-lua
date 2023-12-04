@@ -11,6 +11,21 @@ local status = Lindo.status
 require 'ex_cbfun'
 require 'llindo_usage'
 local solver
+
+local platform_name = {
+    [xta.const.win32x86] = "win32",
+    [xta.const.win64x86] = "win64",
+    [xta.const.linux64x86] = "linux64x86",
+    [xta.const.osx64x86] = "osx64x86"
+}
+
+local function get_tmp_base()
+    local temp_base = sprintf("tmp/%s",platform_name[xta.platformid] or "unknown")
+    if not paths.dirp(temp_base) then
+        paths.mkdir(temp_base)
+    end
+    return temp_base
+end
 ---
 -- Parse command line arguments
 local function usage()
@@ -106,11 +121,11 @@ while ktryenv>0 do
     end
 
     if options.ktrylogf then
-        local flist = paths.files("tmp",function(file) return file:find(options.ktrylogf) and not file:find("~") end)
+        local flist = paths.files(get_tmp_base(),function(file) return file:find(options.ktrylogf) and not file:find("~") end)
         if flist then
             local flog
             for file in flist do
-                flog = "tmp/"..file
+                flog = get_tmp_base() .. file
                 paths.backup(flog)                
                 paths.rmall(flog,"yes")
                 glogger.info("Backed up %s\n",flog)
@@ -136,7 +151,7 @@ while ktryenv>0 do
         pModel:disp_params_non_default()
 
         if options.ktrylogf then
-            pModel.utable.ktrylogf = sprintf("tmp/ktrylogf_%s_m%02d_e%02d.log",options.ktrylogf,ktrymod,ktryenv)
+            pModel.utable.ktrylogf = sprintf("%s/ktrylogf_%s_m%02d_e%02d.log",get_tmp_base(),options.ktrylogf,ktrymod,ktryenv)
             pModel.utable.ktrylogfp = io.open(pModel.utable.ktrylogf,"w")
         end
     
