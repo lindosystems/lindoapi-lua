@@ -53,9 +53,9 @@ lindoapi-lua binding for the LINDO API has several illustrative examples that sh
 
 ## Testing Reproducibility - A Detailed Use Case
 
-The "ex_mps" example includes special command-line options `--ktryenv=<NUMBER>`, `--ktrymod=<NUMBER>`, and `--ktrysolv=<NUMBER>`. These options are designed to test the reproducibility of solutions, particularly in the case of single-threaded LP/QP/NLP models `with` or `without` integer restrictions. By executing consecutive runs under a specific optimization parameter configuration, these options specify the number of times a new `environment`, `model`, and `solve` are initiated. This approach provides a straightforward yet reliable method for gathering logs from different sessions and automates the comparison of these logs to verify reproducibility.
+The "ex_mps" example includes special command-line options `--ktryenv=<NUMBER>`, `--ktrymod=<NUMBER>`, and `--ktrysolv=<NUMBER>`. These options are designed to test the reproducibility of solutions, particularly in the case of single-threaded LP/QP/NLP models `with` or `without` integer restrictions. They specify the number of times a new `environment`, `model`, and `solve` to be initiated to execute consecutive runs for a given optimization parameter configuration. This approach provides a straightforward yet reliable method for gathering logs from different optimization sessions and automates their comparison to verify reproducibility.
 
-In addition, the `--ktrylogf=<keyword>` option in the "ex_mps" example enables the export of the log of each run to a file, with `<keyword>` serving as the basename for the log files. This option is implied by `ktryenv`, `ktrymod` and `ktrysolv` options and set to a random string unless specified by the user. This feature provides a convenient means of capturing and documenting the reproducible details of each optimization run, like (i) branch-counts, (ii) #LPs solved, (iii) iteration-counts, (iv) active nodes etc. Note, time-elapsed log entries are specifically ignored as these entries are not deterministic because elapsed time can vary from run to run depending on machine workload.
+In addition, the `--ktrylogf=<keyword>` option enables exporting logs of each run to a file, with `<keyword>` serving as the basename for the log files. This option is implied by `--ktryenv`, `--ktrymod` and `--ktrysolv` options and set to a random string unless specified by the user. This feature provides a convenient means of capturing and documenting the reproducible details of each optimization run, like (i) branch-counts, (ii) #LPs solved, (iii) iteration-counts, (iv) active nodes etc. Note, time-elapsed log entries are specifically ignored as these entries are not deterministic because elapsed time can vary from run to run depending on machine workload.
 
 There are other options required to ensure the reproducibility of logs: first, all time-limits should be turned off (already the default). Also, too ensure reproducibility of MIP logs, `--cbmip=1 --cblog=0` options need to be set. The former (--cbmip=1) activates progress logging only at new-integer solution epochs, while the latter (--cblog=0) disables the standard MIP log, which contain non-reproducible components such as time-elapsed information. After completing the runs, the log strings are concatenated and subjected to SHA1 or MD5 hashing to compute a hash value of their content, thereby establishing a simple but robust framework for comparing logs or solution vectors.
 
@@ -67,7 +67,7 @@ A report will be generated to display the hash of the log strings and primal sol
 
         log.digests:
         {
-              ccb5a7c3d41c4d72 = true,
+              ccb5a7c3d41c4d72 = 10,
         }
         
 Similarly, the solution.digests table will provide the counts of different hash values of terminal primal solutions, with each entry representing a distinct hash value and its corresponding count in the solution vector. For example:
