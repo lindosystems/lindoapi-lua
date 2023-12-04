@@ -41,7 +41,7 @@ end
 -- @param res The result object.
 -- @param allowed A table containing the error codes that are allowed to continue without triggering an assert.
 -- @param stop_on_err A boolean indicating whether to stop the program and print the error message if the error code is not allowed.
-TBmpmodel.xassert = function(pModel, res, allowed)
+local xassert = function(pModel, res, allowed)
     check_error(pModel, res, allowed, true)
 end
 
@@ -49,7 +49,7 @@ end
 -- @param pModel The model object.
 -- @param res The result object.
 -- @param allowed A table containing the error codes that are allowed to continue without triggering a warning.
-TBmpmodel.wassert = function(pModel, res, allowed)
+local wassert = function(pModel, res, allowed)
     check_error(pModel, res, allowed, false)
 end
 
@@ -65,19 +65,19 @@ end
 --   - model_file (string, optional): The name of the file to solve. If not specified, the current model is used.
 -- @return res The result of solving the model.
 -- @return res_rng The result of computing bound ranges, if has_rng is true.
-TBmpmodel.solve = function(pModel, options)
+local solve = function(pModel, options)
     local has_gop = options and options.has_gop
     local has_rng = options and options.has_rng
     local verb = options and options.verb or 0
     local res, res_rng    
-
-    if verb>0 then printf("Solving %s\n",options and options.model_file or 'current model') end
+    
+    if verb>0 then printf("Solving %s\n",options and options.model_file or 'current model') end    
     if has_gop then
         res = pModel:solveGOP()
-    elseif pModel.numint + pModel.numbin + pModel.numsc + pModel.numsets > 0 then
+    elseif pModel.numint + pModel.numbin + pModel.numsc + pModel.numsets > 0 and not options.lp then
         res = pModel:solveMIP()
     else
-        res = pModel:optimize()
+        res = pModel:optimize(options.method)
     end    
     if verb>2 then print_table3(res) end
     pModel:wassert(res)
@@ -87,10 +87,10 @@ TBmpmodel.solve = function(pModel, options)
        res.pnMIPSolStatus==lxs.LS_STATUS_LOCAL_OPTIMAL or
        res.pnSolStatus == lxs.LS_STATUS_BASIC_OPTIMAL or 
        res.pnSolStatus == lxs.LS_STATUS_OPTIMAL or 
-       res.pnGOPSolStatus==lxs.LS_STATUS_OPTIMAL or 
-       res.pnGOPSolStatus==lxs.LS_STATUS_BASIC_OPTIMAL or 
-       res.pnGOPSolStatus==lxs.LS_STATUS_LOCAL_OPTIMAL or 
-       res.pnGOPSolStatus==lxs.LS_STATUS_FEASIBLE then
+       res.pnGOPSolStatus == lxs.LS_STATUS_OPTIMAL or 
+       res.pnGOPSolStatus == lxs.LS_STATUS_BASIC_OPTIMAL or 
+       res.pnGOPSolStatus == lxs.LS_STATUS_LOCAL_OPTIMAL or 
+       res.pnGOPSolStatus == lxs.LS_STATUS_FEASIBLE then
         local res_
         if res.pnMIPSolStatus then
             res_ = pModel:getMIPPrimalSolution()
@@ -127,7 +127,7 @@ end
 --   - subfolder (string, optional): The subfolder to write the file to. Defaults to nil.
 -- @return res_w The result of writing the model to a file.
 -- @usage res_w = TBmpmodel.write(pModel, {writeas='mps', suffix='_tmp', model_file='my_model', addsets_mask=0, nsets=0, settype=0, subfolder=nil})
-TBmpmodel.write = function(pModel, options)
+local write = function(pModel, options)
     local writeas = options.writeas or 'mps'
     local suffix = options.suffix or '_tmp'
     local model_file = options.model_file
@@ -186,7 +186,7 @@ end
 
 --- Serialize the model instance to a table.
 -- @param pModel The model to serialize.
-TBmpmodel.serialize = function(pModel)
+local serialize = function(pModel)
     local res = pModel:getLPData()
     pModel:wassert(res)
     local arg
@@ -228,7 +228,7 @@ local other_keys = {"utable"}
 -- @param pModel The model to display statistics for.
 -- @return None.
 -- @usage pModel:dispstats()
-TBmpmodel.dispstats = function(pModel)
+local dispstats = function(pModel)
     local res
     --res = pModel:getIntInfo(info.LS_IINFO_NUM_CONS)
     --res = pModel:getIntInfo(info.LS_IINFO_NUM_VARS)
@@ -268,7 +268,8 @@ local function disp_param(pModel, k,v)
     return res
 end
 
-TBmpmodel.disp_params_non_default = function(pModel)
+--- Displays the given model's non-default parameters.
+local disp_params_non_default = function(pModel)
     local res
     printf("\n")
     printf("Non-default parameters:\n")
@@ -298,7 +299,7 @@ end
 ---@field roptol (number, optional): The relative optimality tolerance.
 ---@field poptol (number, optional): The percentage optimality tolerance.
 ---@return None.
-TBmpmodel.set_params_user = function(pModel, options)
+local set_params_user = function(pModel, options)
     local pars = lxp
     local res
     
@@ -418,12 +419,20 @@ TBmpmodel.set_params_user = function(pModel, options)
     if options.strongb then
         res = pModel:setModelIntParameter(pars.LS_IPARAM_MIP_STRONGBRANCHLEVEL,options.strongb)
     end
+
+    if options.pprice then
+        res = pModel:setModelIntParameter(pars.LS_IPARAM_SPLEX_PPRICING,options.pprice)    
+    end
+
+    if options.dprice then
+        res = pModel:setModelIntParameter(pars.LS_IPARAM_SPLEX_DPRICING,options.dprice)        
+    end
 end
 
 --- Gets the progress data for the given model.
 ---@param pModel The model to get progress data for.
 ---@param iLoc The location to get progress data for. Defaults to 11.
-TBmpmodel.getProgressData = function(pModel,iLoc)
+local getProgressData = function(pModel,iLoc)
     local iLoc = iLoc or 11
     local p = {}
     local res
@@ -461,10 +470,11 @@ TBmpmodel.getProgressData = function(pModel,iLoc)
 end
 
 --- Delete the given model and its user table.
-TBmpmodel.delete = function(pModel)
+local delete = function(pModel)
     if pModel then
         if pModel.utable.ktrylogfp then
             io.close(pModel.utable.ktrylogfp)
+            pModel.utable.ktrylogfp = nil
             glogger.info("Closed log file %s, sha:%s\n",pModel.utable.ktrylogf,pModel.utable.ktrylogsha or "N/A")
             local options = pModel.utable.options
             local shafile = sprintf("tmp/%s.sha",options.ktrylogf)
@@ -476,3 +486,17 @@ TBmpmodel.delete = function(pModel)
         glogger.info("Deleted model instance %s\n",tostring(pModel))          
     end
 end
+
+
+TBmpmodel.delete = delete
+TBmpmodel.getProgressData = getProgressData
+TBmpmodel.set_params_user = set_params_user
+TBmpmodel.xassert = xassert
+TBmpmodel.wassert = wassert
+TBmpmodel.solve = solve
+TBmpmodel.disp_param = disp_param
+TBmpmodel.disp_params_non_default = disp_params_non_default
+TBmpmodel.dispstats = dispstats
+TBmpmodel.write = write
+TBmpmodel.serialize = serialize
+TBmpmodel.check_error = check_error

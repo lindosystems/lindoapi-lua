@@ -75,6 +75,11 @@ function print_default_usage()
     print("    , --pre_lp=<value>           Set pre_lp value")
     print("    , --heulevel=<value>         Set heulevel value")
     print("    , --strongb=<value>          Set strong-branch level")
+    print("    , --pprice=<value>           Set pprice value")
+    print("    , --dprice=<value>           Set dprice value")
+    print("    , --lp                       Solve as LP")
+    print("    , --prtfg=<value>            Set prtfg value")
+    print("    , --method=<value>           Set method value")
 end    
 
 require 'alt_getopt'
@@ -94,8 +99,8 @@ local long_default = {
     gop = 0,    
     rng = 0,
     writeas = "w",
-    lindomajor = 1, 
-    lindominor = 1,
+    lindomajor = "M", 
+    lindominor = "I",
     seed = 1,
     max = 0,
     -- Additional options
@@ -125,7 +130,11 @@ local long_default = {
     heulevel = 1,
     prtfg = 1,
     ktrylogf = 1,
-    strongb = 1
+    strongb = 1,
+    pprice = 1,
+    dprice = 1,
+    lp=0,
+    method = 1,
 }
 local short_default = "m:hv:w:M:I:p:s:f:x:"
 
@@ -196,6 +205,10 @@ function parse_options(arg,short,long)
     options.prtfg = nil
     options.ktrylogf = nil
     options.strongb = nil
+    options.pprice = nil
+    options.dprice = nil
+    options.lp = nil
+    options.method = nil
     for k,v in pairs(long) do
         if not options[k] then 
             options[k] = nil
@@ -208,22 +221,23 @@ function parse_options(arg,short,long)
         if k=="help" or k=="h" then options.help=true    
         elseif k=="model" or k=="m" then options.model_file = v   
         elseif k=="file" or k=="f" then options.input_file = v
+        elseif k=="writeas" or k=="w" then options.writeas=v
+        elseif k=="lindomajor" or k=="M" then options.lindomajor=tonumber(v)
+        elseif k=="lindominor" or k=="I" then options.lindominor=tonumber(v)            
+        elseif k=="solve" or k=="s" then options.solve = tonumber(v)   
+        elseif k=="parfile" or k=="p" then options.parfile = v   
+        elseif k=="verb" or k=="v" then options.verb = tonumber(v)
+        elseif k=="xsolver" or k=="x" then options.xsolver=tonumber(v)            
         elseif k=="ktrymod" then options.ktrymod = tonumber(v)
         elseif k=="ktryenv" then options.ktryenv = tonumber(v)
         elseif k=="ktrysolv" then options.ktrysolv = tonumber(v)
         elseif k=="ktrylogf" then options.ktrylogf = v
-        elseif k=="solve" or k=="s" then options.solve = tonumber(v)   
-        elseif k=="parfile" or k=="p" then options.parfile = v   
-        elseif k=="verb" or k=="v" then options.verb = tonumber(v)
         elseif k=="print" then options.print = tonumber(v)
         elseif k=="cbmip" then options.has_cbmip=tonumber(v)
         elseif k=="cbstd" then options.has_cbstd=tonumber(v)
         elseif k=="cblog" then options.has_cblog=tonumber(v)
         elseif k=="gop" then options.has_gop=true
         elseif k=="ranges" then options.has_rng=true
-        elseif k=="writeas" or k=="w" then options.writeas=v
-        elseif k=="lindomajor" or k=="M" then options.lindomajor=tonumber(v)
-        elseif k=="lindominor" or k=="I" then options.lindominor=tonumber(v)
         elseif k=="seed" then options.seed=tonumber(v)
         elseif k=="max" then options.max=true        
         elseif k=="ilim" then options.ilim=tonumber(v)
@@ -244,13 +258,16 @@ function parse_options(arg,short,long)
         elseif k=="ropttol" then options.ropttol = tonumber(v)
         elseif k=="popttol" then options.popttol = tonumber(v)
         elseif k=="pivtol" then options.pivtol = tonumber(v) 
-        elseif k=="xsolver" or k=="x" then options.xsolver=tonumber(v)
         elseif k=="xdll" then options.xdll=v
         elseif k=="pre_root" then options.pre_root=tonumber(v)
         elseif k=="pre_lp" then options.pre_lp=tonumber(v)
         elseif k=="heulevel" then options.heulevel=tonumber(v)  
         elseif k=="prtfg" then options.prtfg=tonumber(v)          
         elseif k=="strongb" then options.strongb=tonumber(v)
+        elseif k=="pprice" then options.pprice=tonumber(v)
+        elseif k=="dprice" then options.dprice=tonumber(v)
+        elseif k=="lp" then options.lp=true
+        elseif k=="method" then options.method=tonumber(v)
         else
             printf("Unknown option '%s'\n",k)
             options.help=true
@@ -262,6 +279,7 @@ function parse_options(arg,short,long)
     else
         printf("Initialized with seed %d\n",options.seed)
     end
+
     math.randomseed(options.seed)     
     if options.verb>2 then 
         print_table_dots(options)
