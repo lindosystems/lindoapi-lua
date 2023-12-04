@@ -66,7 +66,7 @@ if not options.ktrylogf then
     end
 end
 
-if options.ktryenv or options.ktrymod or options.ktrysolv then
+if options.ktryenv>1 or options.ktrymod>1 or options.ktrysolv>1 then
     glogger.info("Invoking back-to-back runs with ..\n")
     glogger.info("ktryenv: %s\n",options.ktryenv or "N/A")
     glogger.info("ktrymod: %s\n",options.ktrymod or "N/A")
@@ -118,7 +118,7 @@ while ktryenv>0 do
         end
     end
     
-    local ktrymod = options.ktrymod
+    local ktrymod = options.ktrymod 
     while ktrymod > 0 do
         ktrymod = ktrymod-1
         -- New model instance
@@ -221,6 +221,15 @@ while ktryenv>0 do
             pModel:wassert(res)
         end 
 
+        if options.lp and false then
+            local str=""
+            for k=1,pModel.numvars do
+                str = str .. "C"
+            end
+            res = pModel:loadVarType(str)
+            pModel:wassert(res)
+        end
+
         -- Solve model
         local res_opt, res_rng 
         if options.solve then 
@@ -229,21 +238,29 @@ while ktryenv>0 do
                 ktrysolv = ktrysolv-1
                 res_opt, res_rng = pModel:solve(options)            
                 if options.verb>0 then
-                    local pd = pModel:getProgressData()                    
+                    local pd = pModel:getProgressData()
+                    local last_line = lsi_pdline(pd)
+                    local dgst
                     if pModel.utable.lines then
-                        local str = table.concat(pModel.utable.lines)
-                        local last_line = lsi_pdline(pd)  
-                        local dgst = SHA2(str)
-                        printf("\n")
-                        printf("lines.digest: %s (last:%s)\n",dgst,SHA2(last_line))
-                        if lines_digests == nil then
-                            lines_digests = {}
-                        end
-                        if not lines_digests[dgst] then
-                            lines_digests[dgst] = 0
-                        end
-                        lines_digests[dgst] = true
+                        local str = table.concat(pModel.utable.lines)                        
+                        dgst = SHA2(str)                        
+                    else
+                        dgst = pModel.utable.ktrylogsha
                     end
+                    printf("\n")                    
+                    printf("lines.digest: %s (last:%s)\n",dgst,SHA2(last_line))
+                    if lines_digests == nil then
+                        lines_digests = {}
+                    end
+                    if not lines_digests[dgst] then
+                        lines_digests[dgst] = 0
+                    end
+                    lines_digests[dgst] = lines_digests[dgst] + 1                    
+                    local xdgst = "x:" .. dgst
+                    if not lines_digests[xdgst] then
+                        lines_digests[xdgst] = {}
+                    end       
+                    table.insert(lines_digests[xdgst],pModel.utable.ktrylogf)                 
                     if options.verb>2 then
                         print_table3(pd)
                     end
@@ -259,7 +276,7 @@ while ktryenv>0 do
                         if not sol_digests[dgst] then
                             sol_digests[dgst] = 0
                         end
-                        sol_digests[dgst] = sol_digests[dgst] + 1
+                        sol_digests[dgst] = sol_digests[dgst] + 1                        
                     end                    
                 end
             end    
