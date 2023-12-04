@@ -51,6 +51,7 @@ function print_default_usage()
     print("  -I, --lindominor=INTEGER       Lindo api minor version to use")    
     print("    , --seed=INTEGER             Set random number generator 'seed'")
     print("    , --max                      Set objective sense to maximize (default: minimize)")
+    printf("   , --llogger=STRING           Set logger value (default: %s), possible values are 'debug', 'info', 'warn', 'critc','error', 'fatal'\n",'info')
     print()    
     -- Additional options    
     print("      --ilim=<value>             Set ilim value")
@@ -103,6 +104,7 @@ local long_default = {
     lindominor = "I",
     seed = 1,
     max = 0,
+    llogger = 1,
     -- Additional options
     ilim = 1,
     tlim = 1,
@@ -209,6 +211,7 @@ function parse_options(arg,short,long)
     options.dprice = nil
     options.lp = nil
     options.method = nil
+    options.llogger = 1
     for k,v in pairs(long) do
         if not options[k] then 
             options[k] = nil
@@ -268,6 +271,7 @@ function parse_options(arg,short,long)
         elseif k=="dprice" then options.dprice=tonumber(v)
         elseif k=="lp" then options.lp=true
         elseif k=="method" then options.method=tonumber(v)
+        elseif k=="llogger" then options.llogger=v
         else
             printf("Unknown option '%s'\n",k)
             options.help=true
@@ -278,6 +282,9 @@ function parse_options(arg,short,long)
         printf("Initialized with seed %d (time)\n",options.seed)
     else
         printf("Initialized with seed %d\n",options.seed)
+    end
+    if options.llogger then
+        glogger.level =options.llogger
     end
 
     math.randomseed(options.seed)     
