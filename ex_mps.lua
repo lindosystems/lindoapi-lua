@@ -20,7 +20,7 @@ local platform_name = {
 }
 
 local function get_tmp_base()
-    local temp_base = sprintf("tmp/%s/",platform_name[xta.platformid] or "unknown")
+    local temp_base = sprintf("tmp/%s",platform_name[xta.platformid] or "unknown")
     if not paths.dirp(temp_base) then
         paths.mkdir(temp_base)
     end
@@ -125,7 +125,7 @@ while ktryenv>0 do
         if flist then
             local flog
             for file in flist do
-                flog = get_tmp_base() .. file
+                flog = sprintf("%s/%s",get_tmp_base(),file)
                 paths.backup(flog)                
                 paths.rmall(flog,"yes")
                 glogger.info("Backed up %s\n",flog)
@@ -149,11 +149,6 @@ while ktryenv>0 do
         -- Set the new parameters
         pModel:set_params_user(options)   
         pModel:disp_params_non_default()
-
-        if options.ktrylogf then
-            pModel.utable.ktrylogf = sprintf("%s/ktrylogf_%s_m%02d_e%02d.log",get_tmp_base(),options.ktrylogf,ktrymod,ktryenv)
-            pModel.utable.ktrylogfp = io.open(pModel.utable.ktrylogf,"w")
-        end
     
         -- Read model from file	
         glogger.info("Reading '%s'\n",options.model_file)
@@ -250,9 +245,14 @@ while ktryenv>0 do
         if options.solve then 
             local ktrysolv = options.ktrysolv
             while ktrysolv>0 do
+                if options.ktrylogf then
+                    pModel.utable.ktrylogf = sprintf("%s/ktrylogf_%s_e%02d_m%02d_s%02d.log",get_tmp_base(),options.ktrylogf,ktryenv,ktrymod,ktrysolv)
+                    pModel.utable.ktrylogfp = io.open(pModel.utable.ktrylogf,"w")
+                end                
                 ktrysolv = ktrysolv-1
                 res_opt, res_rng = pModel:solve(options)            
                 if options.verb>0 then
+                    pModel:disp_mip_sol_report()
                     local pd = pModel:getProgressData()
                     local last_line = lsi_pdline(pd)
                     local dgst
@@ -261,8 +261,7 @@ while ktryenv>0 do
                         dgst = SHA2(str)                        
                     else
                         dgst = pModel.utable.ktrylogsha
-                    end
-                    printf("\n")                    
+                    end              
                     printf("lines.digest: %s (last:%s)\n",dgst,SHA2(last_line))
                     if lines_digests == nil then
                         lines_digests = {}

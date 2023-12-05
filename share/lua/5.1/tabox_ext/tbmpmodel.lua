@@ -487,7 +487,67 @@ local delete = function(pModel)
     end
 end
 
+local disp_mip_sol_report = function(pModel)
+    local res    
+    local nErr
+    local t = {}
+    res = pModel:getInfo(lxi.LS_IINFO_MIP_STATUS)
+    t.mipstatus = res and res.pValue or xta.const.nai
+    
+    if t.mipstatus ~= lxs.LS_STATUS_INFEASIBLE and
+       t.mipstatus ~= lxs.LS_STATUS_LOCAL_INFEASIBLE and
+       t.mipstatus ~= lxs.LS_STATUS_UNBOUNDED then
+        res = pModel:getInfo( lxi.LS_DINFO_MIP_OBJ)
+        t.mipobj = res and res.pValue or xta.const.nad
+        res = pModel:getInfo( lxi.LS_DINFO_MIP_PFEAS)
+        t.pfeas = res and res.pValue or xta.const.nad
+        res = pModel:getInfo( lxi.LS_DINFO_MIP_INTPFEAS)
+        t.int_pfeas = res and res.pValue or xta.const.nad
+    end
+        
+    res = pModel:getInfo( lxi.LS_DINFO_MIP_BESTBOUND)
+    t.bestbnd = res and res.pValue or xta.const.nad
+    res = pModel:getInfo( lxi.LS_IINFO_MIP_BRANCHCOUNT)
+    t.nbranches = res and res.pValue or xta.const.nai
+    res = pModel:getInfo( lxi.LS_IINFO_MIP_LPCOUNT)
+    t.numlps = res and res.pValue or xta.const.nai
+    res = pModel:getInfo( lxi.LS_DINFO_MIP_TOT_TIME)
+    t.miptime = res and res.pValue or xta.const.nad
+    res = pModel:getInfo( lxi.LS_IINFO_MIP_SIM_ITER)
+    t.splx_iter = res and res.pValue or xta.const.nai
+    res = pModel:getInfo( lxi.LS_IINFO_MIP_NLP_ITER)
+    t.nlp_iter = res and res.pValue or xta.const.nai
+    res = pModel:getInfo( lxi.LS_IINFO_MIP_BAR_ITER)
+    t.ipm_iter = res and res.pValue or xta.const.nai
+    res = pModel:getInfo( lxi.LS_DINFO_MIP_ABSGAP)
+    t.absgap = res and res.pValue or xta.const.nad
+    res = pModel:getInfo( lxi.LS_DINFO_MIP_RELGAP)
+    t.relgap = res and res.pValue or xta.const.nad
 
+    local report = "\n\n"
+    report = report .. "MIP Status: " .. (t.mipstatus or "N/A") .. "\n"
+    if t.mipstatus ~= lxs.LS_STATUS_INFEASIBLE and
+        t.mipstatus ~= lxs.LS_STATUS_LOCAL_INFEASIBLE and
+        t.mipstatus ~= lxs.LS_STATUS_UNBOUNDED then
+        report = report .. "MIP Objective: " .. (t.mipobj or "N/A") .. "\n"
+        report = report .. "MIP Primal Infeasibility: " .. (t.pfeas or "N/A") .. "\n"
+        report = report .. "MIP Integer Primal Infeasibility: " .. (t.int_pfeas or "N/A") .. "\n"
+    end    
+    report = report .. "MIP Best Bound: " .. (t.bestbnd or "N/A") .. "\n"
+    report = report .. "MIP Branch Count: " .. (t.nbranches or "N/A") .. "\n"
+    report = report .. "MIP LP Count: " .. (t.numlps or "N/A") .. "\n"
+    report = report .. "MIP Total Time: " .. (t.miptime or "N/A") .. "\n"
+    report = report .. "MIP Simplex Iterations: " .. (t.splx_iter or "N/A") .. "\n"
+    report = report .. "MIP NLP Iterations: " .. (t.nlp_iter or "N/A") .. "\n"
+    report = report .. "MIP Barrier Iterations: " .. (t.ipm_iter or "N/A") .. "\n"
+    report = report .. "MIP Absolute Gap: " .. (t.absgap or "N/A") .. "\n"
+    report = report .. "MIP Relative Gap: " .. (t.relgap or "N/A") .. "\n"
+    print(report)
+    
+    return t
+end
+
+TBmpmodel.disp_mip_sol_report = disp_mip_sol_report
 TBmpmodel.delete = delete
 TBmpmodel.getProgressData = getProgressData
 TBmpmodel.set_params_user = set_params_user
