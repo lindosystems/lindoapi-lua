@@ -19,6 +19,61 @@ local platform_name = {
     [xta.const.osx64x86] = "osx64x86"
 }
 
+--- 
+local function add_objcut(pModel,options,res_lp)
+    local c = res_lp.padC
+    local ka, ia, a, rhs, sense = {}, {}, {}, {}, 'L'
+    ia[1]  = 0
+    for k=1,c.len do        
+        if math.abs(c[k])>0 then
+            table.insert(ka,k-1)
+            table.insert(a,c[k])
+        end
+    end
+    ia[2] = #ka
+    table.insert(rhs,options.addobjcut)
+    if res_lp.pdObjSense ==-1 then
+        sense = 'G'
+    end
+    local res = pModel:addConstraints(1, 
+        sense, 
+        nil,
+        xta:field(ia,'ia','int'),
+        xta:field(a,'a','double'),
+        xta:field(ka,'ka','int'),
+        xta:field(rhs,'rhs','double'))
+    pModel:xassert(res)
+end
+
+--- 
+local function hist_bnds(pModel,options,res_lp)
+    --print_table3(res_lp)    
+    if hasbit(options.histmask,3) then --histmask=4
+        res_lp.padU:printmat(20)
+        res_lp.padL:printmat(20)
+    end
+    local d = res_lp.padU- res_lp.padL
+    printf("min |u-l|=%g\n",d.min)
+    printf("max |u-l|=%g\n",d.max)
+    local eps = math.pow(10,-15)
+    if d.min<eps then
+        d=d+eps
+    end
+    local ld = xta:LOG10(d)
+    local h 
+    h = ld:histogram(10)
+    if h then
+        h:print()
+        local idx = d:find(0)
+        if idx then
+            idx:printmat()
+        end
+    end
+    if pModel.utable.ktrylogfp then
+        io.close(pModel.utable.ktrylogfp)
+    end
+end
+
 local function get_tmp_base()
     local temp_base = sprintf("tmp/%s",platform_name[xta.platformid] or "unknown")
     if not paths.dirp(temp_base) then
@@ -92,7 +147,7 @@ end
 -- New solver instance
 xta:setsolverdll("",8);
 xta:setlindodll(options.lindomajor,options.lindominor)
-local lines_digests = {}
+local log_digests = {}
 local sol_digests = {}
 local ktryenv = options.ktryenv
 while ktryenv>0 do
@@ -159,66 +214,24 @@ while ktryenv>0 do
             printf("Set model sense to maximize (%d)\n",-1)
         end
         local res_lp 
-        if options.histmask then
+        if options.histmask or options.addobjcut then
             res_lp = pModel:getLPData() 
-        end    
-        if res_lp and options.histmask then
-            --print_table3(res_lp)    
-            if hasbit(options.histmask,3) then --histmask=4
-                res_lp.padU:printmat(20)
-                res_lp.padL:printmat(20)
-            end
-            local d = res_lp.padU- res_lp.padL
-            printf("min |u-l|=%g\n",d.min)
-            printf("max |u-l|=%g\n",d.max)
-            local eps = math.pow(10,-15)
-            if d.min<eps then
-                d=d+eps
-            end
-            local ld = xta:LOG10(d)
-            local h 
-            h = ld:histogram(10)
-            if h then
-                h:print()
-                local idx = d:find(0)
-                if idx then
-                    idx:printmat()
-                end
-            end
-            if pModel.utable.ktrylogfp then
-                io.close(pModel.utable.ktrylogfp)
+        end
+
+        if options.histmask then
+            if res_lp then
+                hist_bnds(pModel,options,res_lp)
+            else
+                glogger.info("Failed to get LP data\n")
             end
             solver:dispose()
             return
         end
 
         if options.addobjcut then
-            if not res_lp then
-                res_lp = pModel:getLPData() 
-            end
-            local c = res_lp.padC
-            local ka, ia, a, rhs, sense = {}, {}, {}, {}, 'L'
-            ia[1]  = 0
-            for k=1,c.len do        
-                if math.abs(c[k])>0 then
-                    table.insert(ka,k-1)
-                    table.insert(a,c[k])
-                end
-            end
-            ia[2] = #ka
-            table.insert(rhs,options.addobjcut)
-            if res_lp.pdObjSense ==-1 then
-                sense = 'G'
-            end
-            res = pModel:addConstraints(1, 
-                sense, 
-                nil,
-                xta:field(ia,'ia','int'),
-                xta:field(a,'a','double'),
-                xta:field(ka,'ka','int'),
-                xta:field(rhs,'rhs','double'))
-            pModel:xassert(res)
+            add_objcut(pModel,options,res_lp)
         end
+
         -- Set callback or logback
         if options.has_cbmip>0 then 
             pModel:setMIPCallback(cbmip)
@@ -231,7 +244,7 @@ while ktryenv>0 do
             pModel:wassert(res)
         end 
 
-        if options.lp and false then
+        if options.lp then
             local str=""
             for k=1,pModel.numvars do
                 str = str .. "C"
@@ -241,56 +254,66 @@ while ktryenv>0 do
         end
 
         -- Solve model
-        local res_opt, res_rng 
-        if options.solve then 
-            local ktrysolv = options.ktrysolv
-            while ktrysolv>0 do
+        local res_opt, res_rng
+        local ktrysolv = options.ktrysolv 
+        if options.solve then             
+            while ktrysolv>0 do         
+                collectgarbage()       
                 if options.ktrylogf then
                     pModel.utable.ktrylogf = sprintf("%s/ktrylogf_%s_e%02d_m%02d_s%02d.log",get_tmp_base(),options.ktrylogf,ktryenv,ktrymod,ktrysolv)
                     pModel.utable.ktrylogfp = io.open(pModel.utable.ktrylogf,"w")
-                end                
+                end
+                --pModel.utable.lines = {}            
                 ktrysolv = ktrysolv-1
+                pModel.utable.ktrylogsha = nil
                 res_opt, res_rng = pModel:solve(options)            
                 if options.verb>0 then
                     pModel:disp_mip_sol_report()
                     local pd = pModel:getProgressData()
+                    if options.verb>2 then
+                        print_table3(pd)
+                    end                    
                     local last_line = lsi_pdline(pd)
                     local dgst
                     if pModel.utable.lines then
                         local str = table.concat(pModel.utable.lines)                        
-                        dgst = SHA2(str)                        
+                        dgst = SHA2(str)
                     else
                         dgst = pModel.utable.ktrylogsha
-                    end              
-                    printf("lines.digest: %s (last:%s)\n",dgst,SHA2(last_line))
-                    if lines_digests == nil then
-                        lines_digests = {}
+                    end                                  
+                    if log_digests == nil then
+                        log_digests = {}
+                        log_digests.total = 0
                     end
-                    if not lines_digests[dgst] then
-                        lines_digests[dgst] = 0
+                    if dgst then
+                        if not log_digests[dgst] then
+                            log_digests[dgst] = 0
+                        end
+                        log_digests[dgst] = log_digests[dgst] + 1  
+                        log_digests.total = log_digests.total + 1                  
+                        printf("log.digest: %s  (hits:%d/%d), (last:%s)\n",dgst,log_digests[dgst],log_digests.total,SHA2(last_line))
+                        local xdgst = "x:" .. dgst
+                        if not log_digests[xdgst] then
+                            log_digests[xdgst] = {}
+                        end       
+                        table.insert(log_digests[xdgst],pModel.utable.ktrylogf)
                     end
-                    lines_digests[dgst] = lines_digests[dgst] + 1                    
-                    local xdgst = "x:" .. dgst
-                    if not lines_digests[xdgst] then
-                        lines_digests[xdgst] = {}
-                    end       
-                    table.insert(lines_digests[xdgst],pModel.utable.ktrylogf)                 
-                    if options.verb>2 then
-                        print_table3(pd)
-                    end
+
                     if options.verb>2 then            
                         res_opt.padPrimal:printmat(6,nil,12,nil,'.3e')
                     end
                     if res_opt.padPrimal then
-                        local dgst = SHA2(res_opt.padPrimal:ser())
-                        printf("x.digest: %s\n", dgst)
+                        local dgst = SHA2(res_opt.padPrimal:ser())                        
                         if sol_digests == nil then
                             sol_digests = {}
+                            sol_digests.total = 0
                         end
                         if not sol_digests[dgst] then
                             sol_digests[dgst] = 0
                         end
-                        sol_digests[dgst] = sol_digests[dgst] + 1                        
+                        sol_digests[dgst] = sol_digests[dgst] + 1 
+                        sol_digests.total = sol_digests.total + 1
+                        printf("sol.digest: %s  (hits:%d/%d)\n", dgst,sol_digests[dgst],sol_digests.total)  
                     end                    
                 end
             end    
@@ -326,8 +349,8 @@ while ktryenv>0 do
 end -- ktryenv    
 printf("\n")
 printf("log.digests:\n")
-print_table3(lines_digests)
+print_table3(log_digests)
 printf("\n")
-printf("solution.digests:\n")
+printf("sol.digests:\n")
 print_table3(sol_digests)
 

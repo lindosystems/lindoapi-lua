@@ -52,6 +52,7 @@ function lsi_pdline(p)
     return sline
 end    
 
+
 --- Callback function that gets called everytime a new MIP solution is found
 -- @param pModel Pointer to the model instance
 -- @param dobj Objective value of the new MIP solution
@@ -62,38 +63,43 @@ function cbmip(pModel, dobj, pX, udata)
     local res
     local iLoc = 5
     local retval = 0
-    local counter = pModel.utable.counter
-    if counter%20==0 then
-        printf("\n\n%6s %8s %8s %8s %14s %14s %14s %8s %6s %8s %10s\n",
-        "LOC","ITER","BRANCH","LPs","INFEAS","BEST BND","BEST SOL","ACTIVE","STATUS","CPUTIME","|X|");
-    end
-    counter = counter + 1
-    pModel.utable.counter = counter
-    
-    local p = pModel:getProgressData()
-    local normx = pX:norm(2)
-    szerr = "" --pModel:errmsg(res.ErrorCode) or "N/A"
-    local line = lsi_pdline(p,normx,szerr)
-    printf("\n%s %8.2f %10g %s",line,p.curtime,normx,szerr) 
-    if pModel.utable.ktrylogfp then
-        local str = sprintf("\n%s %8.2f %10g %s",line,-99,normx,szerr)
-        fprintf(pModel.utable.ktrylogfp,"%s",str) 
-        if not pModel.utable.ktrylogsha then
-            pModel.utable.ktrylogsha = ""
-        end
-        pModel.utable.ktrylogsha = SHA2(pModel.utable.ktrylogsha..str)
-    end    
 
-    if pModel.utable.lines==nil then
-        pModel.utable.lines = {}
-    end
-    if line ~= pModel.utable.lines[#pModel.utable.lines] then
-        pModel.utable.lines[#pModel.utable.lines+1] = line
-    end
-    
-    retval = 0
-    if retval>0 then        
-        printf("Warning: cbmip is returning interrupt signal !\n")
+    if 2>1 then
+        local counter = pModel.utable.counter
+        if counter%20==0 then
+            printf("\n\n%6s %8s %8s %8s %14s %14s %14s %8s %6s %8s %10s\n",
+            "LOC","ITER","BRANCH","LPs","INFEAS","BEST BND","BEST SOL","ACTIVE","STATUS","CPUTIME","|X|");
+        end
+        counter = counter + 1
+        pModel.utable.counter = counter
+        
+        local p = pModel:getProgressData()
+        local normx = -99
+        if pX then
+            normx = pX:norm(2)
+        end
+        szerr = "" --pModel:errmsg(res.ErrorCode) or "N/A"
+        local line = lsi_pdline(p)
+        printf("\n%s %8.2f %10g %s",line,p.curtime,normx,szerr) 
+        if pModel.utable.ktrylogfp then
+            local str = sprintf("\n%s %8.2f %10g %s",line,-99,normx,szerr)
+            fprintf(pModel.utable.ktrylogfp,"%s",str) 
+            if not pModel.utable.ktrylogsha then
+                pModel.utable.ktrylogsha = ""
+            end
+            pModel.utable.ktrylogsha = SHA2(pModel.utable.ktrylogsha..str)
+        end    
+
+        if pModel.utable.lines then
+            if line ~= pModel.utable.lines[#pModel.utable.lines] then
+                pModel.utable.lines[#pModel.utable.lines+1] = line
+            end
+        end
+        
+        retval = 0
+        if retval>0 then        
+            printf("Warning: cbmip is returning interrupt signal !\n")
+        end
     end
     return retval
 end
@@ -104,6 +110,7 @@ end
 function cbstd(pModel, iLoc,udata)
     local iter,bncnt,lpcnt,mipcnt,pfeas,bestbnd,pobj,accnt,status,curtime,szerr
     local res
+    
     res = pModel:getProgressInfo(iLoc,info.LS_IINFO_CUR_ITER)
     iter = res and res.pValue or 0
 
