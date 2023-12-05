@@ -71,7 +71,7 @@ local solve = function(pModel, options)
     local verb = options and options.verb or 0
     local res, res_rng    
     
-    if verb>0 then printf("Solving %s\n",options and options.model_file or 'current model') end    
+    if verb>0 then printf("\nSolving %s\n",options and options.model_file or 'current model') end    
     if has_gop then
         res = pModel:solveGOP()
     elseif pModel.numint + pModel.numbin + pModel.numsc + pModel.numsets > 0 and not options.lp then
