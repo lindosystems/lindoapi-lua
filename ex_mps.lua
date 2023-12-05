@@ -136,26 +136,31 @@ if not options.ktrylogf then
     end
 end
 
+local log_digests, sol_digests
 if options.ktryenv>1 or options.ktrymod>1 or options.ktrysolv>1 then
     glogger.info("Invoking back-to-back runs with ..\n")
     glogger.info("ktryenv: %s\n",options.ktryenv or "N/A")
     glogger.info("ktrymod: %s\n",options.ktrymod or "N/A")
     glogger.info("ktrysolv: %s\n",options.ktrysolv or "N/A")
     glogger.info("ktrylogf: %s\n",options.ktrylogf)
+    log_digests = {}
+    log_digests.total = 0
+    sol_digests = {}
+    sol_digests.total = 0    
 end
 
 -- New solver instance
 xta:setsolverdll("",8);
 xta:setlindodll(options.lindomajor,options.lindominor)
-local log_digests = {}
-local sol_digests = {}
+
 local ktryenv = options.ktryenv
 while ktryenv>0 do
     ktryenv = ktryenv-1
     solver = xta:solver()    
     assert(solver,"\n\nError: failed create a solver instance.\n")
-    printf("\n")
-    glogger.info("Created a new solver instance %s\n",solver.version);
+    solver:disp_pretty_version()
+
+    glogger.info("Created a new solver instance ..\n");
     local ymd,hms = xta:datenow(),xta:timenow() 
     local jsec = xta:jsec(ymd,hms)
     glogger.info("Timestamp: %06d-%06d jsec:%d\n",ymd,hms,jsec)
@@ -268,7 +273,10 @@ while ktryenv>0 do
                 pModel.utable.ktrylogsha = nil
                 res_opt, res_rng = pModel:solve(options)            
                 if options.verb>0 then
-                    pModel:disp_mip_sol_report()
+                    printf("\n")
+                    if options.has_cbmip==1 then
+                        pModel:disp_mip_sol_report()
+                    end
                     local pd = pModel:getProgressData()
                     if options.verb>2 then
                         print_table3(pd)
@@ -281,39 +289,36 @@ while ktryenv>0 do
                     else
                         dgst = pModel.utable.ktrylogsha
                     end                                  
-                    if log_digests == nil then
-                        log_digests = {}
-                        log_digests.total = 0
-                    end
-                    if dgst then
-                        if not log_digests[dgst] then
-                            log_digests[dgst] = 0
+                    if log_digests then
+                        if dgst then
+                            if not log_digests[dgst] then
+                                log_digests[dgst] = 0
+                            end
+                            log_digests[dgst] = log_digests[dgst] + 1  
+                            log_digests.total = log_digests.total + 1                  
+                            printf("log.digest: %s  (hits:%d/%d), (last:%s)\n",dgst,log_digests[dgst],log_digests.total,SHA2(last_line))
+                            local xdgst = "x:" .. dgst
+                            if not log_digests[xdgst] then
+                                log_digests[xdgst] = {}
+                            end       
+                            table.insert(log_digests[xdgst],pModel.utable.ktrylogf)
                         end
-                        log_digests[dgst] = log_digests[dgst] + 1  
-                        log_digests.total = log_digests.total + 1                  
-                        printf("log.digest: %s  (hits:%d/%d), (last:%s)\n",dgst,log_digests[dgst],log_digests.total,SHA2(last_line))
-                        local xdgst = "x:" .. dgst
-                        if not log_digests[xdgst] then
-                            log_digests[xdgst] = {}
-                        end       
-                        table.insert(log_digests[xdgst],pModel.utable.ktrylogf)
                     end
+
+                    if sol_digests then
+                        if res_opt.padPrimal then                        
+                            local dgst = SHA2(res_opt.padPrimal:ser())                        
+                            if not sol_digests[dgst] then
+                                sol_digests[dgst] = 0
+                            end
+                            sol_digests[dgst] = sol_digests[dgst] + 1 
+                            sol_digests.total = sol_digests.total + 1
+                            printf("sol.digest: %s  (hits:%d/%d)\n", dgst,sol_digests[dgst],sol_digests.total)  
+                        end
+                    end                    
 
                     if options.verb>2 then            
                         res_opt.padPrimal:printmat(6,nil,12,nil,'.3e')
-                    end
-                    if res_opt.padPrimal then
-                        local dgst = SHA2(res_opt.padPrimal:ser())                        
-                        if sol_digests == nil then
-                            sol_digests = {}
-                            sol_digests.total = 0
-                        end
-                        if not sol_digests[dgst] then
-                            sol_digests[dgst] = 0
-                        end
-                        sol_digests[dgst] = sol_digests[dgst] + 1 
-                        sol_digests.total = sol_digests.total + 1
-                        printf("sol.digest: %s  (hits:%d/%d)\n", dgst,sol_digests[dgst],sol_digests.total)  
                     end                    
                 end
             end    
@@ -347,10 +352,15 @@ while ktryenv>0 do
     solver:dispose()
     glogger.info("Disposed solver instance %s\n",tostring(solver))  
 end -- ktryenv    
-printf("\n")
-printf("log.digests:\n")
-print_table3(log_digests)
-printf("\n")
-printf("sol.digests:\n")
-print_table3(sol_digests)
+
+if log_digests then
+    printf("\n")
+    printf("log.digests:\n")
+    print_table3(log_digests)
+end
+if sol_digests then
+    printf("\n")
+    printf("sol.digests:\n")
+    print_table3(sol_digests)
+end
 
