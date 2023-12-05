@@ -42,3 +42,13 @@ end
 TBsolver.wassert = function(pSolver,res, allowed)
     check_error(pSolver, res, allowed, false)
 end
+
+TBsolver.disp_pretty_version = function(solver) -- Display version info
+    glogger.info("\n")    
+    local res = solver:getVersionInfo()        
+    local tokens = split(res.pachBuildDate,"\n")
+    glogger.info("LINDO API %s  built on %s\n",res.pachVernum,tokens[1])
+    glogger.info("%s\n",tokens[2])
+    glogger.info("%s\n",tokens[3])
+    glogger.info("\n")    
+end
