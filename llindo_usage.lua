@@ -211,7 +211,7 @@ function parse_options(arg,short,long)
     options.dprice = nil
     options.lp = nil
     options.method = nil
-    options.llogger = 1
+    options.llogger = 'info'
     for k,v in pairs(long) do
         if not options[k] then 
             options[k] = nil
