@@ -130,7 +130,7 @@ if options.seed then
   end    
 end
 
-if not options.ktrylogf then
+if not options.ktrylogf and 0> 1 then
     if options.ktryenv or options.ktrymod or options.ktrysolv then
         options.ktrylogf = getBasename(options.model_file)
     end
@@ -142,7 +142,9 @@ if options.ktryenv>1 or options.ktrymod>1 or options.ktrysolv>1 then
     glogger.info("ktryenv: %s\n",options.ktryenv or "N/A")
     glogger.info("ktrymod: %s\n",options.ktrymod or "N/A")
     glogger.info("ktrysolv: %s\n",options.ktrysolv or "N/A")
-    glogger.info("ktrylogf: %s\n",options.ktrylogf)
+    if options.ktrylogf then 
+        glogger.info("ktrylogf: %s\n",options.ktrylogf)
+    end
     log_digests = {}
     log_digests.total = 0
     sol_digests = {}
@@ -306,7 +308,7 @@ while ktryenv>0 do
                             log_digests[dgst] = log_digests[dgst] + 1  
                             log_digests.total = log_digests.total + 1                  
                             printf("log.digest: %s  (hits:%d/%d), (last_pd_line.digest:%s)\n",dgst,log_digests[dgst],log_digests.total,dgst_pd)
-                            local xdgst = "x:" .. dgst
+                            local xdgst = "files:" .. dgst
                             if not log_digests[xdgst] then
                                 log_digests[xdgst] = {}
                             end       
