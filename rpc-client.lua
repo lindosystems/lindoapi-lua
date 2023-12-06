@@ -19,6 +19,7 @@ local lsmajor,lsminor = 14,0 --xta_get_config('solver_major_version'),xta_get_co
 local iModel = -1
 local serialize_byfile = Lindo.serialize_byfile
 
+
 function default_usage()
   print("")
   print("A simple JSON-RPC client using a ZeroMQ socket to communicate with the LINDO API server")
@@ -192,7 +193,7 @@ if hasbit(ping,bit(2)) then -- ping=+2
   for request_nbr = 0,2 do
       local request = jsonrpc.encode_rpc(jsonrpc.request, "ping2", {arg1=1, arg2=2})
   
-      logger.info("Sending quit request: %s\n" , request)
+      logger.info("Sending ping2 request: %s\n" , request)
       requester:send(request)
       return 
   --[[
@@ -207,7 +208,7 @@ end
 if hasbit(ping,bit(3)) then -- ping=+4
 -- Now request a non-available method
   local request = jsonrpc.encode_rpc(jsonrpc.request, "ping3", {1})
-  logger.info("Sending request: %s\n" , request)
+  logger.info("Sending ping3 request: %s\n" , request)
   requester:send(request)
   local response = requester:recv()
   logger.info("Received response: %s\n" , response )  
@@ -218,7 +219,7 @@ if hasbit(ping,bit(4)) then -- ping=+8
   for request_nbr = 0,2 do
       local request = jsonrpc.encode_rpc(jsonrpc.request, "ping4", {arg1=1, arg2=2})
   
-      logger.info("Sending request: %s\n" , request)
+      logger.info("Sending ping4 request: %s\n" , request)
       requester:send(request)
   
       local response = requester:recv()
