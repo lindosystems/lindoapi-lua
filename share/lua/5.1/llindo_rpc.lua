@@ -52,8 +52,8 @@ local remote_procedures = {
         return true, "ALIVE"
     end,
 
-    shutdown = function(args)
-        logger.debug("'shutdown()' was called, acting with following args:\n")
+    quit = function(args)
+        logger.debug("'quit()' was called, acting with following args:\n")
         for k,v in pairs(args) do logger.debug("%s = %s\n",k,v) end
         return true, "ok"
     end,
@@ -65,8 +65,8 @@ local remote_procedures = {
     
     createEnv = function(args)
       if not solver_ then
-        local vermaj,vermin = args and args[1] or 14, args and args[2] or 0
-        xta:setlindodll(vermaj,vermin)
+        local lsmaj,lsmin = args and args[1] or 14, args and args[2] or 0
+        xta:setlindodll(lsmaj,lsmin)
         solver_ = xta:solver()
         local flag = true
         if solver_ then          
@@ -141,6 +141,20 @@ local remote_procedures = {
 
     showModels = function(args)
       return true, get_keys(modDict,modStack)
+    end,
+
+    modelAt = function(args)
+      local pos = tonumber(args[1])
+      if pos then
+        local szModel = modStack:at(pos)
+        if szModel then
+          return true,szModel
+        else
+          return false,'none'
+        end
+      else
+        return false,'none'
+      end
     end,
     
     showEnvs = function(args)
@@ -238,21 +252,9 @@ local remote_procedures = {
         logger.warn("loadLPData: model '%s' does not exist\n",szModel);
         return false, -1
       end
-      local pnode = args[2]
-      --print_table3(pnode)
-      local res = pModel:loadLPData(
-         pnode.pdObjSense,
-         pnode.pdObjConst,
-         pnode.padC and xta:fielddes(pnode.padC,"padC","double") or nil,
-         pnode.padB and xta:fielddes(pnode.padB,"padB","double") or nil,               
-         pnode.pachConTypes,               
-         pnode.paiAcols and xta:fielddes(pnode.paiAcols,"paiAcols","int") or nil,
-         pnode.panAcols and xta:fielddes(pnode.panAcols,"panAcols","int") or nil,
-         pnode.padAcoef and xta:fielddes(pnode.padAcoef,"padAcoef","double") or nil,
-         pnode.paiArows and xta:fielddes(pnode.paiArows,"paiArows","int") or nil,
-         pnode.padL and xta:fielddes(pnode.padL,"padL","double") or nil,
-         pnode.padU and xta:fielddes(pnode.padU,"padU","double") or nil   
-        )      
+      local pnode_list = args[2]
+      --print_table3(pnode_list)
+      local res = pModel:loadDataNode(pnode_list['lp_data'],"lp_data")
       local flag=false
       if res then
         flag = res.ErrorCode==0 
@@ -263,7 +265,30 @@ local remote_procedures = {
       else
         return flag, -1
       end 
-    end,   
+    end, 
+    
+    loadModelData = function(args)
+      local szModel = parse_model(args)
+      local pModel = modDict[szModel]
+      if not pModel then
+        logger.warn("loadModelData: model '%s' does not exist\n",szModel);
+        return false, -1
+      end
+      local pnode_list = args[2]
+      local res, res_tmp
+      
+      res = pModel:loadModelDataNode(pnode_list)
+      local flag=false
+      if res then
+        flag = res.ErrorCode==0 
+        if flag then    
+          logger.info("loadModelData: pModel %s is loaded\n",szModel)
+        end
+        return flag, res.ErrorCode        
+      else
+        return flag, -1
+      end 
+    end,
     
     getPrimalSolution = function(args)
       local szModel = parse_model(args)

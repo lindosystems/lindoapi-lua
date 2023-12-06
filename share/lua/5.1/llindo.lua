@@ -1638,7 +1638,7 @@ Lindo.info =
 }
 
 
-Lindo.getSerializedLPData = function (mpsfile)
+Lindo.serialize_byfile = function (mpsfile)
     local yysolver = nil
     assert(mpsfile)
     if not yysolver then
@@ -1655,27 +1655,9 @@ Lindo.getSerializedLPData = function (mpsfile)
     local arg
     local res = yyModel:readMPSFile(mpsfile, 0)
     if res.ErrorCode ~= 0 then
-        logger.warn("readMPSFile failed to read '%s', err:%d\n", mpsfile, res.ErrorCode)
+        yyModel:wassert(res)
     else
-        local pData = yyModel:getLPData()
-        if not pData then
-            logger.error("getLPData failed\n")
-        else
-            --print_table3(pData)
-            arg = {
-                pdObjSense = pData.pdObjSense,
-                pdObjConst = pData.pdObjConst,
-                padC = pData.padC:ser(),
-                padB = pData.padB:ser(),
-                pachConTypes = pData.pachConTypes,
-                paiAcols = pData.paiAcols:ser(),
-                panAcols = pData.panAcols:ser(),
-                padAcoef = pData.padAcoef:ser(),
-                paiArows = pData.paiArows:ser(),
-                padL = pData.padL:ser(),
-                padU = pData.padU:ser()
-            }
-        end
+        arg = yyModel:serialize()
     end
     if yyModel then
         yyModel:dispose()

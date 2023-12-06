@@ -1,4 +1,4 @@
---- A dummy JSON-RPC client using a ZeroMQ socket to communicate with the server
+--- A simple JSON-RPC client using a ZeroMQ socket to communicate with the server
 
 require "alt_getopt"
 local Lindo = require("llindo_tabox")
@@ -15,19 +15,63 @@ local info = Lindo.info
 if (xta==nil) then
   xta=tabox.env()
 end
-local vermaj,vermin = 14,0 --xta_get_config('solver_major_version'),xta_get_config('solver_minor_version')
+local lsmajor,lsminor = 14,0 --xta_get_config('solver_major_version'),xta_get_config('solver_minor_version')
+local iModel = -1
+local serialize_byfile = Lindo.serialize_byfile
 
-local getSerializedLPData = Lindo.getSerializedLPData
+function default_usage()
+  print("")
+  print("A simple JSON-RPC client using a ZeroMQ socket to communicate with the LINDO API server")
+  print("")
+  print("Usage: lslua rpc-client.lua [options] [args]")
+  print("Options:")
+  print("  -h, --help")
+  print("  -s, --rpcserver=<url>  URL of the RPC server")
+  print("  -v, --verb=<level>     Verbosity level")
+  print("  -q, --quit             Quit the server")
+  print("  --createEnv            Create a new environment")
+  print("  --deleteEnv            Delete the current environment")
+  print("  --createModel          Create a new model")
+  print("  --deleteModel=<id>     Delete the model with id=<id>")
+  print("  --loadLPData=<file>    Load LP data from <file>")
+  print("  --optimize=<method>    Optimize the model with <method>")
+  print("  --getSolution=<id>     Get solution <id>")
+  print("  --getInfo=<id>         Get info <id>")
+  print("  --freeSolutionMemory   Free solution memory")
+  print("  --freeSolverMemory     Free solver memory")
+  print("  --getModelParameter=<id>  Get model parameter <id>")
+  print("  --setModelParameter=<id>  Set model parameter <id>")
+  print("  --showModels           Show all models")
+  print("  --showEnvs             Show all environments")
+  print("  --dump_error_objects   Dump error objects")
+  print("  --parValue=<value>     Parameter value")
+  print("  --lsmajor=<value>      Major version of the solver")
+  print("  --lsminor=<value>      Minor version of the solver")
+  print("  --ping=<value>         Ping the server")
+  print("  --szModel=<id>         Model id")
+  print("  --model_file=<file>    Model file")
+  print("  --loadMIPVarStartPoint=<file>       Load MIP variable start point from file")
+  print("  --solveMIP             Solve MIP")
+  print("  --solveGOP             Solve GOP")
+  print("  --modifyLowerBounds    Modify lower bounds")
+  print("  --modifyUpperBounds    Modify upper bounds")
+  print("  --modifyRHS            Modify RHS")
+  print("  --modifyAj             Modify Aj")
+  print("  --deleteAj             Delete Aj")
+  print("  --iModel=<id>          Model id")
+  print("")
+end
 
-local short = "s:t:"
+local short = "hs:v:q"
 local long = {
+  help = "h",
   szModel = 1,
   createEnv = 0,
   deleteEnv = 0,  
   createModel = 0,
   deleteModel = 1,
   loadLPData = 0,
-  mpsfile = 1,
+  model_file = 1,
   optimize = 1,
   getSolution = 1,
   getInfo = 1,
@@ -37,12 +81,16 @@ local long = {
   setModelParameter = 1,
 
   ping = 1,   --bitmask
-  rpcserver = 1,  
+  rpcserver = 's',  
   showModels = 0,
   showEnvs = 0,
   dump_error_objects = 0,
   parValue = 1,
-  verb=1
+  verb = 'v',
+  quit = 'q',
+  lsmajor = 1,
+  lsminor = 1,
+  iModel = 1,
 }
 
 local opts, optind, optarg = alt_getopt.get_ordered_opts(arg, short, long)
@@ -54,14 +102,17 @@ end
 
 local cmdOptions={}
 cmdOptions.ping = 0
-if #arg==0 then cmdOptions.ping=1; end  
+if #arg==0 then 
+  default_usage()
+  cmdOptions.ping=1; 
+end  
 
 for i, k in pairs(opts) do
   local v = optarg[i]
   if k=='rpcserver' then cmdOptions.rpcserver=v
   elseif k=='ping' then cmdOptions.ping = tonumber(v)
   elseif k=='parValue' then cmdOptions.parValue = tonumber(v) 
-  elseif k=='mpsfile' then cmdOptions.mpsfile = v
+  elseif k=='model_file' then cmdOptions.model_file = v
     
   elseif k=='createEnv' then cmdOptions.createEnv = true
   elseif k=='deleteEnv' then cmdOptions.deleteEnv = true  
@@ -79,14 +130,21 @@ for i, k in pairs(opts) do
   elseif k=='showModels' then cmdOptions.showModels = true
   elseif k=='showEnvs' then cmdOptions.showEnvs = true
   elseif k=='verb' then cmdOptions.verb = tonumber(v)
-
-  else cmdOptions[k] = true
+  elseif k=='quit' or k =='q' then cmdOptions.quit = true
+  elseif k=='lsmajor' then lsmajor = tonumber(v)
+  elseif k=='lsminor' then lsminor = tonumber(v)
+  elseif k=='dump_error_objects' then cmdOptions.dump_error_objects = true
+  elseif k=='loadMIPVarStartPoint' then cmdOptions.loadMIPVarStartPoint = v
+  elseif k=='solveMIP' then cmdOptions.solveMIP = true
+  elseif k=='solveGOP' then cmdOptions.solveGOP = true
+  elseif k=='iModel' then iModel = tonumber(v)
+  else
+    cmdOptions[k] = true  
   end
 end
 --print_table3(cmdOptions)
-  
--- Establish connection with the RPC server
 
+-- Establish connection with the RPC server
 local rpcport,server_url = get_zmq_client_url(cmdOptions.rpcserver)
 logger.info("Attempting to connect to %s \n" , server_url)
 
@@ -95,6 +153,22 @@ local requester, err = context:socket{zmq.REQ,
   connect = server_url
 }
 zmq.assert(requester, err)
+
+--- Get remote model by position
+-- @param pos Position of the model in the stack
+local function getModelAtRemote(pos)
+  local request = jsonrpc.encode_rpc(jsonrpc.request, "modelAt", {pos})
+  requester:send(request)
+  local response = requester:recv()
+  
+  logger.debug("Received response: %s\n" , response )
+  local jnode = jsonrpc.decode(response)
+  if jnode.result then
+    return jnode.result
+  else
+    return nil
+  end
+end
 
 local ping = cmdOptions.ping
 if hasbit(ping,bit(1)) then -- ping=+1
@@ -114,11 +188,11 @@ if hasbit(ping,bit(1)) then -- ping=+1
 end
 
 if hasbit(ping,bit(2)) then -- ping=+2
--- Request the server to invoke the method 'try2', with some arguments
+-- Request the server to invoke the method 'quit', with some arguments
   for request_nbr = 0,2 do
-      local request = jsonrpc.encode_rpc(jsonrpc.request, "shutdown", {arg1=1, arg2=2})
+      local request = jsonrpc.encode_rpc(jsonrpc.request, "ping2", {arg1=1, arg2=2})
   
-      logger.info("Sending shutdown request: %s\n" , request)
+      logger.info("Sending quit request: %s\n" , request)
       requester:send(request)
       return 
   --[[
@@ -132,7 +206,7 @@ end
 
 if hasbit(ping,bit(3)) then -- ping=+4
 -- Now request a non-available method
-  local request = jsonrpc.encode_rpc(jsonrpc.request, "verb", {1})
+  local request = jsonrpc.encode_rpc(jsonrpc.request, "ping3", {1})
   logger.info("Sending request: %s\n" , request)
   requester:send(request)
   local response = requester:recv()
@@ -165,6 +239,13 @@ if hasbit(ping,bit(4)) then -- ping=+8
   end
 end
 
+if cmdOptions.quit then
+  local request = jsonrpc.encode_rpc(jsonrpc.request, "quit", {arg1=1, arg2=2})
+  logger.info("Sending quit request: %s\n" , request)
+  requester:send(request)
+  return 
+end
+
 if cmdOptions.verb then -- 
   -- Now request a non-available method
     local request = jsonrpc.encode_rpc(jsonrpc.request, "verb", {cmdOptions.verb})
@@ -178,7 +259,7 @@ local szEnv
 if cmdOptions.createEnv then
 -- Request the server to invoke the method 'createEnv', with some arguments
       
-      local request = jsonrpc.encode_rpc(jsonrpc.request, "createEnv", {vermaj, vermin})
+      local request = jsonrpc.encode_rpc(jsonrpc.request, "createEnv", {lsmajor, lsminor})
   
       logger.info("Sending request: %s\n" , request)
       requester:send(request)
@@ -241,7 +322,7 @@ end
 
 if cmdOptions.deleteModel then
 -- Request the server to invoke the method 'deleteModel', with some arguments
-      szModel = cmdOptions.deleteModel or modStack:at(-1) 
+      szModel = cmdOptions.deleteModel or getModelAtRemote(iModel) 
       assert(szModel,"\nError: --deleteModel=<id> is required\n")
       local request = jsonrpc.encode_rpc(jsonrpc.request, "deleteModel", {szModel})
   
@@ -260,14 +341,17 @@ end
 
 
 if cmdOptions.loadLPData then
-   szModel = cmdOptions.szModel or modStack:at(-1)
+  
+   modStack:list()
+   szModel = cmdOptions.szModel or getModelAtRemote(iModel)
    assert(szModel,"\nError: --szModel is required\n") 
-   local mpsfile = cmdOptions.mpsfile or sprintf("%s\\lp\\mps\\netlib\\afiro.mps.gz",os.getenv("LS_PROB_PATH")) 
+   local model_file = cmdOptions.model_file or sprintf("%s\\lp\\mps\\netlib\\afiro.mps.gz",os.getenv("LS_PROB_PATH")) 
    local arg={}
    arg[1] = szModel
-   arg[2] = getSerializedLPData(mpsfile)
+   logger.info("Loading '%s' into '%s'\n",model_file,szModel)
+   arg[2] = serialize_byfile(model_file)
    if not (arg[2]) then
-      logger.error("Failed to serialize '%s'\n",mpsfile)       
+      logger.error("Failed to serialize '%s'\n",model_file)       
    end   
    assert(arg[2])
    
@@ -284,7 +368,7 @@ if cmdOptions.loadLPData then
 end
 
 if cmdOptions.optimize then
-   szModel = cmdOptions.szModel or modStack:at(-1)
+   szModel = cmdOptions.szModel or getModelAtRemote(iModel)
    assert(szModel,"\nError: --szModel is required\n")
    local arg={}
    arg[1]=szModel
@@ -305,7 +389,7 @@ if cmdOptions.optimize then
 end
 
 if cmdOptions.solveMIP then
-   szModel = cmdOptions.szModel or modStack:at(-1)
+   szModel = cmdOptions.szModel or getModelAtRemote(iModel)
    assert(szModel,"\nError: --szModel is required\n")
    local arg={}
    arg[1]=szModel
@@ -323,7 +407,7 @@ if cmdOptions.solveMIP then
 end
 
 if cmdOptions.solveGOP then
-   szModel = cmdOptions.szModel or modStack:at(-1)
+   szModel = cmdOptions.szModel or getModelAtRemote(iModel)
    assert(szModel,"\nError: --szModel is required\n")
    local arg={}
    arg[1]=szModel
@@ -341,7 +425,7 @@ if cmdOptions.solveGOP then
 end
 
 if cmdOptions.freeSolutionMemory  then
-   szModel = cmdOptions.szModel or modStack:at(-1)
+   szModel = cmdOptions.szModel or getModelAtRemote(iModel)
    assert(szModel,"\nError: --szModel is required\n")
    local arg={}
    arg[1]=szModel
@@ -359,7 +443,7 @@ if cmdOptions.freeSolutionMemory  then
 end
 
 if cmdOptions.freeSolverMemory then
-   szModel = cmdOptions.szModel or modStack:at(-1)
+   szModel = cmdOptions.szModel or getModelAtRemote(iModel)
    assert(szModel,"\nError: --szModel is required\n")
    local arg={}
    arg[1]=szModel
@@ -378,7 +462,7 @@ end
 
 
 if cmdOptions.getSolution then
-   szModel = cmdOptions.szModel or modStack:at(-1)
+   szModel = cmdOptions.szModel or getModelAtRemote(iModel)
    assert(szModel,"\nError: --szModel is required\n")
    local arg={}
    arg[1]=szModel
@@ -460,7 +544,7 @@ end
 
 if cmdOptions.getInfo then
 -- Request the server to invoke the method 'showModels', with some arguments
-   szModel = cmdOptions.szModel or modStack:at(-1)
+   szModel = cmdOptions.szModel or getModelAtRemote(iModel)
    assert(szModel,"\nError: --szModel is required\n")
    local arg={}
    arg[1]=szModel
@@ -480,7 +564,7 @@ end
 
 if cmdOptions.getModelParameter then
 -- Request the server to invoke the method 'getModelParameter', with some arguments
-   szModel = cmdOptions.szModel or modStack:at(-1)
+   szModel = cmdOptions.szModel or getModelAtRemote(iModel)
    assert(szModel,"\nError: --szModel is required\n")
    local arg={}
    arg[1]=szModel
@@ -501,7 +585,7 @@ end
 
 if cmdOptions.setModelParameter then
 -- Request the server to invoke the method 'setModelParameter', with some arguments
-   szModel = cmdOptions.szModel or modStack:at(-1)
+   szModel = cmdOptions.szModel or getModelAtRemote(iModel)
    assert(szModel,"\nError: --szModel is required\n")
    local arg={}
    arg[1]=szModel

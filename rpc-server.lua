@@ -83,7 +83,7 @@ while run do
           verb=res.result
         end
 
-        if req:find("shutdown") and res.result=='ok' then
+        if req:find("quit") and res.result=='ok' then
           run=false
         end
 
