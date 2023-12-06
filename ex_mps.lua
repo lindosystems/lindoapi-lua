@@ -258,10 +258,10 @@ while ktryenv>0 do
             pModel:wassert(res)
         end
 
-        -- Solve model
-        local res_opt, res_rng
+        -- Solve model        
         local ktrysolv = options.ktrysolv 
         if options.solve then             
+            local res_opt, res_rng
             while ktrysolv>0 do         
                 collectgarbage()       
                 if options.ktrylogf then
@@ -280,14 +280,13 @@ while ktryenv>0 do
                     local pd = pModel:getProgressData()
                     if options.verb>2 then
                         print_table3(pd)
-                    end                    
-                    local last_line = lsi_pdline(pd)
-                    local dgst
+                    end
+                    local pd_line = lsi_pdline(pd)
+                    local dgst_pd = SHA2(pd_line)
+                    local dgst = pModel.utable.ktrylogsha
                     if pModel.utable.lines then
                         local str = table.concat(pModel.utable.lines)                        
                         dgst = SHA2(str)
-                    else
-                        dgst = pModel.utable.ktrylogsha
                     end                                  
                     if log_digests then
                         if dgst then
@@ -296,7 +295,7 @@ while ktryenv>0 do
                             end
                             log_digests[dgst] = log_digests[dgst] + 1  
                             log_digests.total = log_digests.total + 1                  
-                            printf("log.digest: %s  (hits:%d/%d), (last:%s)\n",dgst,log_digests[dgst],log_digests.total,SHA2(last_line))
+                            printf("log.digest: %s  (hits:%d/%d), (last_pd_line.digest:%s)\n",dgst,log_digests[dgst],log_digests.total,dgst_pd)
                             local xdgst = "x:" .. dgst
                             if not log_digests[xdgst] then
                                 log_digests[xdgst] = {}
@@ -317,30 +316,27 @@ while ktryenv>0 do
                         end
                     end                    
 
-                    if options.verb>2 then            
-                        res_opt.padPrimal:printmat(6,nil,12,nil,'.3e')
-                    end                    
+                    -- solution
+                    if res_opt then
+                        if options.verb>2 then print_table3(res_opt) end
+                        if res_opt.padPrimal then
+                            if options.verb>1 then
+                                res_opt.padPrimal:printmat(6,nil,12,nil,'.3e')
+                            end
+                        else
+                            glogger.info("No primal solution\n")
+                        end
+                    end
+                    -- ranges 
+                    if res_rng then
+                        if options.verb>2 then print_table3(res_rng) end
+                        if options.verb>1 then
+                            res_rng.padDec:printmat(6,nil,12,nil,'.3e')
+                        end
+                    end	                    
                 end
             end    
         end    
-
-        if res_rng then
-            if options.verb>2 then print_table3(res_rng) end
-            if options.verb>1 then
-                res_rng.padDec:printmat(6,nil,12,nil,'.3e')
-            end
-        end	
-
-        if res_opt then
-            if options.verb>2 then print_table3(res_opt) end
-            if res_opt.padPrimal then
-                if options.verb>1 then
-                    res_opt.padPrimal:printmat(6,nil,12,nil,'.3e')
-                end
-            else
-                glogger.info("No primal solution\n")
-            end
-        end	
 
         if options.writeas then
             pModel:write(options.writeas)

@@ -12,6 +12,12 @@ local lxs = Lindo.status
 local function check_error(pModel, res, allowed, stop_on_err)
     local stop_on_err = stop_on_err    
     -- Check if res.ErrorCode is in the allowed table              
+    if not res then
+        printf("res is nil\n")
+        traceback()
+        io.read()
+        return
+    end
     if res.ErrorCode == 0 then
         return
     end        
@@ -186,7 +192,7 @@ end
 
 --- Serialize the model instance to a table.
 -- @param pModel The model to serialize.
-local serialize = function(pModel)
+local xserialize = function(pModel)
     local res = pModel:getLPData()
     pModel:wassert(res)
     local arg
@@ -470,6 +476,7 @@ local getProgressData = function(pModel,iLoc)
 end
 
 --- Delete the given model and its user table.
+-- @param pModel The model to delete.
 local delete = function(pModel)
     if pModel then
         if pModel.utable.ktrylogfp then
@@ -487,6 +494,8 @@ local delete = function(pModel)
     end
 end
 
+--- Displays MIP solution for the given model
+-- @param pModel The model to display MIP solution for.
 local disp_mip_sol_report = function(pModel)
     local res    
     local nErr
@@ -547,6 +556,164 @@ local disp_mip_sol_report = function(pModel)
     return t
 end
 
+--- Serialize the model instance to a table.
+-- @param pModel The model to serialize.
+local serialize = function (pModel)
+    if not pModel then
+        return { ErrorCode = Lindo.errors.LSERR_ILLEGAL_NULL_POINTER }    
+    end
+    if pModel.numcons == 0 then
+        return { ErrorCode = Lindo.errors.LSERR_INTERNAL_ERROR }
+    end
+
+    local pnode_list
+    local lp_data, qc_data, var_type
+    
+    -- get model's LP data
+    local pData = pModel:getLPData()    
+    if not pData then
+        print("getLPData returned nil..\n")
+        lp_data = { ErrorCode = Lindo.errors.LSERR_INTERNAL_ERROR }    
+    else
+        pModel:wassert(pData)
+        --print_table3(pData)
+        if pData.pdObjSense then
+            lp_data = {
+                pdObjSense = pData.pdObjSense,
+                pdObjConst = pData.pdObjConst,
+                padC = pData.padC:ser(),
+                padB = pData.padB:ser(),
+                pachConTypes = pData.pachConTypes,
+                paiAcols = pData.paiAcols:ser(),
+                panAcols = pData.panAcols:ser(),
+                padAcoef = pData.padAcoef:ser(),
+                paiArows = pData.paiArows:ser(),
+                padL = pData.padL:ser(),
+                padU = pData.padU:ser(),
+                ErrorCode = pData.ErrorCode
+            }
+        else
+            lp_data = pData
+        end
+    end
+
+    -- get model's QC data
+    local qData = pModel:getQCData()
+    if not qData then
+        glogger.error("getQCData returned nil\n")
+        qc_data = { ErrorCode = Lindo.errors.LSERR_INTERNAL_ERROR }
+    else
+        pModel:wassert(qData)
+        --print_table3(qData)
+        if qData.paiQCcols1 then
+            qc_data = {
+                paiQCcols1 = qData.paiQCcols1:ser(),
+                paiQCcols2 = qData.paiQCcols2:ser(),
+                paiQCrows = qData.paiQCrows:ser(),
+                padQCcoef = qData.padQCcoef:ser(),
+                ErrorCode = qData.ErrorCode
+            }
+        else
+            qc_data = qData
+        end
+    end
+
+    -- get model's variable types
+    local vData = pModel:getVarType()
+    if not vData then
+        glogger.error("getVarType returned nil\n")
+        var_type = { ErrorCode = Lindo.errors.LSERR_INTERNAL_ERROR }
+    else
+        pModel:wassert(vData)
+        --print_table3(vData)
+        if vData.pachVarTypes then
+            var_type = {
+                pachVarTypes = vData.pachVarTypes,
+                ErrorCode = vData.ErrorCode
+            }
+        else
+            var_type = vData
+        end
+    end
+
+    pnode_list = {
+        lp_data = lp_data,
+        var_type = var_type,
+        qc_data = qc_data
+    }
+    print_table3(pnode_list)
+
+    return pnode_list
+end
+
+--- Loads the model data from the given table.
+--- @param pModel The model to load data for.
+--- @param pnode The table containing the data to load.
+--- @param ktype The type of data to load.
+local loadDataNode = function(pModel, pnode, ktype)
+    local res
+    assert(pnode,"\nError: pnode is nil\n")
+    if ktype=='lp_data' then
+        res = pModel:loadLPData(
+            pnode.pdObjSense,
+            pnode.pdObjConst,
+            pnode.padC and xta:fielddes(pnode.padC,"padC","double") or nil,
+            pnode.padB and xta:fielddes(pnode.padB,"padB","double") or nil,               
+            pnode.pachConTypes,               
+            pnode.paiAcols and xta:fielddes(pnode.paiAcols,"paiAcols","int") or nil,
+            pnode.panAcols and xta:fielddes(pnode.panAcols,"panAcols","int") or nil,
+            pnode.padAcoef and xta:fielddes(pnode.padAcoef,"padAcoef","double") or nil,
+            pnode.paiArows and xta:fielddes(pnode.paiArows,"paiArows","int") or nil,
+            pnode.padL and xta:fielddes(pnode.padL,"padL","double") or nil,
+            pnode.padU and xta:fielddes(pnode.padU,"padU","double") or nil   
+            )          
+    elseif ktype=='qc_data' then
+        res = pModel:loadQCData(                        
+            pnode.paiQCcols1 and xta:fielddes(pnode.paiQCcols1,"paiQCcols1","int") or nil,
+            pnode.paiQCcols2 and xta:fielddes(pnode.paiQCcols2,"paiQCcols2","int") or nil,
+            pnode.paiQCrows and xta:fielddes(pnode.paiQCrows,"paiQCrows","int") or nil,
+            pnode.padQCcoef and xta:fielddes(pnode.padQCcoef,"padQCcoef","double") or nil
+            )            
+    elseif ktype=='var_type' then
+        res = pModel:loadVarType(pnode.pachVarTypes)        
+    else
+        printf("Error: ktype=%s not recognized\n",ktype)
+        traceback()
+        res = { ErrorCode = Lindo.errors.LSERR_INTERNAL_ERROR}
+    end
+    pModel:wassert(res)
+    return res
+end
+
+--- Loads the model data from the given table.
+--- @param pModel The model to load data for.
+--- @param pnode_list The table containing the data to load.
+local loadModelDataNodes = function(pModel, pnode_list)
+    local pnode = pnode_list("lp_data")
+    local res = { ErrorCode = Lindo.errors.LSERR_NO_ERROR}    
+    if pnode then
+        local res1 = loadDataNode(pModel, pnode, "lp_data")       
+        if res1.ErrorCode ~= Lindo.errors.LSERR_NO_ERROR then
+            res.ErrorCode = res1.ErrorCode
+        end
+    end
+    pnode = pnode_list("var_type")
+    if pnode then
+        local res1 = loadDataNode(pModel, pnode, "var_type")  
+        if res1.ErrorCode ~= Lindo.errors.LSERR_NO_ERROR then
+            res.ErrorCode = res1.ErrorCode
+        end        
+    end
+    pnode = pnode_list("qc_data")
+    if pnode then
+        local res1 = loadDataNode(pModel, pnode, "qc_data")  
+        if res1.ErrorCode ~= Lindo.errors.LSERR_NO_ERROR then
+            res.ErrorCode = res1.ErrorCode
+        end        
+    end
+    return res
+end
+
 TBmpmodel.disp_mip_sol_report = disp_mip_sol_report
 TBmpmodel.delete = delete
 TBmpmodel.getProgressData = getProgressData
@@ -560,3 +727,6 @@ TBmpmodel.dispstats = dispstats
 TBmpmodel.write = write
 TBmpmodel.serialize = serialize
 TBmpmodel.check_error = check_error
+TBmpmodel.loadModelDataNodes = loadModelDataNodes
+TBmpmodel.loadDataNode = loadDataNode
+TBmpmodel.xserialize = xserialize
