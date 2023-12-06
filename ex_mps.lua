@@ -240,6 +240,9 @@ while ktryenv>0 do
         -- Set callback or logback
         if options.has_cbmip>0 then 
             pModel:setMIPCallback(cbmip)
+            if options.has_cbmip>1 then
+                pModel.utable.lines = {}
+            end
         elseif options.has_cbstd>0 then	
             pModel:setCallback(cbstd)
         end
@@ -263,12 +266,18 @@ while ktryenv>0 do
         if options.solve then             
             local res_opt, res_rng
             while ktrysolv>0 do         
+                local szktryid = sprintf("e%02d_m%02d_s%02d",ktryenv,ktrymod,ktrysolv)
                 collectgarbage()       
                 if options.ktrylogf then
-                    pModel.utable.ktrylogf = sprintf("%s/ktrylogf_%s_e%02d_m%02d_s%02d.log",get_tmp_base(),options.ktrylogf,ktryenv,ktrymod,ktrysolv)
+                    pModel.utable.ktrylogf = sprintf("%s/ktrylogf_%s_%s.log",get_tmp_base(),options.ktrylogf,szktryid)
                     pModel.utable.ktrylogfp = io.open(pModel.utable.ktrylogf,"w")
                 end
-                --pModel.utable.lines = {}            
+                if pModel.utable.lines then
+                    if not pModel.utable.lines[szktryid] then
+                        pModel.utable.lines[szktryid] = {}                        
+                    end
+                    pModel.utable.lines_ktry = pModel.utable.lines[szktryid]
+                end
                 ktrysolv = ktrysolv-1
                 pModel.utable.ktrylogsha = nil
                 res_opt, res_rng = pModel:solve(options)            
@@ -285,9 +294,10 @@ while ktryenv>0 do
                     local dgst_pd = SHA2(pd_line)
                     local dgst = pModel.utable.ktrylogsha
                     if pModel.utable.lines then
-                        local str = table.concat(pModel.utable.lines)                        
+                        local str = table.concat(pModel.utable.lines[szktryid])                        
                         dgst = SHA2(str)
-                    end                                  
+                        glogger.info("Overwriting dgst with %s (cbmip=%d)\n",dgst,options.has_cbmip)
+                    end
                     if log_digests then
                         if dgst then
                             if not log_digests[dgst] then

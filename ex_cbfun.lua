@@ -90,9 +90,9 @@ function cbmip(pModel, dobj, pX, udata)
             pModel.utable.ktrylogsha = SHA2(pModel.utable.ktrylogsha..str)
         end    
 
-        if pModel.utable.lines then
-            if line ~= pModel.utable.lines[#pModel.utable.lines] then
-                pModel.utable.lines[#pModel.utable.lines+1] = line
+        if pModel.utable.lines_ktry then
+            if line ~= pModel.utable.lines_ktry[#pModel.utable.lines_ktry] then
+                pModel.utable.lines_ktry[#pModel.utable.lines_ktry+1] = line
             end
         end
         
