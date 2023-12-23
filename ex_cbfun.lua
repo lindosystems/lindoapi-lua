@@ -35,7 +35,7 @@ function myprintlog(pModel, str)
     if string.len(str)<-2 then
 		io.read()
 	end
-    if pModel.utable.ktrylogfp then
+    if pModel.utable and pModel.utable.ktrylogfp then
         fprintf(pModel.utable.ktrylogfp,"%s",str)
         if not pModel.utable.ktrylogsha then
             pModel.utable.ktrylogsha = ""
