@@ -469,7 +469,7 @@ local getProgressData = function(pModel,iLoc)
     res = pModel:getProgressInfo(iLoc,lxi.LS_IINFO_CUR_ACTIVE_COUNT)
     p.accnt = res and res.pValue or 0    
     
-    res = pModel:getProgressInfo(iLoc,lxi.LS_DINFO_CUR_TIME)
+    res = pModel:getProgressInfo(iLoc,lxi.LS_DINFO_CUR_TIME)    
     p.curtime = res and res.pValue or 0    
 
     return p
