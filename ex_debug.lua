@@ -20,9 +20,10 @@ local function usage()
     print()
     print_default_usage()
     print()
-    print("Usage: lua ex_debug.lua [options]")
+    print("Usage: lslua ex_debug.lua [options]")
     print("Example:")
-    print("\t lua ex_debug.lua -m model.mps [options]")
+    print("\t lslua ex_debug.lua -m model.mps [options]")
+    print("\t lslua ex_debug.lua -m netlibinf/bgdbg1.mps.gz --iis_method=3 --iis_norm=1")
     print()
 end   
 
@@ -71,6 +72,7 @@ if options.has_cblog>0 then
 	pModel.logfun = myprintlog
 	glogger.info("Set a new log function for the model instance\n");
 end	
+pModel.utable = {}
 
 -- Read model from file	
 glogger.info("Reading %s\n",options.model_file)
@@ -102,8 +104,15 @@ if 0>1 then
     print_table3(pModel:setModelIntParameter(pars.LS_IPARAM_IIS_USE_EFILTER,2))
 end    
 
-res=pModel:setModelIntParameter(pars.LS_IPARAM_IIS_METHOD,6)
-pModel:xassert(res)
+if options.iis_method then
+    res=pModel:setModelIntParameter(pars.LS_IPARAM_IIS_METHOD,options.iis_method)
+    pModel:xassert(res)
+end    
+
+if options.iis_norm then
+    res=pModel:setModelIntParameter(pars.LS_IPARAM_IIS_INFEAS_NORM,options.iis_norm)
+    pModel:xassert(res)
+end    
 
 local removed = {}
 while true do
@@ -126,7 +135,7 @@ while true do
             pModel:modifyConstraintType(1,paiCons,"N")
             printf("Removed constraint %d\n",paiCons[1] or -1)
             removed[#removed+1] = paiCons[1]
-            if 2>1 then
+            if options.qa~='yes' then
                 printf("Press enter to reoptimize or q to quit\n")
                 local q = io.read()        
                 if q=='q' then
@@ -139,13 +148,14 @@ while true do
         end
     end
 end    
+printf("Removed constraints: ")
 print_table3(removed)
 if 2>1 then
     for k=1,#removed do
         res = pModel:getConstraintDatai(removed[k])
         print_table3(res)
     end
-    res = pModel:writeMPIFile("c:\\tmp\\prob\\debug.mpi")
+    res = pModel:writeMPIFile("tmp/debug.mpi")
     pModel:xassert(res)
 end
 if 0>1 then
