@@ -16,20 +16,21 @@ local solver
 -- Parse command line arguments
 local function usage()
     print()
-    print("Read a model from a file and optimize or debug.")
+    print("Read a model from a file and optimize or debug.") 
     print()
     print_default_usage()
     print()
     print("Usage: lslua ex_debug.lua [options]")
     print("Example:")
-    print("\t lslua ex_debug.lua -m model.mps [options]")
-    print("\t lslua ex_debug.lua -m netlibinf/bgdbg1.mps.gz --iis_method=3 --iis_norm=1")
+    print("\t lslua ex_debug.lua -m netlibinf/bgdbg1.mps.gz --iis_level=5 --iis_method=3 --iis_norm=1")
     print()
 end   
 
-local short="i:"
+local short=""
 local long={
-    iis_level = "i",
+    iis_level = 1,     
+    iis_method = 1,
+    iis_norm = 1,     
 }
 local options, opts, optarg = parse_options(arg,short,long)
 
@@ -155,8 +156,12 @@ if 2>1 then
         res = pModel:getConstraintDatai(removed[k])
         print_table3(res)
     end
-    res = pModel:writeMPIFile("tmp/debug.mpi")
+    local fname = "tmp/debug.mpi"
+    res = pModel:writeMPIFile(fname)
     pModel:xassert(res)
+    if res.ErrorCode==0 then
+        glogger.info("Exported reduced model to %s\n",fname)
+    end
 end
 if 0>1 then
     res = pModel:getLPVariableDataj(0)
