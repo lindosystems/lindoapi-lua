@@ -86,9 +86,9 @@ function cbmip(pModel, dobj, pX, udata)
             fprintf(pModel.utable.ktrylogfp,"%s",str) 
             if not pModel.utable.ktrylogsha then
                 pModel.utable.ktrylogsha = ""
-            end
-            pModel.utable.ktrylogsha = SHA2(pModel.utable.ktrylogsha..str)
+            end            
         end    
+        pModel.utable.ktrylogsha = SHA2(pModel.utable.ktrylogsha or ""..str)
 
         if pModel.utable.lines_ktry then
             if line ~= pModel.utable.lines_ktry[#pModel.utable.lines_ktry] then
