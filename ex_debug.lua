@@ -148,7 +148,8 @@ while true do
             break
         end
     end
-end    
+end
+
 printf("Removed constraints: ")
 print_table3(removed)
 if 2>1 then
