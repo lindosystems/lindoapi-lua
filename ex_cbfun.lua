@@ -81,14 +81,14 @@ function cbmip(pModel, dobj, pX, udata)
         szerr = "" --pModel:errmsg(res.ErrorCode) or "N/A"
         local line = lsi_pdline(p)
         printf("\n%s %8.2f %10g %s",line,p.curtime,normx,szerr) 
-        if pModel.utable.ktrylogfp then
-            local str = sprintf("\n%s %8.2f %10g %s",line,-99,normx,szerr)
-            fprintf(pModel.utable.ktrylogfp,"%s",str) 
-            if not pModel.utable.ktrylogsha then
-                pModel.utable.ktrylogsha = ""
-            end            
+        local str = sprintf("\n%s %8.2f %10g %s",line,-99,normx,szerr)
+        if pModel.utable.ktrylogfp then            
+            fprintf(pModel.utable.ktrylogfp,"%s",str)            
         end    
-        pModel.utable.ktrylogsha = SHA2(pModel.utable.ktrylogsha or ""..str)
+        if not pModel.utable.ktrylogsha then
+            pModel.utable.ktrylogsha = ""
+        end        
+        pModel.utable.ktrylogsha = SHA2(pModel.utable.ktrylogsha..str)
 
         if pModel.utable.lines_ktry then
             if line ~= pModel.utable.lines_ktry[#pModel.utable.lines_ktry] then
