@@ -57,7 +57,7 @@ function ls_test_solve_mpx()
     local res = pModel:getHess()
     print_table3(res)
     pModel:dispose()
-    printf("%s\n",pModel)
+    printf("%s\n",tostring(pModel))
 end
 
 
