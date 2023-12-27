@@ -76,7 +76,7 @@ local solve = function(pModel, options)
     local has_rng = options and options.has_rng
     local verb = options and options.verb or 0
     local res, res_rng    
-    
+    local has_int = pModel.numint + pModel.numbin + pModel.numsc + pModel.numsets > 0
     if verb>0 then printf("\nSolving %s\n",options and options.model_file or 'current model') end    
     if has_gop then
         res = pModel:solveGOP()
@@ -96,10 +96,16 @@ local solve = function(pModel, options)
        res.pnGOPSolStatus == lxs.LS_STATUS_OPTIMAL or 
        res.pnGOPSolStatus == lxs.LS_STATUS_BASIC_OPTIMAL or 
        res.pnGOPSolStatus == lxs.LS_STATUS_LOCAL_OPTIMAL or 
-       res.pnGOPSolStatus == lxs.LS_STATUS_FEASIBLE then
+       res.pnGOPSolStatus == lxs.LS_STATUS_FEASIBLE then        
         local res_
-        if res.pnMIPSolStatus then
-            res_ = pModel:getMIPPrimalSolution()
+        if res.pnGOPSolStatus then
+            if has_int then
+                res_ = pModel:getMIPPrimalSolution()
+            else
+                res_ = pModel:getPrimalSolution()
+            end   
+        elseif res.pnMIPSolStatus then
+            res_ = pModel:getMIPPrimalSolution()                     
         elseif res.pnSolStatus then
             res_ = pModel:getPrimalSolution()
             if has_rng and not has_gop then
