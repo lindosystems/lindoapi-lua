@@ -12,13 +12,8 @@ Clone this repository to install lindoapi-lua.
    git clone https://github.com/your-username/lindoapi-lua.git
    ```     
 
-Make sure to have LINDO API installed on your system. If you haven't already, follow this link to download and install
+Make sure to have LINDO API installed on your system. If you haven't already, click [here](https://www.lindo.com/index.php/ls-downloads/try-lindo-api) to download and install the latest version.
 
-    
-    https://www.lindo.com/index.php/ls-downloads/try-lindo-api
-    
-
-## Documentation
 
 For more detailed information on LINDO API, please refer to the official LINDO API user-manual and Appendix on Lua.
 
