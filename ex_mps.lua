@@ -167,20 +167,7 @@ while ktryenv>0 do
     local jsec = xta:jsec(ymd,hms)
     glogger.info("Timestamp: %06d-%06d jsec:%d\n",ymd,hms,jsec)
     local res
-    if options.xuserdll then
-        local xuserdll = options.xuserdll 
-        if not xuserdll:find(".dll") and not xuserdll:find(".so") and not xuserdll:find(".dylib") then
-            xuserdll = "j:\\usr2\\LINGO\\64_20\\MyUser.dll"        
-        end
-        res = solver:setXSolverLibrary(94,xuserdll)
-        solver:xassert(res)
-    end
-
-    if options.xsolver>0 then
-        local xdll = options.xdll 
-        res = solver:setXSolverLibrary(options.xsolver,xdll)
-        solver:xassert(res)
-    end
+    apply_solver_options(solver,options)
 
     if options.ktrylogf then
         local flist = paths.files(get_tmp_base(),function(file) return file:find(options.ktrylogf) and not file:find("~") end)
