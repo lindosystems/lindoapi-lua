@@ -6,11 +6,17 @@ Using scripting languages like Lua simplifies the process of prototyping ideas a
 
 ## Installation
 
-To use **lindoapi-lua**, you need to have the LINDO API installed on your system. If you haven't already, follow the installation instructions in LINDO API user manual.
+Clone this repository to install lindoapi-lua.
 
    ```bash
    git clone https://github.com/your-username/lindoapi-lua.git
    ```     
+
+Make sure to have LINDO API installed on your system. If you haven't already, follow this link to download and install
+
+    
+    https://www.lindo.com/index.php/ls-downloads/try-lindo-api
+    
 
 ## Documentation
 
