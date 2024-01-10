@@ -3,6 +3,7 @@ local lxp = Lindo.parameters
 local lxe = Lindo.errors
 local lxi = Lindo.info
 local lxs = Lindo.status
+local lom = Lindo.OptMethod 
 
 --- Checks the result object 'res' with respect to Lindo API's error base.
 -- @param pModel The model object.
@@ -438,6 +439,11 @@ local set_params_user = function(pModel, options)
 
     if options.dprice then
         res = pModel:setModelIntParameter(pars.LS_IPARAM_SPLEX_DPRICING,options.dprice)        
+    end
+
+    if options.multis then
+        res = pModel:setModelIntParameter(pars.LS_IPARAM_NLP_MAXLOCALSEARCH,options.multis)       
+        res = pModel:setModelIntParameter(pars.LS_IPARAM_NLP_SOLVER,Lindo.NLPOptMethod.LS_NMETHOD_MSW_GRG)
     end
 end
 

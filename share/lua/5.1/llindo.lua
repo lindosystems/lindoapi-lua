@@ -1637,6 +1637,34 @@ Lindo.info =
 
 }
 
+Lindo.OptMethod = 
+{
+   LS_METHOD_FREE                           = 0,
+   LS_METHOD_PSIMPLEX                       = 1,
+   LS_METHOD_DSIMPLEX                       = 2,
+   LS_METHOD_BARRIER                        = 3,
+   LS_METHOD_NLP                            = 4,
+   LS_METHOD_MIP                            = 5,
+   LS_METHOD_MULTIS                         = 6,
+   LS_METHOD_GOP                            = 7,
+   LS_METHOD_IIS                            = 8,
+   LS_METHOD_IUS                            = 9,
+   LS_METHOD_SBD                            = 10,
+   LS_METHOD_SPRINT                         = 11,
+   LS_METHOD_GA                             = 12,
+   LS_METHOD_FILELP                         = 13
+}
+
+Lindo.NLPOptMethod = 
+{
+  LS_NMETHOD_FREE                           = 4,
+  LS_NMETHOD_LSQ                            = 5,
+  LS_NMETHOD_QP                             = 6,
+  LS_NMETHOD_CONOPT                         = 7,
+  LS_NMETHOD_SLP                            = 8,
+  LS_NMETHOD_MSW_GRG                        = 9,
+  LS_NMETHOD_IPOPT                          = 10
+}
 
 Lindo.serialize_byfile = function (mpsfile)
     local yysolver = nil
