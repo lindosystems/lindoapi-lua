@@ -209,6 +209,10 @@ function gen_sort(options)
     addString(sbuf, sprintf("END\n"))
     local str = toString(sbuf)
     pModel:readMPXStream(str)
+
+    fwrite(file, "w", str)        
+    glogger.info("Wrote model to %s\n", file)    
+
     if options.solve then
         res = pModel:solveGOP()
         print_table3(res)
@@ -222,10 +226,6 @@ function gen_sort(options)
         end
     end
     
-    
-    fwrite(file, "w", str)        
-    glogger.info("Wrote model to %s\n", file)    
-
     if options.writeas then
         assert(options.writeas=='mpi',"Only MPI format is supported")
         options.model_file = changeFileExtension(file,".mpi")
