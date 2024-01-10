@@ -274,6 +274,8 @@ end
 options.verb = math.max(options.verb and options.verb or 1, 2)
 
 solver = xta:solver()
+apply_solver_options(solver,options)
+
 gen_sort(options)
 printf("Disposing %s\n",tostring(solver))  
 solver:dispose()
