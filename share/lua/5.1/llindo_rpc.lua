@@ -364,11 +364,11 @@ local remote_procedures = {
       if not pModel then
         logger.warn("getInfo: model '%s' does not exist\n",szModel);
         return false, -1
-      end
+      end      
       local key = args[2]      
       local res
       if Lindo.info[key] then
-        res = pModel:getInfo(Lindo.info[key])
+        res = pModel:getInfo(Lindo.info[key])        
       else
         logger.warn("getInfo: invalid key '%s'\n",key)
         return false,errs.LSERR_INVALID_INPUT
