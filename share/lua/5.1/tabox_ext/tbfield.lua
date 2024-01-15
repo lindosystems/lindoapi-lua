@@ -257,3 +257,17 @@ TBfield.find = function(f1,val)
   end  
   return fidx  
 end
+
+TBfield.histogramsc = function(v)
+  assert(v:isfield())
+  assert(v.type~='string')
+  local vmin = math.floor(v:getmin())
+  local vmax = math.ceil(v:getmax())
+  local hrange = math.max(math.abs(vmin),math.abs(vmax))
+  local nbins = 2*hrange
+  if xta.debugmode>0 then
+    printf("%s: min=%g, max=%g, hrange=%g\n",title,vmin,vmax,hrange)
+  end  
+  local ht  = v:histogram(nbins,-hrange,hrange)
+  return ht
+end
