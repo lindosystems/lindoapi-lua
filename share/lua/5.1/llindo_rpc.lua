@@ -53,8 +53,8 @@ local remote_procedures = {
     end,
 
     quit = function(args)
-        logger.debug("'quit()' was called, acting with following args:\n")
-        for k,v in pairs(args) do logger.debug("%s = %s\n",k,v) end
+        logger.info("'quit()' was called, acting with following args:\n")
+        for k,v in pairs(args) do logger.info("%s = %s\n",k,v) end
         return true, "ok"
     end,
     
