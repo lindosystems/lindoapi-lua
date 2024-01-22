@@ -101,13 +101,17 @@ if 0>1 then
   os.exit(1)
 end
 
+-- Initialize the options
 local cmdOptions={}
 cmdOptions.ping = 0
+cmdOptions.verb = nil
+
 if #arg==0 then 
   default_usage()
   cmdOptions.ping=1; 
 end  
 
+-- Parse the options
 for i, k in pairs(opts) do
   local v = optarg[i]
   if k=='rpcserver' then cmdOptions.rpcserver=v
@@ -130,7 +134,7 @@ for i, k in pairs(opts) do
   elseif k=='getModelParameter' then cmdOptions.getModelParameter = tonumber(v) or pars[v]
   elseif k=='showModels' then cmdOptions.showModels = true
   elseif k=='showEnvs' then cmdOptions.showEnvs = true
-  elseif k=='verb' then cmdOptions.verb = tonumber(v)
+  elseif k=='verb' or k =='v' then cmdOptions.verb = tonumber(v)
   elseif k=='quit' or k =='q' then cmdOptions.quit = true
   elseif k=='lsmajor' then lsmajor = tonumber(v)
   elseif k=='lsminor' then lsminor = tonumber(v)
@@ -244,11 +248,13 @@ if cmdOptions.quit then
   local request = jsonrpc.encode_rpc(jsonrpc.request, "quit", {arg1=1, arg2=2})
   logger.info("Sending quit request: %s\n" , request)
   requester:send(request)
+  local response = requester:recv()
+  logger.info("Received response: %s\n" , response )    
   return 
 end
 
 if cmdOptions.verb then -- 
-  -- Now request a non-available method
+  -- Now request a non-available method    
     local request = jsonrpc.encode_rpc(jsonrpc.request, "verb", {cmdOptions.verb})
     logger.info("Sending request: %s\n" , request)
     requester:send(request)

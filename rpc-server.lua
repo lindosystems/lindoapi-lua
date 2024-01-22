@@ -81,6 +81,7 @@ while run do
 
         if req:find("verb") and res.result then
           verb=res.result
+          glogger.debug("Verb set to "..verb)
         end
 
         if req:find("quit") and res.result=='ok' then
