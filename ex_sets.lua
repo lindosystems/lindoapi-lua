@@ -411,7 +411,7 @@ if options.nsemicont>0 then
   for k=1,#sc_list do
     local i = sc_list[k]
     local x_i = res_opt.padPrimal[i+1]
-    assert(x_i>reps or x_i<-resp)    
+    assert(x_i>reps or x_i<-reps)    
     lb_sc[k]=x_i
     ub_sc[k]=x_i*10
   end
@@ -423,29 +423,31 @@ if options.nsemicont>0 then
   if options.verb>0 then
     printf("Adding %d semi-cont vars\n",#sc_list)
   end
-  if 2>1 then
-    print_table3(sc_list)
-    local sc_type = string.rep("S",#sc_list)
-    res = pModel:modifyLowerBounds(#sc_list,sc_vars,lb_sc)  
-    pModel:xassert(res)
-    res= pModel:modifyUpperBounds(#sc_list,sc_vars,ub_sc)    
-    pModel:xassert(res)
-    local bytes = {}
-    for k=1,nvars do
-      table.insert(bytes,"C")
+  if pModel.numsc==0 then
+    if 1>0 then
+      print_table3(sc_list)
+      local sc_type = string.rep("S",#sc_list)
+      res = pModel:modifyLowerBounds(#sc_list,sc_vars,lb_sc)  
+      pModel:xassert(res)
+      res= pModel:modifyUpperBounds(#sc_list,sc_vars,ub_sc)    
+      pModel:xassert(res)
+      local bytes = {}
+      for k=1,nvars do
+        table.insert(bytes,"C")
+      end
+      for k=1,#sc_list do
+        local i = sc_list[k]+1
+        bytes[i]="S"
+      end      
+      local var_type = table.concat(bytes)
+      local var_idx = xta:field(nvars,'var_idx','integer')
+      --res = pModel:modifyVarType(#sc_list,sc_vars,sc_type)
+      res = pModel:loadVarType(var_type)
+      pModel:xassert(res)    
+    else
+      res = pModel:loadSemiContData(#sc_list,sc_vars,lb_sc,ub_sc)    
+      pModel:xassert(res)
     end
-    for k=1,#sc_list do
-      local i = sc_list[k]+1
-      bytes[i]="S"
-    end      
-    local var_type = table.concat(bytes)
-    local var_idx = xta:field(nvars,'var_idx','integer')
-    --res = pModel:modifyVarType(#sc_list,sc_vars,sc_type)
-    res = pModel:loadVarType(var_type)
-    pModel:xassert(res)    
-  else
-    res = pModel:loadSemiContData(#sc_list,sc_vars,lb_sc,ub_sc)    
-    pModel:xassert(res)
   end
   
   if options.verb>2 then print_table3(res) end
