@@ -1,3 +1,4 @@
+#!/usr/bin/env lslua
 -- File: ex_sets.lua
 -- Description: Example of adding (randomized) SETS (sos1/sos2/sos3) to models.
 -- Author: mka
@@ -11,6 +12,8 @@ local status = Lindo.status
 require 'ex_cbfun'
 require 'llindo_usage'
 local solver
+local verb
+local options, opts, optarg
 
 ---
 --
@@ -110,26 +113,37 @@ end
 --- Build the index set of candidate variables to be added to the model as 'sets'
 ---@param res_opt any
 ---@param res_rng any
-function ls_build_var_list(res_opt, res_rng)
-  local idx = {}
+function ls_build_var_list(res_opt, res_rng, prob)
+  local prob = prob or 0.4
+  local varlist = {}
   if res_rng then
     for k=1,res_opt.padPrimal.len do
       local flag = res_opt.padPrimal[k]>0 and (res_rng.padDec[k]>0 and res_rng.padDec[k]<1e30 or res_rng.padInc[k]>0 and res_rng.padInc[k]<1e30)
       if flag then
-        printf("%3d %10g %10g %10g %s\n",k,res_opt.padPrimal[k],res_rng.padDec[k],res_rng.padInc[k],"*")
-        table.insert(idx,k)
+        if options.verb>1 then
+          printf("%3d %10g %10g %10g %s\n",k,res_opt.padPrimal[k],res_rng.padDec[k],res_rng.padInc[k],"*")
+        end
+        table.insert(varlist,k)
       end
     end
   else
     for k=1,res_opt.padPrimal.len do
-      local flag = res_opt.padPrimal[k]>0 or math.random(0,1)>0.4
+      local flag 
+      if prob>0 then
+        flag = math.random(0,1)>prob
+      end
+      if res_opt.padPrimal[k]>0 then
+        flag = true
+      end
       if flag then
-        printf("%3d %10g %s\n",k,res_opt.padPrimal[k],"*")
-        table.insert(idx,k)
+        if options.verb>1 then
+          printf("%3d %10g %s\n",k,res_opt.padPrimal[k],"*")
+        end
+        table.insert(varlist,k)
       end
     end    
   end
-  return idx
+  return varlist
 end
 
 --- func desc
@@ -231,7 +245,7 @@ local function usage()
     print("    , --disp_sets                Display set/sc data")
     print("    , --addsets_mask=INTEGER     An integer mask to specify how to add sets")        
     print("    , --nsets=INTEGER            Set number of sets to 'INTEGER'")        
-    print("    , --settype=INTEGER          Set set-type to 'INTEGER'")        
+    print("    , --nsemicont=INTEGER        Set number of semi-cont vars to 'INTEGER'")        
     print("    , --max_sk=INTEGER           Set maximum set-size to 'INTEGER'")        
     print("    , --min_sk=INTEGER           Set minimum set-size to 'INTEGER'")     
     
@@ -240,14 +254,15 @@ end
 
 local long = {      
     nsets = 1,
-    settype = 1,
+    nsemicont = 1,
     max_sk = 1,
     min_sk = 1,
     disp_sets = 0,
-    addsets_mask = 1
+    addsets_mask = 1,
+    max = 0
 }
 local short = ""
-local options, opts, optarg = parse_options(arg,short,long)
+options, opts, optarg = parse_options(arg,short,long)
 
 -- parse app specific options
 for i, k in pairs(opts) do
@@ -255,15 +270,16 @@ for i, k in pairs(opts) do
     if k=="disp_sets" then options.disp_sets=true end
     if k=="addsets_mask" then options.addsets_mask = tonumber(v) end    
     if k=="nsets" then options.nsets=tonumber(v) end
-    if k=="settype" then options.settype=tonumber(v) end
+    if k=="nsemicont" then options.nsemicont=tonumber(v) end
     if k=='max_sk' then options.max_sk=tonumber(v) end
     if k=='min_sk' then options.min_sk=tonumber(v) end
+    if k=='max' then options.max=true end
 end
 
 options.disp_sets = options.disp_sets or false
 options.addsets_mask = options.addsets_mask or 0
 options.nsets = options.nsets or 3 
-options.settype = options.settype or 2
+options.nsemicont = options.nsemicont or 0
 options.min_sk = options.min_sk or 3
 options.max_sk = options.max_sk or 20
 options.verb = options.verb or 0
@@ -293,11 +309,19 @@ if options.has_cblog>0 then
 	pModel.logfun = myprintlog
 	printf("Set a new log function for the model instance\n");
 end	
+-- set options and utable
+pModel:set_params_user(options)  
+assert(pModel.utable.counter)
 
 -- Read model from file	
 printf("Reading %s\n",options.model_file)
 local nErr = pModel:readfile(options.model_file,0)
 pModel:xassert({ErrorCode=nErr})
+
+if options.max then    
+  pModel:setModelIntParameter(pars.LS_IPARAM_OBJSENSE,-1)
+  printf("Set model sense to maximize (%d)\n",-1)
+end
 
 -- Set callback or logback
 if options.has_cbmip>0 then 
@@ -329,57 +353,135 @@ if res_opt then
     else
         printf("No primal solution\n")
     end
-end	
+end
+
+if options.sol then
+  local solfile = changeFileExtension(options.model_file,".sol")
+  res = pModel:writesol(solfile,nil,1)
+  pModel:wassert(res)
+end
 
 -- Build candidate variables to go into sets
-local idx, t_sets
+local varlist, t_sets
 if options.addsets_mask>0 then
   -- Add random sets
-  idx = ls_build_var_list(res_opt,res_rng)
-  assert(idx and #idx>0)
+  varlist = ls_build_var_list(res_opt,res_rng)
+  assert(varlist and #varlist>0)
   t_sets = {}
 end
 
-
+local settype
 if hasbit(options.addsets_mask,bit(1)) then --addset=+1
   settype = 1 -- SOS1
-  t_sets, idx = ls_gen_random_sets(pModel,idx,settype,options,t_sets)
+  t_sets, varlist = ls_gen_random_sets(pModel,varlist,settype,options,t_sets)
 end
 
 if hasbit(options.addsets_mask,bit(2)) then --addset=+2
   settype = 2 -- SOS2
-  t_sets, idx = ls_gen_random_sets(pModel,idx,settype,options,t_sets)
+  t_sets, varlist = ls_gen_random_sets(pModel,varlist,settype,options,t_sets)
 end
 
 if hasbit(options.addsets_mask,bit(3)) then --addset=+4
   settype = 3 -- SOS3
-  t_sets, idx = ls_gen_random_sets(pModel,idx,settype,options,t_sets)
+  t_sets, varlist = ls_gen_random_sets(pModel,varlist,settype,options,t_sets)
 end
 
 if hasbit(options.addsets_mask,bit(4)) then --addset=+8
   settype = 4 -- CARD
-  t_sets, idx = ls_gen_random_sets(pModel,idx,settype,options,t_sets)
+  t_sets, varlist = ls_gen_random_sets(pModel,varlist,settype,options,t_sets)
+end
+
+local sc_list
+local seed = options.seed
+
+if options.nsemicont>0 then  
+  -- Add random semi-cont vars
+  local nsemicont = options.nsemicont
+  local varlist = ls_build_var_list(res_opt,res_rng,0.0)  
+  local varorder = xta:randperm(#varlist,seed)
+  local nvars = pModel.numvars
+  sc_list = {}
+  for k=1,nsemicont do
+    local i = varlist[varorder[k]]
+    table.insert(sc_list,i-1)
+  end
+  local lb_sc = xta:field(#sc_list,'lb_sc','double')
+  local ub_sc = xta:field(#sc_list,'ub_sc','double')
+  local reps = 1e-5
+  for k=1,#sc_list do
+    local i = sc_list[k]
+    local x_i = res_opt.padPrimal[i+1]
+    assert(x_i>reps or x_i<-resp)    
+    lb_sc[k]=x_i
+    ub_sc[k]=x_i*10
+  end
+  local sc_vars = xta:field(sc_list,'paiVarndx','integer')
+  lb_sc:printmat()
+  ub_sc:printmat()    
+  sc_vars:printmat()
+  local res 
+  if options.verb>0 then
+    printf("Adding %d semi-cont vars\n",#sc_list)
+  end
+  if 2>1 then
+    print_table3(sc_list)
+    local sc_type = string.rep("S",#sc_list)
+    res = pModel:modifyLowerBounds(#sc_list,sc_vars,lb_sc)  
+    pModel:xassert(res)
+    res= pModel:modifyUpperBounds(#sc_list,sc_vars,ub_sc)    
+    pModel:xassert(res)
+    local bytes = {}
+    for k=1,nvars do
+      table.insert(bytes,"C")
+    end
+    for k=1,#sc_list do
+      local i = sc_list[k]+1
+      bytes[i]="S"
+    end      
+    local var_type = table.concat(bytes)
+    local var_idx = xta:field(nvars,'var_idx','integer')
+    --res = pModel:modifyVarType(#sc_list,sc_vars,sc_type)
+    res = pModel:loadVarType(var_type)
+    pModel:xassert(res)    
+  else
+    res = pModel:loadSemiContData(#sc_list,sc_vars,lb_sc,ub_sc)    
+    pModel:xassert(res)
+  end
+  
+  if options.verb>2 then print_table3(res) end
 end
 
 if options.addsets_mask>0 then  
   res = ls_load_sets(pModel, t_sets)
   pModel:xassert(res)
   if options.verb>2 then print_table3(res) end
-  pModel.utable = options
-  res = pModel:setMIPCallback(cbmip)
-  pModel:xassert(res)
-  
-  pModel:dispstats()
-  
-  options.has_rng = false
-  res_opt, _ = pModel:solve(options)
-  pModel:wassert(res_opt)
-  if verb>2 then print_table3(res_opt) end    
-  if res_opt.pnMIPSolStatus~=status.LS_STATUS_INFEASIBLE then
-    options.writeas='mps'    
-  else
-    printf("No MIP solution, cannot write MPS file\n")      
-  end  
+end
+
+
+if options.nsemicont > 0 or options.addsets_mask > 0 then
+    --res = pModel:setMIPCallback(cbmip)
+    --pModel:xassert(res)
+    pModel:dispstats()
+    options.has_rng = false
+    printf("Re-solving model with new sets/sc\n")
+    res_opt, _ = pModel:solve(options)
+    pModel:wassert(res_opt)
+    if verb > 2 then
+        print_table3(res_opt)
+    end
+    if res_opt.pnMIPSolStatus ~= status.LS_STATUS_INFEASIBLE then
+      if options.writeas then
+        options.writeas = 'mps'
+      end
+    else
+        printf("No MIP solution, cannot write MPS file\n")
+    end
+    for k=1,#sc_list do
+      local i = sc_list[k]
+      res = pModel:getLPVariableDataj(i)
+      print_table3(res)      
+    end
+    print()
 end
 
 if options.writeas then

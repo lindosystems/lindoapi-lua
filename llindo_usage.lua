@@ -142,7 +142,8 @@ local long_default = {
     dprice = 1,
     lp=0,
     method = 1,
-    qa = 1
+    qa = 1,
+    sol = 0,
 }
 local short_default = "m:hv:w:M:I:p:s:f:x:"
 
@@ -223,6 +224,7 @@ function parse_options(arg,short,long)
     options.qa = nil
     options.multis = nil
     options.llogger = 'info'
+    options.sol = nil
     for k,v in pairs(long) do
         if not options[k] then 
             options[k] = nil
@@ -288,6 +290,7 @@ function parse_options(arg,short,long)
         elseif k=="iis_norm" then options.iis_norm=tonumber(v)              
         elseif k=="iis_level" then options.iis_level=tonumber(v)
         elseif k=="qa" then options.qa=v
+        elseif k=="sol" then options.sol=true
         else
             printf("Unknown option '%s'\n",k)
             options.help=true

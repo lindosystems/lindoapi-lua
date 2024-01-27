@@ -5,6 +5,10 @@ local lxi = Lindo.info
 local lxs = Lindo.status
 local lom = Lindo.OptMethod 
 
+function res_ok(res)
+    return res and res.ErrorCode==0
+end
+
 --- Checks the result object 'res' with respect to Lindo API's error base.
 -- @param pModel The model object.
 -- @param res The result object.
@@ -81,9 +85,9 @@ local solve = function(pModel, options)
     if verb>0 then printf("\nSolving %s\n",options and options.model_file or 'current model') end    
     if has_gop then
         res = pModel:solveGOP()
-    elseif pModel.numint + pModel.numbin + pModel.numsc + pModel.numsets > 0 and not options.lp then
+    elseif pModel.numint + pModel.numbin + pModel.numsc + pModel.numsets > 0 and not options.lp then        
         res = pModel:solveMIP()
-    else
+    else        
         res = pModel:optimize(options.method)
     end    
     if verb>2 then print_table3(res) end
@@ -726,6 +730,34 @@ local loadModelDataNodes = function(pModel, pnode_list)
     return res
 end
 
+--- Writes the solution to a file.
+--- @param pModel The model to write the solution for.
+--- @param solfile The name of the file to write the solution to.
+--- @param format The format to write the solution in. Defaults to nil. 
+--- Possible values are:
+---  0: LS_SOLUTION_OPT                     0
+---  1: LS_SOLUTION_MIP                     1
+---  2: LS_SOLUTION_OPT_IPM                 2
+---  3: LS_SOLUTION_OPT_OLD                 3
+---  4: LS_SOLUTION_MIP_OLD                 4
+--- @return res The result of writing the solution to a file.
+local writesol = function(pModel,solfile,format,verb)    
+    local res
+    if not format then
+        res = pModel:writeSolution(solfile)
+    else
+        res = pModel:writeSolutionOfType(solfile,format)
+    end
+    if verb  then
+        if res_ok(res) then
+            printf("Solution written to '%s'\n",solfile)
+        else
+            printf("Error %d: %s\n",res.ErrorCode,pModel:errmsg(res.ErrorCode) or "N/A")
+        end
+    end
+    return res
+end
+
 TBmpmodel.disp_mip_sol_report = disp_mip_sol_report
 TBmpmodel.delete = delete
 TBmpmodel.getProgressData = getProgressData
@@ -742,3 +774,4 @@ TBmpmodel.check_error = check_error
 TBmpmodel.loadModelDataNodes = loadModelDataNodes
 TBmpmodel.loadDataNode = loadDataNode
 TBmpmodel.xserialize = xserialize
+TBmpmodel.writesol = writesol

@@ -1,3 +1,4 @@
+#!/usr/bin/env lslua
 -- File: ex_mps.lua
 -- Description: Example of reading a model from an MPS file and optimizing it.
 -- Author: mka
@@ -186,7 +187,7 @@ while ktryenv>0 do
     while ktrymod > 0 do
         ktrymod = ktrymod-1
         -- New model instance
-        local pModel = solver:mpmodel()
+        local pModel = solver:mpmodel()        
         assert(pModel,"\n\nError: failed create a model instance.\n")
         glogger.info("Created a new model instance\n");
         pModel.usercalc=xta.const.size_max
@@ -339,6 +340,12 @@ while ktryenv>0 do
 
         if options.writeas then
             pModel:write(options.writeas)
+        end
+
+        if options.sol then
+            local solfile = changeFileExtension(options.model_file,".sol")
+            res = pModel:writesol(solfile,options.verb)
+            pModel:wassert(res)
         end
 
         pModel:delete()        
