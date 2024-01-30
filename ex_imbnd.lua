@@ -347,7 +347,7 @@ if options.solve then
 	--yModel:setModelIntParameter(pars.LS_IPARAM_MIP_PRINTLEVEL,2)
 	yModel:setModelIntParameter(pars.LS_IPARAM_LP_PRINTLEVEL,2)
 	printf("Solving %s\n",model_file)	
-	local res_opt, res_rng = yModel:solve({has_gop=false,has_rng=false})
+	local res_opt, res_rng = yModel:solve({has_gop=false,ranges=nil})
 	if res_rng then
 		print_table3(res_rng)
 		if verb>1 then

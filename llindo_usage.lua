@@ -46,7 +46,7 @@ function print_default_usage()
     print("    , --cbstd=VALUE              User std-callback on/off (1/0)")
     print("    , --gop                      Use gop solver")
     print("    , --multis=VALUE             Use multistart solver with 'VALUE' multi starts")
-    print("    , --rng                      Compute bound ranges analysis")
+    print("    , --ranges=STRING            Compute range analysis, possible values are 'bounds', 'obj', etc..")
     print("    , --writeas=EXT              Write model to a file with extension 'EXT'")
     print("  -M, --lindomajor=INTEGER       Lindo api major version to use")
     print("  -I, --lindominor=INTEGER       Lindo api minor version to use")    
@@ -102,7 +102,7 @@ local long_default = {
     cblog = 1,
     cbstd = 1,
     gop = 0,    
-    rng = 0,
+    ranges = 1,
     writeas = "w",
     lindomajor = "M", 
     lindominor = "I",
@@ -172,7 +172,7 @@ function parse_options(arg,short,long)
     options.has_cbstd = 0
     options.has_cblog = 1
     options.has_gop   = false
-    options.has_rng = false
+    options.ranges = nil
     options.writeas = nil
     options.lindomajor = 14
     options.lindominor = 0
@@ -254,7 +254,7 @@ function parse_options(arg,short,long)
         elseif k=="cblog" then options.has_cblog=tonumber(v)
         elseif k=="gop" then options.has_gop=true
         elseif k=="multis" then options.multis=tonumber(v)
-        elseif k=="ranges" then options.has_rng=true
+        elseif k=="ranges" then options.ranges=v
         elseif k=="seed" then options.seed=tonumber(v)
         elseif k=="max" then options.max=true        
         elseif k=="ilim" then options.ilim=tonumber(v)

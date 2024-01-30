@@ -115,8 +115,9 @@ end
 ---@param res_rng any
 function ls_build_var_list(res_opt, res_rng, prob)
   local prob = prob or 0.4
-  local varlist = {}
-  if res_rng then
+  local varlist = {}  
+  if res_rng and res_rng.bounds then    
+    local res_rng = res_rng.bounds
     for k=1,res_opt.padPrimal.len do
       local flag = res_opt.padPrimal[k]>0 and (res_rng.padDec[k]>0 and res_rng.padDec[k]<1e30 or res_rng.padInc[k]>0 and res_rng.padInc[k]<1e30)
       if flag then
@@ -336,12 +337,12 @@ if options.disp_sets then
 end	
 
 -- Solve model
-options.has_rng = true
+options.ranges = "bounds"
 local res_opt, res_rng = pModel:solve(options)
 if res_rng then
     if options.verb>2 then print_table3(res_rng) end
     if options.verb>1 then
-        res_rng.padDec:printmat(6,nil,12,nil,'.3e')
+        res_rng.bounds.padDec:printmat(6,nil,12,nil,'.3e')
     end
 end	
 if res_opt then
@@ -464,7 +465,7 @@ if options.nsemicont > 0 or options.addsets_mask > 0 then
     --res = pModel:setMIPCallback(cbmip)
     --pModel:xassert(res)
     pModel:dispstats()
-    options.has_rng = false
+    options.ranges = nil
     printf("Re-solving model with new sets/sc\n")
     res_opt, _ = pModel:solve(options)
     pModel:wassert(res_opt)

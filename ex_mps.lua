@@ -331,7 +331,11 @@ while ktryenv>0 do
                     if res_rng then
                         if options.verb>2 then print_table3(res_rng) end
                         if options.verb>1 then
-                            res_rng.padDec:printmat(6,nil,12,nil,'.3e')
+                            for ktype,v in pairs(res_rng) do
+                                printf("Range %s:\n", ktype)
+                                v.padDec:printmat(6,nil,12,nil,'.3e')
+                                v.padInc:printmat(6,nil,12,nil,'.3e')
+                            end                            
                         end
                     end	                    
                 end
