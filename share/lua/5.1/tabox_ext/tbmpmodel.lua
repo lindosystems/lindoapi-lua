@@ -81,14 +81,14 @@ local solve = function(pModel, options)
     local ranges = options and options.ranges
     local verb = options and options.verb or 0
     local res, res_rng    
-    local has_int = pModel.numint + pModel.numbin + pModel.numsc + pModel.numsets > 0
+    local has_int = pModel.numint + pModel.numbin + pModel.numsc + pModel.numsets > 0 
     if ranges then
         res_rng = {} --initiate ranges output
     end
     if verb>0 then printf("\nSolving %s\n",options and options.model_file or 'current model') end    
     if has_gop then
         res = pModel:solveGOP()
-    elseif pModel.numint + pModel.numbin + pModel.numsc + pModel.numsets > 0 and not options.lp then        
+    elseif has_int and not options.lp then        
         res = pModel:solveMIP()
     else        
         res = pModel:optimize(options.method)
