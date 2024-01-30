@@ -71,17 +71,20 @@ end
 -- @param pModel The model to solve.
 -- @param options A table containing the following fields:
 --   - has_gop (boolean, optional): Whether the model has global optimization. Defaults to false.
---   - has_rng (boolean, optional): Whether to compute bound ranges. Defaults to false.
+--   - ranges (string, optional): List of range types to compute
 --   - verb (number, optional): The level of verbosity. Defaults to 0.
 --   - model_file (string, optional): The name of the file to solve. If not specified, the current model is used.
 -- @return res The result of solving the model.
--- @return res_rng The result of computing bound ranges, if has_rng is true.
+-- @return res_rng The result of range computations, for a given range type.
 local solve = function(pModel, options)
     local has_gop = options and options.has_gop
-    local has_rng = options and options.has_rng
+    local ranges = options and options.ranges
     local verb = options and options.verb or 0
     local res, res_rng    
     local has_int = pModel.numint + pModel.numbin + pModel.numsc + pModel.numsets > 0
+    if ranges then
+        res_rng = {} --initiate ranges output
+    end
     if verb>0 then printf("\nSolving %s\n",options and options.model_file or 'current model') end    
     if has_gop then
         res = pModel:solveGOP()
@@ -113,8 +116,28 @@ local solve = function(pModel, options)
             res_ = pModel:getMIPPrimalSolution()                     
         elseif res.pnSolStatus then
             res_ = pModel:getPrimalSolution()
-            if has_rng and not has_gop then
-                res_rng = pModel:getBoundRanges()
+            if ranges and not has_gop then
+                if ranges:find("bounds") or ranges:find("all") then
+                    local rng_ = pModel:getBoundRanges()
+                    if verb>2 then
+                        print_table3(rng_)
+                    end
+                    res_rng.bounds = rng_
+                end
+                if ranges:find("obj") or ranges:find("all") then                    
+                    local rng_ = pModel:getObjectiveRanges()
+                    if verb>2 then
+                        print_table3(rng_)
+                    end 
+                    res_rng.obj = rng_
+                end
+                if ranges:find("rhs") or ranges:find("all") then
+                    local rng_ = pModel:getConstraintRanges()
+                    if verb>2 then
+                        print_table3(rng_)
+                    end 
+                    res_rng.rhs = rng_
+                end
                 if verb>2 then
                     print_table3(res_rng)
                 end
