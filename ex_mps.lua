@@ -319,18 +319,20 @@ while ktryenv>0 do
                     -- solution
                     if res_opt then
                         if options.verb>2 then print_table3(res_opt) end
-                        if res_opt.padPrimal then
-                            if options.verb>1 then
-                                res_opt.padPrimal:printmat(6,nil,12,nil,'.3e')
+                            if options.verb>0 then
+                            if res_opt.padPrimal then
+                                if options.verb>1 then
+                                    res_opt.padPrimal:printmat(6,nil,12,nil,'.3e')
+                                end
+                            else
+                                glogger.info("No primal solution\n")
                             end
-                        else
-                            glogger.info("No primal solution\n")
                         end
                     end
                     -- ranges 
                     if res_rng then
                         if options.verb>2 then print_table3(res_rng) end
-                        if options.verb>1 then
+                        if options.verb>0 then
                             for ktype,v in pairs(res_rng) do
                                 printf("Range %s:\n", ktype)
                                 v.padDec:printmat(6,nil,12,nil,'.3e')
