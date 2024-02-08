@@ -64,6 +64,41 @@ local wassert = function(pModel, res, allowed)
     check_error(pModel, res, allowed, false)
 end
 
+---- Calculate and return the ranges for specified model
+-- @param pModel The model to calculate ranges for.
+-- @param ranges The range types to compute.
+-- @param res_rng The result of range computations, for a given range type.
+-- @return res_rng The result of range computations, for a given range type.
+local get_ranges = function(pModel,options,res_rng)
+    local ranges = options and options.ranges or "all"
+    local verb = options and options.verb or 0    
+    local res_rng = res_rng or {}
+    if ranges:find("bounds") or ranges:find("all") then
+        local rng_ = pModel:getBoundRanges()
+        if verb>2 then
+            print_table3(rng_)
+        end
+        res_rng.bounds = rng_
+    end
+    if ranges:find("obj") or ranges:find("all") then                    
+        local rng_ = pModel:getObjectiveRanges()
+        if verb>2 then
+            print_table3(rng_)
+        end 
+        res_rng.obj = rng_
+    end
+    if ranges:find("rhs") or ranges:find("all") then
+        local rng_ = pModel:getConstraintRanges()
+        if verb>2 then
+            print_table3(rng_)
+        end 
+        res_rng.rhs = rng_
+    end
+    if verb>2 then
+        print_table3(res_rng)
+    end
+    return res_rng
+end
 ---
 --
 
@@ -116,32 +151,9 @@ local solve = function(pModel, options)
             res_ = pModel:getMIPPrimalSolution()                     
         elseif res.pnSolStatus then
             res_ = pModel:getPrimalSolution()
-            if ranges and not has_gop then
-                if ranges:find("bounds") or ranges:find("all") then
-                    local rng_ = pModel:getBoundRanges()
-                    if verb>2 then
-                        print_table3(rng_)
-                    end
-                    res_rng.bounds = rng_
-                end
-                if ranges:find("obj") or ranges:find("all") then                    
-                    local rng_ = pModel:getObjectiveRanges()
-                    if verb>2 then
-                        print_table3(rng_)
-                    end 
-                    res_rng.obj = rng_
-                end
-                if ranges:find("rhs") or ranges:find("all") then
-                    local rng_ = pModel:getConstraintRanges()
-                    if verb>2 then
-                        print_table3(rng_)
-                    end 
-                    res_rng.rhs = rng_
-                end
-                if verb>2 then
-                    print_table3(res_rng)
-                end
-            end
+        end
+        if ranges and not has_gop then
+            res_rng = pModel:get_ranges(options, res_rng)
         end
         res.padPrimal = res_.padPrimal
         if verb>1 then
@@ -798,3 +810,4 @@ TBmpmodel.loadModelDataNodes = loadModelDataNodes
 TBmpmodel.loadDataNode = loadDataNode
 TBmpmodel.xserialize = xserialize
 TBmpmodel.writesol = writesol
+TBmpmodel.get_ranges = get_ranges
