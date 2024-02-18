@@ -44,12 +44,12 @@ On Unix-like systems
 
 lindoapi-lua binding for the LINDO API has several illustrative examples that showcase the versatility and utility of using Lua for various mathematical optimization tasks. 
 
-- The "ex_mps" example mimics the functionality of the "runlindo" command, demonstrating how Lua can be used to interface with the LINDO API for solving optimization problems encoded in the MPS or other portable file formats. See the section on "runlindo" in the LINDO API's user manual.
-- The "ex_sets" example highlights the ability to add arbitrary Special Ordered Sets (SOS) constraints to a model, showcasing Lua's flexibility in manipulating and customizing model data.
-- The "ex_imbnd" example demonstrates how Lua can be utilized to compute the implied bounds of variables within an optimization model, showcasing the power of scripting languages for performing repetitive optimization tasks.
-- The "ex_debug" example exemplifies Lua's capability to aid in debugging infeasible linear, integer, or nonlinear models, showcasing its utility in troubleshooting and refining optimization models.
-- The "ex_sort" example illustrates Lua's potential for sorting a vector using math programming techniques, showcasing its applicability beyond traditional optimization tasks.
-- The "ex_cluster" example showcases Lua's ability to perform cluster analysis using LINDO API's extension libraries, highlighting its potential for advanced data analysis and optimization-related tasks. These examples collectively underscore the diverse applications and advantages of using Lua and the **lindoapi-lua** binding for mathematical optimization and related tasks.
+- The `ex_mps` example mimics the functionality of the `runlindo` command, demonstrating how Lua can be used to interface with the LINDO API for solving optimization problems encoded in the MPS or other portable file formats. See the section on `runlindo` in the LINDO API's user manual.
+- The `ex_sets` example highlights the ability to add arbitrary Special Ordered Sets (SOS) constraints to a model, showcasing Lua's flexibility in manipulating and customizing model data.
+- The `ex_imbnd` example demonstrates how Lua can be utilized to compute the implied bounds of variables within an optimization model, showcasing the power of scripting languages for performing repetitive optimization tasks.
+- The `ex_debug` example exemplifies Lua's capability to aid in debugging infeasible linear, integer, or nonlinear models, showcasing its utility in troubleshooting and refining optimization models.
+- The `ex_sort` example illustrates Lua's potential for sorting a vector using math programming techniques, showcasing its applicability beyond traditional optimization tasks.
+- The `ex_cluster` example showcases Lua's ability to perform cluster analysis using LINDO API's extension libraries, highlighting its potential for advanced data analysis and optimization-related tasks. These examples collectively underscore the diverse applications and advantages of using Lua and the **lindoapi-lua** binding for mathematical optimization and related tasks.
 
 
 ## Testing Reproducibility - A Detailed Use Case
@@ -58,11 +58,11 @@ The "ex_mps" example includes special command-line options `--ktryenv=<NUMBER>`,
 
 In addition, the `--ktrylogf=<keyword>` option enables exporting logs of each run to a file, with `<keyword>` serving as the basename for the log files. This option is implied by `--ktryenv`, `--ktrymod` and `--ktrysolv` options and set to a random string unless specified by the user. This feature provides a convenient means of capturing and documenting the reproducible details of each optimization run, like (i) branch-counts, (ii) #LPs solved, (iii) iteration-counts, (iv) active nodes etc. Note, time-elapsed log entries are specifically ignored as these entries are not deterministic because elapsed time can vary from run to run depending on machine workload.
 
-There are other options required to ensure the reproducibility of logs: first, all time-limits should be turned off (already the default). Also, too ensure reproducibility of MIP logs, `--cbmip=1 --cblog=0` options need to be set. The former (--cbmip=1) activates progress logging only at new-integer solution epochs, while the latter (--cblog=0) disables the standard MIP log, which contain non-reproducible components such as time-elapsed information. After completing the runs, the log strings are concatenated and subjected to SHA1 or MD5 hashing to compute a hash value of their content, thereby establishing a simple but robust framework for comparing logs or solution vectors.
+There are other options required to ensure the reproducibility of logs: first, all time-limits should be turned off (already the default). Also, too ensure reproducibility of MIP logs, `--cbmip=1 --cblog=0` options need to be set. The former (`--cbmip=1`) activates progress logging only at new-integer solution epochs, while the latter (`--cblog=0`) disables the standard MIP log, which contain non-reproducible components such as time-elapsed information. After completing the runs, the log strings are concatenated and subjected to SHA1 or MD5 hashing to compute a hash value of their content, thereby establishing a simple but robust framework for comparing logs or solution vectors.
 
-A typical test run for reproducibility can be initiated as follows
+A typical test run for reproducibility can be initiated as follows. Here, `X.Y` stands for LINDO API's version number, e.g. `12.0`. You should modify this line according to your installation path.
 
-        $ lslua ex_mps.lua -m /usr/lindoapi/14.0/samples/data/bm23.mps --ktrymod=10  --ktrylogf=bm23 --cblog=0 --cbmip=1
+        $ lslua ex_mps.lua -m /usr/lindoapi/X.Y/samples/data/bm23.mps --ktrymod=10  --ktrylogf=bm23 --cblog=0 --cbmip=1
 
 A report will be generated to display the hash of the log strings and primal solution vector. The log.digests table will showcase the hash values of the logs, with each entry indicating a unique hash value for a specific log file. For instance:
 
