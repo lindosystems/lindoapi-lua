@@ -80,7 +80,7 @@ end
         print()
         print("Usage: lua ex_gen_knap.lua [options]")
         print("Example:")
-        print("\t lua ex_gen_knap.lua -N 100 -K 10  [options]")
+        print("\t lslua ex_gen_knap.lua -N 100 -K 10  [options]")
     end   
     
     ---

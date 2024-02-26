@@ -97,7 +97,7 @@ local function usage()
     print()
     print("Usage: lua ex_mps.lua [options]")
     print("Example:")
-    print("\t lua ex_mps.lua -m /path/to/model.mps [options]")
+    print("\t lslua ex_mps.lua -m /path/to/model.mps [options]")
     print()
 end   
 

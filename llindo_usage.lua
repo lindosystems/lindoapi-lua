@@ -174,7 +174,7 @@ function parse_options(arg,short,long)
     options.has_gop   = false
     options.ranges = nil
     options.writeas = nil
-    options.lindomajor = 14
+    options.lindomajor = 15
     options.lindominor = 0
     options.solve = 1
     options.xsolver = 0
