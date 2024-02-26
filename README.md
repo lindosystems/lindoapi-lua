@@ -69,21 +69,21 @@ A typical test run for reproducibility can be initiated as follows. Here, `X.Y` 
 
         $ lslua ex_mps.lua -m /usr/lindoapi/X.Y/samples/data/bm23.mps --ktrymod=10  --ktrylogf=bm23 --cblog=0 --cbmip=1
 
-A report will be generated to display the hash of the log strings and primal solution vector. The log.digests table will showcase the hash values of the logs, with each entry indicating a unique hash value for a specific log file. For instance:
+A report will be generated to display the hash of the log strings and primal solution vector. The `log.digests` table will showcase the hash values of the logs, with each entry indicating a unique hash value for a specific log file. For instance:
 
         log.digests:
         {
               ccb5a7c3d41c4d72 = 10,
         }
         
-Similarly, the solution.digests table will provide the counts of different hash values of terminal primal solutions, with each entry representing a distinct hash value and its corresponding count in the solution vector. For example:
+Similarly, the `solution.digests` table will provide the counts of different hash values of terminal primal solutions, with each entry representing a distinct hash value and its corresponding count in the solution vector. For example:
 
         solution.digests:
         {
               2b69668ddde265aa = 10,
         }
 
-In the event that there are logs differ from one another, the log.digests table would contain multiple entries, each corresponding to a unique hash value for a log file. Likewise, the solutions.digest table would present counts of different hash values of terminal primal solutions, offering insights into the variability and consistency of the optimization runs.
+In the event that there are logs differ from one another, the log.digests table would contain multiple entries, each corresponding to a unique hash value for a log file. Likewise, the `solutions.digest` table would present counts of different hash values of terminal primal solutions, offering insights into the variability and consistency of the optimization runs.
 
 ## Contributing
 
