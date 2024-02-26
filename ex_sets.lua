@@ -233,7 +233,7 @@ end
 
 ---
 -- Parse command line arguments
-local function usage()
+local function usage(help_)
     print()
     print("Read a model from an MPS file and optimize or modify.")
     print()
@@ -241,7 +241,7 @@ local function usage()
     print("Example:")
     print("\t lslua ex_sets.lua -m model.mps [options]")
     print()
-    print_default_usage()
+    if help_ then print_default_usage() end
 	print()
     print("    , --disp_sets                Display set/sc data")
     print("    , --addsets_mask=INTEGER     An integer mask to specify how to add sets")        
@@ -249,7 +249,8 @@ local function usage()
     print("    , --nsemicont=INTEGER        Set number of semi-cont vars to 'INTEGER'")        
     print("    , --max_sk=INTEGER           Set maximum set-size to 'INTEGER'")        
     print("    , --min_sk=INTEGER           Set minimum set-size to 'INTEGER'")     
-    
+    print("")
+    if not help_ then print_help_option() end
     print()
 end   
 
@@ -288,7 +289,7 @@ options.seed = options.seed or 0
 verb = options.verb
 
 if not options.model_file then
-	usage()
+	usage(options.help)
 	return
 end	
 

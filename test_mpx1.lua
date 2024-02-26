@@ -1,3 +1,4 @@
+#!/usr/bin/env lslua
 --
 -- luatabox unit tests
 package.path = package.path..";./?.lua;./systree/share/lua/5.1/?.lua;./systree/share/lua/5.1/?/init.lua"

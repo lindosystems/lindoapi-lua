@@ -1,3 +1,4 @@
+#!/usr/bin/env lua
 --
 --   json-rpc:
 --     simple rpc implementation and helpers

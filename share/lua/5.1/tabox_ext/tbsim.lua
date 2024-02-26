@@ -1,3 +1,4 @@
+#!/usr/bin/env lua
 
 local islivenow = function(xsim)
   local flag = xsim:isstate(xta.const.state_sim_live)>0

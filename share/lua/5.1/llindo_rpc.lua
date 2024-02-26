@@ -1,3 +1,4 @@
+#!/usr/bin/env lua
 
 
 local Lindo = require("llindo_tabox")

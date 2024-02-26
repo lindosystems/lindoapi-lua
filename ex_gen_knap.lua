@@ -64,11 +64,11 @@ function generateKnapsackProblem(N, K, min_w, max_w, min_c, max_c)
 end
 
 -- Usage function
-    local function usage()
+    local function usage(help_)
         print()
         print("Read a model and compute tightest possible bounds.")
         print()
-        print_default_usage()
+        if help_ then print_default_usage() end
         print()
         print("    , --solve                    Solve as tightened model")
         print(" -N , --nvars=<INTEGER>  Number of variables")
@@ -81,6 +81,9 @@ end
         print("Usage: lua ex_gen_knap.lua [options]")
         print("Example:")
         print("\t lslua ex_gen_knap.lua -N 100 -K 10  [options]")
+    	print("")
+	    if not help_ then print_help_option() end        
+	    print()
     end   
     
     ---

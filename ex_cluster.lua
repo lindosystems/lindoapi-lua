@@ -1,3 +1,4 @@
+#!/usr/bin/env lslua
 -- File: ex_cluster.lua
 -- Description: Cluster analysis of input file using Self-organizing map
 -- Author: mka
@@ -217,11 +218,11 @@ function repchar(mychar, n)
 end
 
 -- Usage function
-local function usage()
+local function usage(help_)
     print()
     print("Perform cluster analysis of specified model.")
     print()
-    print_default_usage()
+    if help_ then print_default_usage() end
     print()
     print("Options:")
     print("    , --somboxwidth=INTEGER      Set the somboxwidth (default: 12)")

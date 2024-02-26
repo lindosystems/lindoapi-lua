@@ -1,3 +1,4 @@
+#!/usr/bin/env lua
 -- -*- coding: utf-8 -*-
 --
 -- Simple JSON encoding and decoding in pure Lua.

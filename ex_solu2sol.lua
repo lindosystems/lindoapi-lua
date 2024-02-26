@@ -1,3 +1,4 @@
+#!/usr/bin/env lslua
 -- File: ex_solu2sol.lua
 -- Description: Convert Lingo solution file to a solution file for a related MPI model.
 -- Author: mka
@@ -63,7 +64,7 @@ function parseScalarizedInitFile(lines)
 end
 
 -- Usage function
-local function usage()
+local function usage(help_)
     print()
     print("Read solution of a Lingo model and create a solution file for a related MPI model.")
     print()
@@ -71,9 +72,12 @@ local function usage()
     print("Example:")
     print("\t lslua ex_solu2sol.lua -f /path/to/my.solu -m /path/to/my.mpi [options]")
     print()
-    print_default_usage()
+    if help_ then print_default_usage() end
     print()
     print("    , --solve                    Solve last state of model")
+	print("")
+	if not help_ then print_help_option() end        
+	print()    
 end  
 ---
 -- Parse command line arguments

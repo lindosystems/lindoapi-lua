@@ -1,3 +1,4 @@
+#!/usr/bin/env lslua
 local Lindo = require("llindo_tabox")
 assert(Lindo)
 local pars = Lindo.parameters

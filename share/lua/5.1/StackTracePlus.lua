@@ -1,3 +1,4 @@
+#!/usr/bin/env lua
 -- tables
 local _G = _G
 local string, io, debug, coroutine = string, io, debug, coroutine

@@ -1,3 +1,4 @@
+#!/usr/bin/env lslua
 -- File: ex_imbnd.lua
 -- Description: Example of computing best implied bounds for a model.
 -- Author: mka
@@ -250,11 +251,11 @@ function ls_calc_im_opt_bounds(pModel)
 end
 
 -- Usage function
-local function usage()
+local function usage(help_)
     print()
     print("Read a model and compute tightest possible bounds.")
     print()
-    print_default_usage()
+    if help_ then print_default_usage() end
     print()
     print("    , --lp                       Solve as lp when finding best bounds")
     print("    , --solve                    Solve as tightened model")
@@ -262,6 +263,9 @@ local function usage()
     print("Usage: lua ex_imbnd.lua [options]")
     print("Example:")
     print("\t lslua ex_imbnd.lua -m /path/to/model.mps [options]")
+	print("")
+	if not help_ then print_help_option() end        
+	print()    
 end   
 
 ---

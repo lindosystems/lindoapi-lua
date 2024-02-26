@@ -1,3 +1,4 @@
+#!/usr/bin/env lua
 
 local TB_ANN_TRF_SSIGMOID = 1
 local TB_ANN_TRF_LSIGMOID = 2

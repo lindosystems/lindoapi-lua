@@ -1,3 +1,4 @@
+#!/usr/bin/env lua
 --
 --  Ported functions from zhelpers.h
 --

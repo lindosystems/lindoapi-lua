@@ -1,3 +1,4 @@
+#!/usr/bin/env lslua
 -- File: ex_lindo3.lua
 -- Description: Example of using the Lindo API to 
 --  1. setup a model with linear constraints

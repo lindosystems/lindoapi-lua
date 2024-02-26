@@ -1,3 +1,4 @@
+#!/usr/bin/env lslua
 --- A dummy JSON-RPC server receiving requests on a ZeroMQ socket
 local usage = [[
 Start an instance of RPC server
