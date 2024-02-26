@@ -1,3 +1,4 @@
+#!/usr/bin/env lua
 local Lindo = require("llindo")
 local lxp = Lindo.parameters
 local lxe = Lindo.errors

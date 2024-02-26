@@ -1,3 +1,4 @@
+#!/usr/bin/env lslua
 -- File: ex_lindo1.lua
 -- Description: Example of using the Lindo API to read a model file and 
  --             perform various solver operations

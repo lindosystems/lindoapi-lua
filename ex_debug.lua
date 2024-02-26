@@ -1,3 +1,4 @@
+#!/usr/bin/env lslua
 -- File: ex_debug.lua
 -- Description: Example of debugging a model via IIS finder
 -- Author: mka
@@ -14,15 +15,17 @@ local solver
 
 ---
 -- Parse command line arguments
-local function usage()
+local function usage(help_)
     print()
     print("Read a model from a file and optimize or debug.") 
     print()
-    print_default_usage()
+    if help_ then print_default_usage() end
     print()
     print("Usage: lslua ex_debug.lua [options]")
     print("Example:")
     print("\t lslua ex_debug.lua -m netlibinf/bgdbg1.mps.gz --iis_level=5 --iis_method=3 --iis_norm=1")
+    print("")
+    if not help_ then print_help_option() end    
     print()
 end   
 

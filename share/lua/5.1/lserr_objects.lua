@@ -1,3 +1,4 @@
+#!/usr/bin/env lua
 local M = {
       ["2365"] = {
             ["err_code"] = 2365,

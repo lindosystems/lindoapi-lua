@@ -1,3 +1,4 @@
+#!/usr/bin/env lua
 --- Pretty options displayer
 function print_table_dots(tbl)
     local max_key_length = 0
@@ -22,6 +23,11 @@ function print_table_dots(tbl)
         print(row)
     end
     print()
+end
+
+--- Notify all applications the -h option to see more options
+function print_help_option()
+    print("  -h, --help                     Show extended options list")
 end
 
 --- Display standard usage, applicable to all examples

@@ -1,3 +1,4 @@
+#!/usr/bin/env lslua
 -- File: ex_cbfun.lua
 -- Description: Example of using callback functions with the Lindo API
 -- Author: mka

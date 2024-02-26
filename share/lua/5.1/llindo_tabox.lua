@@ -1,3 +1,4 @@
+#!/usr/bin/env lua
 --
 -- LINDO API Lua Interface
 -- 

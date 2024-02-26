@@ -1,3 +1,4 @@
+#!/usr/bin/env lua
 -- Copyright (c) 2009 Aleksey Cheusov <vle@gmx.net>
 --
 -- Permission is hereby granted, free of charge, to any person obtaining

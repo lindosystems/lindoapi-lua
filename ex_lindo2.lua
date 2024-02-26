@@ -1,3 +1,4 @@
+#!/usr/bin/env lslua
 -- File: ex_lindo2.lua
 -- Description: Example of using the Lindo API to setup and solve a model with Lua tables
 -- Author: mka

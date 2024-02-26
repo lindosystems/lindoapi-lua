@@ -1,3 +1,4 @@
+#!/usr/bin/env lslua
 -- File: ex_sort.lua
 -- Description: Example of using the Lindo API to sort a vector
 --              over an affine transformation
@@ -238,7 +239,7 @@ function gen_sort(options)
 end
 
 -- Usage function
-local function usage()
+local function usage(help_)
     print()
     print("Sort a vector 'x' via MILP.")
     print()
@@ -246,11 +247,14 @@ local function usage()
     print("Example:")
     print("\t lslua ex_sort.lua -m /path/to/model_file.mpx [options]")
     print()
-    print_default_usage()
+    if help_ then print_default_usage() end
     print()
     print("    , --solve                    Solve last state of model")
     print("    , --ndim                     Number of columns")
     print("    , --mdim                     Number of rows")
+	print("")
+	if not help_ then print_help_option() end        
+	print()    
 end  
 ---
 -- Parse command line arguments

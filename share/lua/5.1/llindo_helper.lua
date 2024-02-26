@@ -1,3 +1,4 @@
+#!/usr/bin/env lua
 local paths = require('paths')
 
 require('ftamod_print')

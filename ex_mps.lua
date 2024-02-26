@@ -1,4 +1,5 @@
 #!/usr/bin/env lslua
+#!/usr/bin/env lslua
 -- File: ex_mps.lua
 -- Description: Example of reading a model from an MPS file and optimizing it.
 -- Author: mka
@@ -84,11 +85,11 @@ local function get_tmp_base()
 end
 ---
 -- Parse command line arguments
-local function usage()
+local function usage(help_)
     print()
     print("Read a model from an MPS file and optimize or modify.")
     print()
-    print_default_usage()
+    if help_ then print_default_usage() end
     print()
     print("Options:")
     print("    , --addobjcut=[number]      Add objcut with rhs 'number' (default: nil)")    
@@ -98,7 +99,9 @@ local function usage()
     print("Usage: lua ex_mps.lua [options]")
     print("Example:")
     print("\t lslua ex_mps.lua -m /path/to/model.mps [options]")
-    print()
+	print("")
+	if not help_ then print_help_option() end        
+	print()
 end   
 
 local short=""

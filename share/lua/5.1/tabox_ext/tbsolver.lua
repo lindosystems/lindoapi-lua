@@ -1,3 +1,4 @@
+#!/usr/bin/env lua
 
 TBsolver.errmsg = function(pSolver, ErrorCode)
     local res = pSolver:getErrorMessage(ErrorCode)   

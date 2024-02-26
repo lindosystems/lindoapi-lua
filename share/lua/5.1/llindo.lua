@@ -1,3 +1,4 @@
+#!/usr/bin/env lua
 local Lindo = {}
 Lindo._VERSION = 'v0.1.0'
 Lindo._DESCRIPTION = 'LINDO API Lua Interface'
