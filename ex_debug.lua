@@ -62,6 +62,7 @@ end
 xta:setsolverdll("",8);
 xta:setlindodll(options.lindomajor,options.lindominor)
 solver = xta:solver()
+assert(solver,"\nError: cannot create a solver instance\n")
 glogger.info("Created a new solver instance %s\n",solver.version);
 local ymd,hms = xta:datenow(),xta:timenow() 
 local jsec = xta:jsec(ymd,hms)

@@ -238,6 +238,15 @@ function gen_sort(options)
     print(solver)
 end
 
+-- parse app specific options
+function app_options(options,k,v)
+    if k=="ndim" then options.ndim=tonumber(v)
+    elseif k=="mdim" then options.mdim=tonumber(v) 
+    else
+    	printf("Unknown option '%s'\n",k)
+    end
+end
+
 -- Usage function
 local function usage(help_)
     print()
@@ -246,7 +255,7 @@ local function usage(help_)
     print("Usage: lslua ex_sort.lua [options]")    
     if help_ then print_default_usage() end
     print()
-    print("    , --solve                    Solve last state of model")
+    print("    , --solve=<INTEGER>          Solve last state of model")
     print("    , --ndim                     Number of columns")
     print("    , --mdim                     Number of rows")
 	print("")
@@ -266,14 +275,6 @@ local short = "n:m:"
 options, opts, optarg = parse_options(arg,short,long)
 --print_table3(options)
 
--- parse app specific options
-for i, k in pairs(opts) do
-    local v = optarg[i]             
-    if k=="solve" then options.solve=true end
-    if k=="ndim" then options.ndim=tonumber(v) end
-    if k=="mdim" then options.mdim=tonumber(v) end
-end
-
 if options.help then
 	usage(true)
 	return
@@ -287,6 +288,7 @@ end
 options.verb = math.max(options.verb and options.verb or 1, 2)
 
 solver = xta:solver()
+assert(solver,"\nError: cannot create a solver instance\n")
 apply_solver_options(solver,options)
 
 gen_sort(options)

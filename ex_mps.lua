@@ -82,6 +82,17 @@ local function get_tmp_base()
     end
     return temp_base
 end
+
+-- parse app specific options
+function app_options(options,k,v)
+    if k=="addobjcut" then options.addobjcut=tonumber(v) 
+    elseif k=="histmask" then options.histmask=tonumber(v)
+    elseif k=="xuserdll" then options.xuserdll=v 
+	else
+		printf("Unknown option '%s'\n",k)
+    end    
+end
+
 ---
 -- Parse command line arguments
 local function usage(help_)
@@ -110,15 +121,6 @@ local long={
     xuserdll = 1,
 }
 local options, opts, optarg = parse_options(arg,short,long)
-
--- parse app specific options
-for i, k in pairs(opts) do
-    local v = optarg[i]         
-    if k=="addobjcut" then options.addobjcut=tonumber(v) end
-    if k=="histmask" then options.histmask=tonumber(v) end
-    if k=="xuserdll" then options.xuserdll=v end
-end
-
 
 if options.help then
 	usage(true)
@@ -168,7 +170,7 @@ local ktryenv = options.ktryenv
 while ktryenv>0 do
     ktryenv = ktryenv-1
     solver = xta:solver()    
-    assert(solver,"\n\nError: failed create a solver instance.\n")
+    assert(solver,"\nError: cannot create a solver instance\n")   
     solver:disp_pretty_version()
 
     glogger.info("Created a new solver instance ..\n");

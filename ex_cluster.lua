@@ -217,10 +217,33 @@ function repchar(mychar, n)
     return mychar:rep(n)
 end
 
+
+function app_options(options, k, v)  
+	if k == "somboxwidth" then options.somboxwidth = tonumber(v)
+	elseif k == "outpath" then options.outpath = v 
+	elseif k == "plotMode" then options.plotMode = tonumber(v) 
+	elseif k == "testId" then options.testId = tonumber(v) 
+	elseif k == "ldim" then options.ldim = tonumber(v) 
+	elseif k == "optmethod" then options.optmethod = tonumber(v) 
+	elseif k == "ilim" then options.ilim = tonumber(v) 
+	elseif k == "dist" then options.dist = tonumber(v) 
+	elseif k == "maxiters" then options.maxiters = tonumber(v) 
+	elseif k == "nx" then options.nx = tonumber(v) 
+	elseif k == "ny" then options.ny = tonumber(v)
+	elseif k == "alphafun" then options.alphafun = v
+	elseif k == "neigh" then options.neigh = tonumber(v)
+	elseif k == "topol" then options.topol = v
+	elseif k == "init" then options.init = v  
+	else
+		printf("Unknown option '%s'\n",k)
+	end  
+end
+
+
 -- Usage function
 local function usage(help_)
     print()
-    print("Perform cluster analysis of specified model.")
+    print("Perform cluster analysis of specified vector set, e.g x0 candidates from MULTIS.")
     print()
     print("Usage: lslua ex_cluster.lua [options]")
     if help_ then print_default_usage() end
@@ -255,7 +278,9 @@ local function usage(help_)
       dist=='x': absolute uncentered correlation
       dist=='s': Spearman's rank correlation
       dist=='k': Kendall's tau      
-      ]]      
+      ]]     
+    print()
+    if not help_ then print_help_option() end
     print("Example:")
     print("\t lslua ex_cluster.lua -m tmp/Rset0-1.txt --maxiters=5000 --nx=20 --ny=20")
     print()
@@ -285,8 +310,6 @@ local long = {
 
 }
 local short = ""
--- Parse options
-options, opts, optarg = parse_options(arg,short,long)
 
 -- Set defaults
 options.somboxwidth=12
@@ -305,27 +328,8 @@ options.neigh=1 --'bubble'
 options.topol=3 --'hexa'
 options.init=1 --'rand'
 
-for i, k in pairs(opts) do
-  local v = optarg[i]
-  -- ... (existing conditions)
-
-  if k == "somboxwidth" then options.somboxwidth = tonumber(v)
-  elseif k == "outpath" then options.outpath = v 
-  elseif k == "plotMode" then options.plotMode = tonumber(v) 
-  elseif k == "testId" then options.testId = tonumber(v) 
-  elseif k == "ldim" then options.ldim = tonumber(v) 
-  elseif k == "optmethod" then options.optmethod = tonumber(v) 
-  elseif k == "ilim" then options.ilim = tonumber(v) 
-  elseif k == "dist" then options.dist = tonumber(v) 
-  elseif k == "maxiters" then options.maxiters = tonumber(v) 
-  elseif k == "nx" then options.nx = tonumber(v) 
-  elseif k == "ny" then options.ny = tonumber(v)
-  elseif k == "alphafun" then options.alphafun = v
-  elseif k == "neigh" then options.neigh = tonumber(v)
-  elseif k == "topol" then options.topol = v
-  elseif k == "init" then options.init = v  
-  end
-end
+-- Parse options
+options, opts, optarg = parse_options(arg,short,long)
 
 if options.help then
   usage(true)

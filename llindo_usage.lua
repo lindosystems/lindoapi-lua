@@ -298,9 +298,8 @@ function parse_options(arg,short,long)
         elseif k=="iis_level" then options.iis_level=tonumber(v)
         elseif k=="qa" then options.qa=v
         elseif k=="sol" then options.sol=true
-        else
-            printf("Unknown option '%s'\n",k)
-            options.help=true
+        else            
+            app_options(options,k,v)
         end        
     end
     if options.seed==0 then

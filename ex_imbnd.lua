@@ -250,6 +250,15 @@ function ls_calc_im_opt_bounds(pModel)
     return yModel
 end
 
+-- parse app specific options
+function app_options(options,k,v)
+    
+	if 0>1 then print()
+	else
+		printf("Unknown option '%s'\n",k)
+	end
+end
+
 -- Usage function
 local function usage(help_)
     print()
@@ -259,6 +268,7 @@ local function usage(help_)
     if help_ then print_default_usage() end
     print("App. Options:")
     print()
+    print("  -m, --model=STRING             Specify the model file name")    
     print("    , --lp                       Solve as lp when finding best bounds")
     print("    , --solve                    Solve as tightened model")
 	print("")
@@ -271,19 +281,11 @@ end
 ---
 -- Parse command line arguments
 local long={
-		lp = 0,
-		solve = 0
+
 	}
 local short = ""
 options, opts, optarg = parse_options(arg,short,long)
 --print_table3(options)
-
--- parse app specific options
-for i, k in pairs(opts) do
-    local v = optarg[i]         
-    if k=="lp" then options.solve_as_lp=true end
-    if k=="solve" then options.solve=true end
-end
 
 -- Local copies of options
 local has_cbmip = options.has_cbmip
@@ -301,10 +303,11 @@ if options.help then
 	return 
 end
 
-if not options.nvars then
+if not options.model_file then
 	usage(options.help)
 	return
 end	
+
 if options.seed then
   if options.seed~=0 then
     math.randomseed(options.seed)
@@ -318,6 +321,7 @@ end
 xta:setsolverdll("",8); -- disable loading LINGO
 xta:setlindodll(lindomajor,lindominor)
 solver = xta:solver()
+assert(solver,"\nError: cannot create a solver instance\n")
 printf("Created a new solver instance %s\n",solver.version);
 local ymd,hms = xta:datenow(),xta:timenow() 
 local jsec = xta:jsec(ymd,hms)
@@ -347,8 +351,10 @@ pModel:xassert({ErrorCode = nErr})
 
 -- Calc implied bounds
 local yModel 
+printf("\nStarted computing optimal bounds\n")
 yModel = ls_calc_im_opt_bounds(pModel)
-
+assert(yModel,"Error: failed to compute optimal bounds\n")
+printf("Finished computing optimal bounds\n")
 
 if options.solve then
 	-- Solve model
