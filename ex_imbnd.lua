@@ -261,7 +261,7 @@ local function usage()
     print()
     print("Usage: lua ex_imbnd.lua [options]")
     print("Example:")
-    print("\t lua ex_imbnd.lua -m /path/to/model.mps [options]")
+    print("\t lslua ex_imbnd.lua -m /path/to/model.mps [options]")
 end   
 
 ---
