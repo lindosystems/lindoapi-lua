@@ -4,30 +4,19 @@ UNAME=`uname`
 MNAME=`uname -m`
 CURPATH=$(pwd)
 
-if [ "${PLATFORM}" != "" ]; then
-    echo PLATFORM specified: $PLATFORM
-elif [ "${UNAME:0:6}" = "CYGWIN" ]; then
-    PLATFORM=win32x86
-    CURPATH=$(cygpath -w $CURPATH)
-elif [ "${UNAME:0:7}" = "MINGW64" ]; then
-    PLATFORM=win64x86   
-    CURPATH=$(cygpath -w $CURPATH)    
-elif [ "${UNAME:0:7}" = "MINGW32" ]; then
-    PLATFORM=win32x86
-    CURPATH=$(cygpath -w $CURPATH)
-elif [ "${UNAME:0:7}" = "MSYS_NT" ]; then
-    PLATFORM=win32x86   
-    CURPATH=$(cygpath -w $CURPATH)
-elif [ "${UNAME}" = "Linux" ]; then
-    PLATFORM=linux64x86
-    source $LINDOAPI_HOME/bin/linux64/lindoapivars.sh
-elif [ "${UNAME}" = "Darwin" ]; then
-    PLATFORM=osx64x86
-    #if [ "${MNAME}" = "arm64" ]; then
-    #   PLATFORM=osx64arm
-    #fi
-    source $LINDOAPI_HOME/bin/$PLATFORM/lindoapivars.sh    
+# Check for LINDOAPI_HOME and LINDOAPI_LICENSE_FILE variables
+if [ -z "$LINDOAPI_HOME" ]; then
+  echo "LINDOAPI_HOME is not set. Please set the LINDOAPI_HOME environment variable."
+  exit 1
 fi
+source $LINDOAPI_HOME/bin/lindoapivars.sh
+
+if [ -z "$LINDOAPI_LICENSE_FILE" ]; then
+  echo "LINDOAPI_LICENSE_FILE is not set. Please check the installation of LINDO API."
+  exit 1
+fi
+
+
 if [ ! -z $TABOX_HOME ]; then
     remove_path $TABOX_HOME/bin/$PLATFORM 
 fi
