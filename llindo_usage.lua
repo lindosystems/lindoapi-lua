@@ -27,7 +27,8 @@ end
 
 --- Notify all applications the -h option to see more options
 function print_help_option()
-    print("  -h, --help                     Show extended options list")
+    print("  -h, --help                    Show extended options list")
+    print()
 end
 
 --- Display standard usage, applicable to all examples

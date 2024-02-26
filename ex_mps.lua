@@ -1,5 +1,4 @@
 #!/usr/bin/env lslua
-#!/usr/bin/env lslua
 -- File: ex_mps.lua
 -- Description: Example of reading a model from an MPS file and optimizing it.
 -- Author: mka
@@ -89,19 +88,19 @@ local function usage(help_)
     print()
     print("Read a model from an MPS file and optimize or modify.")
     print()
+    print("Usage: lslua ex_mps.lua [options]")
+    print()
     if help_ then print_default_usage() end
     print()
-    print("Options:")
+    print("App. Options:")
     print("    , --addobjcut=[number]      Add objcut with rhs 'number' (default: nil)")    
     print("    , --histmask=[number]       Analyze LP data with histogram with specified mask 'number' (default: nil)")    
     print("    , --xuserdll=[string]       Set user DLL (default: nil)")
-    print()
-    print("Usage: lua ex_mps.lua [options]")
-    print("Example:")
-    print("\t lslua ex_mps.lua -m /path/to/model.mps [options]")
 	print("")
 	if not help_ then print_help_option() end        
-	print()
+    print("Example:")
+    print("\t lslua ex_mps.lua -m /path/to/model.mps [options]")    	
+	print()    
 end   
 
 local short=""
@@ -120,8 +119,14 @@ for i, k in pairs(opts) do
     if k=="xuserdll" then options.xuserdll=v end
 end
 
+
+if options.help then
+	usage(true)
+	return
+end
+
 if not options.model_file then
-	usage()
+	usage(options.help)
 	return
 end	
 

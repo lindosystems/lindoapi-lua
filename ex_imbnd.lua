@@ -255,17 +255,17 @@ local function usage(help_)
     print()
     print("Read a model and compute tightest possible bounds.")
     print()
+    print("Usage: lslua ex_imbnd.lua [options]")
     if help_ then print_default_usage() end
+    print("App. Options:")
     print()
     print("    , --lp                       Solve as lp when finding best bounds")
     print("    , --solve                    Solve as tightened model")
-    print()
-    print("Usage: lua ex_imbnd.lua [options]")
-    print("Example:")
-    print("\t lslua ex_imbnd.lua -m /path/to/model.mps [options]")
 	print("")
 	if not help_ then print_help_option() end        
-	print()    
+    print("Example:")
+    print("\t lslua ex_imbnd.lua -m /path/to/model.mps [options]")    	
+    print() 
 end   
 
 ---
@@ -294,11 +294,17 @@ local lindomajor = options.lindomajor
 local lindominor = options.lindominor
 local model_file = options.model_file
 verb = math.max(options.verb and options.verb or 1, 2)
-if not model_file then
-	usage()
+
+
+if options.help then
+	usage(true)
+	return 
+end
+
+if not options.nvars then
+	usage(options.help)
 	return
 end	
-
 if options.seed then
   if options.seed~=0 then
     math.randomseed(options.seed)

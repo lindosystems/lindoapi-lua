@@ -237,9 +237,7 @@ local function usage(help_)
     print()
     print("Read a model from an MPS file and optimize or modify.")
     print()
-    print("Usage: lua ex_sets.lua [options]")
-    print("Example:")
-    print("\t lslua ex_sets.lua -m model.mps [options]")
+    print("Usage: lslua ex_sets.lua [options]")
     print()
     if help_ then print_default_usage() end
 	print()
@@ -251,7 +249,9 @@ local function usage(help_)
     print("    , --min_sk=INTEGER           Set minimum set-size to 'INTEGER'")     
     print("")
     if not help_ then print_help_option() end
-    print()
+    print("Example:")
+    print("\t lslua ex_sets.lua -m model.mps [options]")    
+    print()    
 end   
 
 local long = {      
@@ -287,6 +287,11 @@ options.max_sk = options.max_sk or 20
 options.verb = options.verb or 0
 options.seed = options.seed or 0
 verb = options.verb
+
+if options.help then
+  usage(true)
+  return
+end
 
 if not options.model_file then
 	usage(options.help)
