@@ -61,7 +61,7 @@ end
 ---
 --
 function testSolverLicense()
-  local licfile = os.getenv("LINDOAPI_HOME") .. "/license/lndapi130.lic"
+  local licfile = os.getenv("LINDOAPI_HOME") .. "/license/lndapi150.lic"
   printf("\nLoading %s\n",licfile)
   local res = solver:loadLicenseString(licfile)
   print_table3(res)

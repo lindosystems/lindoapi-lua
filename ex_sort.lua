@@ -286,7 +286,7 @@ if not options.ndim then
 end	
 
 options.verb = math.max(options.verb and options.verb or 1, 2)
-
+xta:setlindodll(options.lindomajor,options.lindominor)
 solver = xta:solver()
 assert(solver,"\nError: cannot create a solver instance\n")
 apply_solver_options(solver,options)
