@@ -3,13 +3,14 @@ set PLATFORM=%1
 
 rem Check for LINDOAPI_HOME and LINDOAPI_LICENSE_FILE variables
 if not defined LINDOAPI_HOME (
-    echo LINDOAPI_HOME is not set. Please set the LINDOAPI_HOME environment variable.
-    echo Or run "/path/to/lindoapi/bin/lindoapivars.bat" from command prompt
+    echo LINDOAPI_HOME is not set. Please set the LINDOAPI_HOME environment variable.    
     exit /b 1
 )
 
+@call "%LINDOAPI_HOME%\bin\lindoapivars.bat
+
 if not defined LINDOAPI_LICENSE_FILE (
-    echo LINDOAPI_LICENSE_FILE is not set. Please set the LINDOAPI_LICENSE_FILE environment variable.
+    echo LINDOAPI_LICENSE_FILE is not set. Please check the installation of LINDO API.
     echo Or run "/path/to/lindoapi/bin/lindoapivars.bat" from command prompt
     exit /b 1
 )
