@@ -44,6 +44,8 @@ On Windows
 On Unix-like systems
 
         $ lslua ex_mps.lua -m /path/to/myfile.mps
+        
+This interface is versionless and supports all recent LINDO API versions. The version to use will be deduced from the `LINDOAPI_LICENSE_FILE` and `LINDOAPI_HOME` environment variables.    
 
 ## Examples
 
