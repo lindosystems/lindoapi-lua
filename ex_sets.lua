@@ -231,6 +231,21 @@ function ls_gen_random_sets(pModel,  idx, settype_k, options, t_sets)
   return t_sets, idx
 end
 
+-- parse app specific options
+function app_options(options,k,v)
+    if k=="disp_sets" then options.disp_sets=true 
+    elseif k=="addsets_mask" then options.addsets_mask = tonumber(v) 
+    elseif k=="nsets" then options.nsets=tonumber(v) 
+    elseif k=="nsemicont" then options.nsemicont=tonumber(v) 
+    elseif k=='max_sk' then options.max_sk=tonumber(v) 
+    elseif k=='min_sk' then options.min_sk=tonumber(v) 
+    elseif k=='max' then options.max=true 
+    else
+    	printf("Unknown option '%s'\n",k)
+    end
+end
+
+
 ---
 -- Parse command line arguments
 local function usage(help_)
@@ -241,6 +256,7 @@ local function usage(help_)
     print()
     if help_ then print_default_usage() end
 	print()
+	print("  -m, --model=STRING             Specify the model file name")
     print("    , --disp_sets                Display set/sc data")
     print("    , --addsets_mask=INTEGER     An integer mask to specify how to add sets")        
     print("    , --nsets=INTEGER            Set number of sets to 'INTEGER'")        
@@ -264,20 +280,8 @@ local long = {
     max = 0
 }
 local short = ""
-options, opts, optarg = parse_options(arg,short,long)
 
--- parse app specific options
-for i, k in pairs(opts) do
-    local v = optarg[i]         
-    if k=="disp_sets" then options.disp_sets=true end
-    if k=="addsets_mask" then options.addsets_mask = tonumber(v) end    
-    if k=="nsets" then options.nsets=tonumber(v) end
-    if k=="nsemicont" then options.nsemicont=tonumber(v) end
-    if k=='max_sk' then options.max_sk=tonumber(v) end
-    if k=='min_sk' then options.min_sk=tonumber(v) end
-    if k=='max' then options.max=true end
-end
-
+-- defaults
 options.disp_sets = options.disp_sets or false
 options.addsets_mask = options.addsets_mask or 0
 options.nsets = options.nsets or 3 
@@ -286,6 +290,9 @@ options.min_sk = options.min_sk or 3
 options.max_sk = options.max_sk or 20
 options.verb = options.verb or 0
 options.seed = options.seed or 0
+
+options, opts, optarg = parse_options(arg,short,long)
+
 verb = options.verb
 
 if options.help then
@@ -303,6 +310,7 @@ end
 xta:setsolverdll("",8);
 xta:setlindodll(options.lindomajor,options.lindominor)
 solver = xta:solver()
+assert(solver,"\nError: cannot create a solver instance\n")
 printf("Created a new solver instance %s\n",solver.version);
 local ymd,hms = xta:datenow(),xta:timenow() 
 local jsec = xta:jsec(ymd,hms)

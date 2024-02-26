@@ -88,12 +88,6 @@ local short = ""
 options, opts, optarg = parse_options(arg,short,long)
 --print_table3(options)
 
--- parse app specific options
-for i, k in pairs(opts) do
-    local v = optarg[i]             
-    if k=="solve" then options.solve=true end
-end
-
 options.verb = math.max(options.verb and options.verb or 1, 2)
 
 
@@ -110,6 +104,7 @@ end
 xta:setsolverdll("",8);
 xta:setlindodll(15,0)
 solver = xta:solver()
+assert(solver,"\nError: cannot create a solver instance\n")
 printf("Created a new solver instance %s\n",solver.version);
 local ymd,hms = xta:datenow(),xta:timenow() 
 local jsec = xta:jsec(ymd,hms)

@@ -63,54 +63,56 @@ function generateKnapsackProblem(N, K, min_w, max_w, min_c, max_c)
     return problemString
 end
 
+function app_options(options, k, v)
+    -- parse app specific options   
+	if k=="min_w" then options.min_w=tonumber(v) 
+	elseif k=="max_w" then options.max_w=tonumber(v) 
+	elseif k=="min_c" then options.min_c=tonumber(v) 
+	elseif k=="max_c" then options.max_c=tonumber(v) 
+	elseif k=="N" or k=="nvars" then options.nvars=tonumber(v) 
+	elseif k=="K" or k=="ncons" then options.ncons=tonumber(v) 
+	else
+		printf("Unknown option '%s'\n",k)
+	end
+end
+
 -- Usage function
-    local function usage(help_)
-        print()
-        print("Read a model and compute tightest possible bounds.")
-        print()
-        print("Usage: lslua ex_gen_knap.lua [options]")
-        if help_ then print_default_usage() end
-        print()
-        print("    , --solve                    Solve as tightened model")
-        print(" -N , --nvars=<INTEGER>  Number of variables")
-        print(" -K , --ncons=<INTEGER>  Number of constraints")
-        print("    , --min_w=<INTEGER>  Minimum weight for objective coefficients")
-        print("    , --max_w=<INTEGER>  Maximum weight for objective coefficients")
-        print("    , --min_c=<INTEGER>  Minimum weight for constraint coefficients")
-        print("    , --max_c=<INTEGER>  Maximum weight for constraint coefficients")        
-        print()
-	    if not help_ then print_help_option() end        	    
-        print("Example:")
-        print("\t lslua ex_gen_knap.lua -N 100 -K 10  [options]")
-    	print("")        	    
-    end   
-    
-    ---
-    -- Parse command line arguments
-    local long={
-            min_w = 1,
-            max_w = 1,
-            min_c = 1,
-            max_c = 1,
-            nvars = "N",
-            ncons = "K",
-        }
-    local short = "N:K:"
-    options, opts, optarg = parse_options(arg,short,long)
-    --print_table3(options)
-    --print_table3(opts)
-    
-    -- parse app specific options
-    for i, k in pairs(opts) do
-        local v = optarg[i]         
-        if k=="min_w" then options.min_w=tonumber(v) end
-        if k=="max_w" then options.max_w=tonumber(v) end
-        if k=="min_c" then options.min_c=tonumber(v) end
-        if k=="max_c" then options.max_c=tonumber(v) end
-        if k=="N" or k=="nvars" then options.nvars=tonumber(v) end
-        if k=="K" or k=="ncons" then options.ncons=tonumber(v) end
-        if k=="solve" then options.solve=true end
-    end    
+local function usage(help_)
+	print()
+	print("Read a model and compute tightest possible bounds.")
+	print()
+	print("Usage: lslua ex_gen_knap.lua [options]")
+	if help_ then print_default_usage() end
+	print()
+	print("    , --solve=<INTEGER>  Solve as tightened model")
+	print(" -N , --nvars=<INTEGER>  Number of variables")
+	print(" -K , --ncons=<INTEGER>  Number of constraints")
+	print("    , --min_w=<INTEGER>  Minimum weight for objective coefficients")
+	print("    , --max_w=<INTEGER>  Maximum weight for objective coefficients")
+	print("    , --min_c=<INTEGER>  Minimum weight for constraint coefficients")
+	print("    , --max_c=<INTEGER>  Maximum weight for constraint coefficients")        
+	print()
+	if not help_ then print_help_option() end        	    
+	print("Example:")
+	print("\t lslua ex_gen_knap.lua -N 100 -K 10  [options]")
+	print("")        	    
+end   
+
+---
+-- Parse command line arguments
+local long={
+		min_w = 1,
+		max_w = 1,
+		min_c = 1,
+		max_c = 1,
+		nvars = "N",
+		ncons = "K",
+	}
+local short = "N:K:"
+options, opts, optarg = parse_options(arg,short,long)
+--print_table3(options)
+--print_table3(opts)
+           
     
 if options.help then
 	usage(true)
@@ -148,6 +150,7 @@ if options.solve then
     local lindominor = options.lindominor      
     xta:setlindodll(lindomajor,lindominor)
     local solver = xta:solver()
+    assert(solver,"\nError: cannot create a solver instance\n")
     printf("Created a new solver instance %s\n",solver.version);
     local ymd,hms = xta:datenow(),xta:timenow() 
     local jsec = xta:jsec(ymd,hms)
