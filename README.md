@@ -14,7 +14,7 @@ Using scripting languages like Lua simplifies the process of prototyping ideas a
 Clone this repository to install lindoapi-lua.
 
    ```bash
-   git clone https://github.com/your-username/lindoapi-lua.git
+   git clone https://github.com/lindosystems/lindoapi-lua.git
    ```     
 
 Make sure to have LINDO API installed on your system. If you haven't already, click [here](https://www.lindo.com/index.php/ls-downloads/try-lindo-api) to download and install the latest version.
