@@ -1,5 +1,4 @@
 #!/bin/bash
-PLATFORM=$1
 UNAME=`uname`
 MNAME=`uname -m`
 CURPATH=$(pwd)
@@ -7,13 +6,13 @@ CURPATH=$(pwd)
 # Check for LINDOAPI_HOME and LINDOAPI_LICENSE_FILE variables
 if [ -z "$LINDOAPI_HOME" ]; then
   echo "LINDOAPI_HOME is not set. Please set the LINDOAPI_HOME environment variable."
-  exit 1
+  return 1
 fi
 source $LINDOAPI_HOME/bin/lindoapivars.sh
 
 if [ -z "$LINDOAPI_LICENSE_FILE" ]; then
   echo "LINDOAPI_LICENSE_FILE is not set. Please check the installation of LINDO API."
-  exit 1
+  return 1
 fi
 
 
