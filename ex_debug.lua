@@ -19,13 +19,12 @@ local function usage(help_)
     print()
     print("Read a model from a file and optimize or debug.") 
     print()
-    if help_ then print_default_usage() end
-    print()
     print("Usage: lslua ex_debug.lua [options]")
-    print("Example:")
-    print("\t lslua ex_debug.lua -m netlibinf/bgdbg1.mps.gz --iis_level=5 --iis_method=3 --iis_norm=1")
+    if help_ then print_default_usage() end
     print("")
-    if not help_ then print_help_option() end    
+    if not help_ then print_help_option() end        
+    print("Example:")
+    print("\t lslua ex_debug.lua -m netlibinf/bgdbg1.mps.gz --iis_level=5 --iis_method=3 --iis_norm=1")   
     print()
 end   
 
@@ -37,8 +36,13 @@ local long={
 }
 local options, opts, optarg = parse_options(arg,short,long)
 
+if options.help then
+  usage(true)
+  return
+end
+
 if not options.model_file then
-	usage()
+	usage(options.help)
 	return
 end	
 if not options.iis_level then

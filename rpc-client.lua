@@ -12,20 +12,23 @@ local logger  = jsonrpc.logger
 local pars = Lindo.parameters
 local errs = Lindo.errors
 local info = Lindo.info
+require 'llindo_usage'
 
 if (xta==nil) then
   xta=tabox.env()
 end
-local lsmajor,lsminor = 14,0 --xta_get_config('solver_major_version'),xta_get_config('solver_minor_version')
+local lsmajor,lsminor = 15,0 --xta_get_config('solver_major_version'),xta_get_config('solver_minor_version')
 local iModel = -1
 local serialize_byfile = Lindo.serialize_byfile
 
 
-function default_usage()
+local function usage()
 	print("")
 	print("A simple JSON-RPC client using a ZeroMQ socket to communicate with the LINDO API server")
-	print("")
+	print("Note: Requires a running rpc-server instance..")
+	print()
 	print("Usage: lslua rpc-client.lua [options] [args]")
+	print()
 	print("Options:")
 	print("  -h, --help")
 	print("  -s, --rpcserver=<url>  URL of the RPC server")
@@ -62,8 +65,10 @@ function default_usage()
 	print("  --deleteAj             Delete Aj")
 	print("  --iModel=<id>          Model id")
 	print("")
-	if not help_ then print_help_option() end        
-	print()
+	if not help_ then print_help_option() end          
+  print("Example:")
+  print("\t lslua rpc-client.lua --ping=1")    	
+  print()
 end
 
 local short = "hs:v:q"
@@ -109,10 +114,6 @@ local cmdOptions={}
 cmdOptions.ping = 0
 cmdOptions.verb = nil
 
-if #arg==0 then 
-  default_usage()
-  cmdOptions.ping=1; 
-end  
 
 -- Parse the options
 for i, k in pairs(opts) do
@@ -151,6 +152,12 @@ for i, k in pairs(opts) do
   end
 end
 --print_table3(cmdOptions)
+
+
+if #arg==0 then 
+  usage()
+  return
+end  
 
 -- Establish connection with the RPC server
 local rpcport,server_url = get_zmq_client_url(cmdOptions.rpcserver)

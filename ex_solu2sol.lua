@@ -68,16 +68,16 @@ local function usage(help_)
     print()
     print("Read solution of a Lingo model and create a solution file for a related MPI model.")
     print()
-    print("Usage: lua ex_solu2sol.lua [options]")
-    print("Example:")
-    print("\t lslua ex_solu2sol.lua -f /path/to/my.solu -m /path/to/my.mpi [options]")
+    print("Usage: lslua ex_solu2sol.lua [options]")    
     print()
-    if help_ then print_default_usage() end
-    print()
-    print("    , --solve                    Solve last state of model")
+    if help_ then print_default_usage() end    
+    print("    , --solve                    Solve last state of model")    
+    print("  -f, --input_file               Solution file to process")    
 	print("")
 	if not help_ then print_help_option() end        
-	print()    
+    print("Example:")
+    print("\t lslua ex_solu2sol.lua -f /path/to/my.solu -m /path/to/my.mpi [options]")    
+    print()    
 end  
 ---
 -- Parse command line arguments
@@ -95,14 +95,20 @@ for i, k in pairs(opts) do
 end
 
 options.verb = math.max(options.verb and options.verb or 1, 2)
+
+
+if options.help then
+	usage(true)
+end
+
 if not options.input_file then
-	usage()
+	usage(options.help)
 	return
 end	
 
 -- New solver instance
 xta:setsolverdll("",8);
-xta:setlindodll(14,0)
+xta:setlindodll(15,0)
 solver = xta:solver()
 printf("Created a new solver instance %s\n",solver.version);
 local ymd,hms = xta:datenow(),xta:timenow() 

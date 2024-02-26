@@ -222,6 +222,7 @@ local function usage(help_)
     print()
     print("Perform cluster analysis of specified model.")
     print()
+    print("Usage: lslua ex_cluster.lua [options]")
     if help_ then print_default_usage() end
     print()
     print("Options:")
@@ -255,12 +256,9 @@ local function usage(help_)
       dist=='s': Spearman's rank correlation
       dist=='k': Kendall's tau      
       ]]      
-    print()
-    print("Usage: lua ex_cluster.lua [options]")
     print("Example:")
     print("\t lslua ex_cluster.lua -m tmp/Rset0-1.txt --maxiters=5000 --nx=20 --ny=20")
     print()
-
 end
 
 
@@ -330,12 +328,12 @@ for i, k in pairs(opts) do
 end
 
 if options.help then
-  usage()
+  usage(true)
   return
 end
 
 if not options.model_file then  
-  usage()
+  usage(options.help)
   glogger.error("No input file specified. Use -m <input_file> to input.\n")
   return
 end

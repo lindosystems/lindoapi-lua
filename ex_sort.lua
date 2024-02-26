@@ -243,18 +243,17 @@ local function usage(help_)
     print()
     print("Sort a vector 'x' via MILP.")
     print()
-    print("Usage: lua ex_sort.lua [options]")
-    print("Example:")
-    print("\t lslua ex_sort.lua -m /path/to/model_file.mpx [options]")
-    print()
+    print("Usage: lslua ex_sort.lua [options]")    
     if help_ then print_default_usage() end
     print()
     print("    , --solve                    Solve last state of model")
     print("    , --ndim                     Number of columns")
     print("    , --mdim                     Number of rows")
 	print("")
-	if not help_ then print_help_option() end        
-	print()    
+	if not help_ then print_help_option() end        	
+    print("Example:")
+    print("\t lslua ex_sort.lua --ndim=10 --mdim=2 [-m /path/to/model_file.mpx [options]]")    
+    print()    
 end  
 ---
 -- Parse command line arguments
@@ -274,6 +273,16 @@ for i, k in pairs(opts) do
     if k=="ndim" then options.ndim=tonumber(v) end
     if k=="mdim" then options.mdim=tonumber(v) end
 end
+
+if options.help then
+	usage(true)
+	return
+end
+
+if not options.ndim then
+	usage(options.help)
+	return
+end	
 
 options.verb = math.max(options.verb and options.verb or 1, 2)
 

@@ -68,6 +68,7 @@ end
         print()
         print("Read a model and compute tightest possible bounds.")
         print()
+        print("Usage: lslua ex_gen_knap.lua [options]")
         if help_ then print_default_usage() end
         print()
         print("    , --solve                    Solve as tightened model")
@@ -78,12 +79,10 @@ end
         print("    , --min_c=<INTEGER>  Minimum weight for constraint coefficients")
         print("    , --max_c=<INTEGER>  Maximum weight for constraint coefficients")        
         print()
-        print("Usage: lua ex_gen_knap.lua [options]")
+	    if not help_ then print_help_option() end        	    
         print("Example:")
         print("\t lslua ex_gen_knap.lua -N 100 -K 10  [options]")
-    	print("")
-	    if not help_ then print_help_option() end        
-	    print()
+    	print("")        	    
     end   
     
     ---
@@ -113,8 +112,18 @@ end
         if k=="solve" then options.solve=true end
     end    
     
+if options.help then
+	usage(true)
+	return
+end
+
+if not options.nvars then
+	usage(options.help)
+	return
+end	
+
 -- Get N, K, min_w, max_w, min_c, and max_c from command line arguments
-local N = options.nvars or 10
+local N = options.nvars -- required
 local K = options.ncons or 1
 local min_w = options.min_w or 1
 local max_w = options.max_w or 10
