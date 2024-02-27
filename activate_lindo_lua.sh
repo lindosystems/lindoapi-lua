@@ -8,6 +8,7 @@ if [ -z "$LINDOAPI_HOME" ]; then
   echo "LINDOAPI_HOME is not set. Please set the LINDOAPI_HOME environment variable."
   return 1
 fi
+# Set LINDO API environment and PLATFORM
 source $LINDOAPI_HOME/bin/lindoapivars.sh
 
 if [ -z "$LINDOAPI_LICENSE_FILE" ]; then
