@@ -35,16 +35,21 @@ getos_name_arch = function()
   if jit and jit.os and jit.arch then
     raw_os_name = jit.os
     raw_arch_name = jit.arch
+  elseif os.getenv("PLATFORM") and os.getenv("PLATFORM") == "win32x86" then
+    raw_os_name = "windows"
+    raw_arch_name = "x86"
+  elseif os.getenv("PLATFORM") and os.getenv("PLATFORM") == "win64x86" then
+    raw_os_name = "windows"
+    raw_arch_name = "x64"    
   else
     -- is popen supported?
     local popen_status, popen_result = pcall(io.popen, "")
+    --print(popen_status, popen_result)
     if popen_status then
       popen_result:close()
       -- Unix-based OS
       raw_os_name = io.popen('uname -s','r'):read('*l')
       raw_arch_name = io.popen('uname -m','r'):read('*l')
-      uname.s = raw_os_name
-      uname.m = raw_arch_name      
     else
       -- Windows
       local env_OS = os.getenv('OS')
@@ -54,6 +59,8 @@ getos_name_arch = function()
       end      
     end
   end
+  uname.s = raw_os_name
+  uname.m = raw_arch_name
 
   raw_os_name = (raw_os_name):lower()
   raw_arch_name = (raw_arch_name):lower()
@@ -68,6 +75,7 @@ getos_name_arch = function()
     ['^cygwin'] = 'Windows',
     ['bsd$'] = 'BSD',
     ['SunOS'] = 'Solaris',
+    ['posix'] = 'Windows'
   }
   
   local arch_patterns = {
@@ -77,7 +85,7 @@ getos_name_arch = function()
     ['x64'] = 'x86_64',
     ['x86_64'] = 'x86_64',
     ['Power Macintosh'] = 'powerpc',
-    ['^arm'] = 'arm',
+    ['^arm'] = 'arm64',
     ['^mips'] = 'mips',
   }
   
@@ -85,7 +93,8 @@ getos_name_arch = function()
     ['x86'] = "libtabox32",
     ['x86_64'] = "libtabox64",
     ['powerpc'] = "libtabox64",
-    ['arm'] = "libtabox32",
+    ['arm'] = "libtabox64",
+    ['arm64'] = "libtabox64",
     ['mips'] = "libtabox64",
   }
 
@@ -107,48 +116,56 @@ getos_name_arch = function()
   return os_name, arch_name, require_name, uname
 end
 
+---
+-- Entry 
+
+local arch_path
+local raw_os_name, raw_os_arch, raw_require_name, uname
+local TABOX_HOME=LINDOAPI_LUA
+assert(TABOX_HOME,"\nError: LINDOAPI_LUA environment variable is not set!\n")
 
 --[[
 package.path = package.path .. ";;" .. LINDOAPI_LUA .. "/apps/lua/?.lua"
 package.path = package.path .. ";;" .. LINDOAPI_LUA .. "/apps/lua/dataViz/?.lua"
 package.path = package.path .. ";;" .. LINDOAPI_LUA .. "/apps/lua/modules/?.lua"
 package.path = package.path .. ";;" .. LINDOAPI_LUA .. "/apps/lua/3rdparty/?.lua"
-package.path = package.path .. ";;" .. LINDOAPI_LUA .. "/apps/lua/3rdparty/?/init.lua"
-]]
-local arch_path
-local raw_os_name, raw_os_arch, raw_require_name, uname
+package.path = package.path .. ";;" .. LINDOAPI_LUA .. "/apps/lua/3rdparty/?/init.lua" ]]
 
-raw_os_name, raw_os_arch, raw_require_name, uname =  getos_name_arch()    
---print(raw_os_name, raw_os_arch, raw_require_name) -- Windows  x86 libtabox32       
-if raw_os_name=="Windows" then
-  if raw_os_arch:match"64" then
-    arch_path = 'win64x86'
-  else
-    arch_path = 'win32x86'
-  end
-  package.cpath =  package.cpath .. ";" .. LINDOAPI_LUA ..  string.format("/lib/%s",arch_path) .. "/systree/lib/lua/5.1/?.dll" .. ";" ..  LINDOAPI_LUA ..  string.format("/bin/%s/?.dll",arch_path)
-else -- non-windows
-  if raw_os_name == "Linux" then
-    if (raw_os_arch or ""):match"64" then
-        arch_path = 'linux64x86'        
-    else
-        arch_path = 'linux32x86'            
-    end
-    package.cpath =  package.cpath .. ";" .. LINDOAPI_LUA ..  string.format("/lib/%s",arch_path) .. "/systree/lib/lua/5.1/?.so" .. ";" ..  LINDOAPI_LUA ..  string.format("/bin/%s/?.so",arch_path)
-  elseif raw_os_name == "Darwin" then
-    if (raw_os_arch or ""):match"64" then
-        arch_path = 'osx64x86'
-    else
-        arch_path = 'osx32x86'
-    end
-    package.cpath =  package.cpath .. ";" .. LINDOAPI_LUA ..  string.format("/lib/%s",arch_path) .. "/systree/lib/lua/5.1/?.so" .. ";" ..  LINDOAPI_LUA ..  string.format("/bin/%s/?.dylib",arch_path) 
-  else
-    error("OS ".. raw_os_name .. " not supported!")
-  end
+--if tabox==nil or not package.cpath:find("/systree/lib/lua/5.1/?") or not package.path:find("/systree/share/lua/5.1/?.lua") then -- e.g. if lua.exe is the caller or txactivate not run
+if 1>0 then
+	raw_os_name, raw_os_arch, raw_require_name, uname =  getos_name_arch()    
+	if raw_os_name=="Windows" then
+	  if raw_os_arch:match"64" then
+	    arch_path = 'win64x86'
+	  else
+	    arch_path = 'win32x86'
+	  end
+	  package.cpath =  package.cpath .. ";" .. TABOX_HOME ..  string.format("/lib/%s",arch_path) .. "/systree/lib/lua/5.1/?.dll" .. ";" ..  TABOX_HOME ..  string.format("/bin/%s/?.dll",arch_path)
+	else -- non-windows
+	  if raw_os_name == "Linux" then
+	    if (raw_os_arch or ""):match"64" then
+	        arch_path = 'linux64x86'        
+	    else
+	        arch_path = 'linux32x86'            
+	    end
+	    package.cpath =  package.cpath .. ";" .. TABOX_HOME ..  string.format("/lib/%s",arch_path) .. "/systree/lib/lua/5.1/?.so" .. ";" ..  TABOX_HOME ..  string.format("/bin/%s/?.so",arch_path)
+	  elseif raw_os_name == "Darwin" then
+	        if (raw_os_arch or ""):match"arm64" then
+	          arch_path = 'osx64arm'
+	        elseif (raw_os_arch or ""):match"64" then
+	        arch_path = 'osx64x86'
+	    else
+	        arch_path = 'osx32x86'
+	    end
+	    package.cpath =  package.cpath .. ";" .. TABOX_HOME ..  string.format("/lib/%s",arch_path) .. "/systree/lib/lua/5.1/?.so" .. ";" ..  TABOX_HOME ..  string.format("/bin/%s/?.dylib",arch_path) 
+	  else
+	    error("OS '".. raw_os_name .. "' not supported!")
+	  end
+	end
+	package.path = package.path .. ";;" .. TABOX_HOME .. string.format("/lib/%s",arch_path) .. "/systree/share/lua/5.1/?.lua"
+	package.path = package.path .. ";;" .. TABOX_HOME .. string.format("/lib/%s",arch_path) .. "/systree/share/lua/5.1/?/init.lua"
+	require (raw_require_name)
 end
-package.path = package.path .. ";;" .. LINDOAPI_LUA .. string.format("/lib/%s",arch_path) .. "/systree/share/lua/5.1/?.lua"
-package.path = package.path .. ";;" .. LINDOAPI_LUA .. string.format("/lib/%s",arch_path) .. "/systree/share/lua/5.1/?/init.lua"
-require (raw_require_name)
 local szkey=[[
   bnKf9IC6VzkK1XFPSs7ymoHigvi1hTGS4xj2P8k/Uh1YBNYOK54qabTHPPt8ng9J
   rL4U40/ZX4AfLjYJKMQwbu2Crlke7WHNv3qlNkDcGM4Mg8rhP6AwrOgup0PjAZHA

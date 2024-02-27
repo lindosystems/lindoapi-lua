@@ -14,7 +14,22 @@ if [ -z "$LINDOAPI_LICENSE_FILE" ]; then
   echo "LINDOAPI_LICENSE_FILE is not set. Please check the installation of LINDO API."
   return 1
 fi
+if is_cygwin; then
+	LINDOAPI_LICENSE_FILE=$(cygpath -w $LINDOAPI_LICENSE_FILE)
+fi
 
+# Patch names from lindoapivars.sh
+if [ "$PLATFORM" == "win32" ]; then
+  PLATFORM="win32x86"
+fi
+
+if [ "$PLATFORM" == "win64" ]; then
+  PLATFORM="win64x86"
+fi
+
+if [ "$PLATFORM" == "linux64" ]; then
+  PLATFORM="linux64x86"
+fi
 
 if [ ! -z $TABOX_HOME ]; then
     remove_path $TABOX_HOME/bin/$PLATFORM 
