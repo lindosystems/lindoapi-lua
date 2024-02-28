@@ -311,25 +311,25 @@ local long = {
 }
 local short = ""
 
--- Set defaults
-options.somboxwidth=12
-options.outpath='./tmp/'
-options.plotMode=1
-options.testId=1
-options.ldim=2
-options.optmethod=0
-options.ilim=5000
-options.dist=1
-options.maxiters=10000
-options.nx=10
-options.ny=10
-options.alphafun=1 --'linear'
-options.neigh=1 --'bubble'
-options.topol=3 --'hexa'
-options.init=1 --'rand'
 
 -- Parse options
 options, opts, optarg = parse_options(arg,short,long)
+-- Fallback to defaults if not specified
+options.somboxwidth = options.somboxwidth or 12
+options.outpath = options.outpath or './tmp/'
+options.plotMode = options.plotMode or 1
+options.testId = options.testId or 1
+options.ldim = options.ldim or 2
+options.optmethod = options.optmethod or 0
+options.ilim = options.ilim or 5000
+options.dist = options.dist or 1
+options.maxiters = options.maxiters or 10000
+options.nx = options.nx or 10
+options.ny = options.ny or 10
+options.alphafun = options.alphafun or 1
+options.neigh = options.neigh or 1
+options.topol = options.topol or 3
+options.init = options.init or 1
 
 if options.help then
   usage(true)
