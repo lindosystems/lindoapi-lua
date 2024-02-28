@@ -318,8 +318,6 @@ if options.seed then
 end
 
 -- New solver instance
-xta:setsolverdll("",8); -- disable loading LINGO
-xta:setlindodll(lindomajor,lindominor)
 solver = xta:solver()
 assert(solver,"\nError: cannot create a solver instance\n")
 printf("Created a new solver instance %s\n",solver.version);

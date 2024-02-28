@@ -145,10 +145,6 @@ local ltxstream = generateKnapsackProblem(N, K, min_w, max_w, min_c, max_c)
 
 if options.solve then    
     -- New solver instance
-    xta:setsolverdll("",8); -- disable loading LINGO
-    local lindomajor = options.lindomajor
-    local lindominor = options.lindominor      
-    xta:setlindodll(lindomajor,lindominor)
     local solver = xta:solver()
     assert(solver,"\nError: cannot create a solver instance\n")
     printf("Created a new solver instance %s\n",solver.version);

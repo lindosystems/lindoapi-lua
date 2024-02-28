@@ -162,9 +162,6 @@ if options.ktryenv>1 or options.ktrymod>1 or options.ktrysolv>1 then
     sol_digests.total = 0    
 end
 
--- New solver instance
-xta:setsolverdll("",8);
-xta:setlindodll(options.lindomajor,options.lindominor)
 
 local ktryenv = options.ktryenv
 while ktryenv>0 do

@@ -171,7 +171,11 @@ function parse_options(arg,short,long)
         long[k] = v
     end
     local opts,optind,optarg = alt_getopt.get_ordered_opts(arg, short, long)
-
+    local major_lic, minor_lic = get_version_from_licfile(os.getenv("LINDOAPI_LICENSE_FILE"))
+    if not major_lic then
+        major_lic = 15
+        printf("Warning: Could not determine Lindo API version from license file, using default version %d\n",major_lic)
+    end
     local options = {}
     options.help = false
     options.parfile = nil
@@ -181,8 +185,8 @@ function parse_options(arg,short,long)
     options.has_gop   = false
     options.ranges = nil
     options.writeas = nil
-    options.lindomajor = 15
-    options.lindominor = 0
+    options.lindomajor = major_lic -- start with the major version from the license file
+    options.lindominor = minor_lic -- start with the minor version from the license file
     options.solve = 1
     options.xsolver = 0
     options.xdll = nil
@@ -245,8 +249,8 @@ function parse_options(arg,short,long)
         elseif k=="model" or k=="m" then options.model_file = v   
         elseif k=="file" or k=="f" then options.input_file = v
         elseif k=="writeas" or k=="w" then options.writeas=v
-        elseif k=="lindomajor" or k=="M" then options.lindomajor=tonumber(v)
-        elseif k=="lindominor" or k=="I" then options.lindominor=tonumber(v)            
+        elseif k=="lindomajor" or k=="M" then options.lindomajor=tonumber(v) -- major version
+        elseif k=="lindominor" or k=="I" then options.lindominor=tonumber(v) -- minor version           
         elseif k=="solve" or k=="s" then options.solve = tonumber(v)   
         elseif k=="parfile" or k=="p" then options.parfile = v   
         elseif k=="verb" or k=="v" then options.verb = tonumber(v)
@@ -311,6 +315,12 @@ function parse_options(arg,short,long)
     if options.llogger then
         glogger.level =options.llogger
     end
+    
+    -- New solver instance
+    xta:setsolverdll("",8);
+    xta:setlindodll(options.lindomajor,options.lindominor)
+    errmsg()
+    print("Configured for Lindo API %d.%d\n",options.lindomajor,options.lindominor)
 
     math.randomseed(options.seed)     
     if options.verb>2 then 
