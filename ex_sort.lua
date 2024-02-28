@@ -263,7 +263,8 @@ local function usage(help_)
     print("Example:")
     print("\t lslua ex_sort.lua --ndim=10 --mdim=2 [-m /path/to/model_file.mpx [options]]")    
     print()    
-end  
+end
+
 ---
 -- Parse command line arguments
 local long={
@@ -286,6 +287,7 @@ if not options.ndim then
 end	
 xta.logfun = printline
 xta.loglevel = 2
+
 options.verb = math.max(options.verb and options.verb or 1, 2)
 solver = xta:solver()
 assert(solver,"\nError: cannot create a solver instance\n")
