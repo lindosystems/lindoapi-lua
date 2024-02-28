@@ -319,8 +319,8 @@ function parse_options(arg,short,long)
     -- New solver instance
     xta:setsolverdll("",8);
     xta:setlindodll(options.lindomajor,options.lindominor)
-    errmsg()
-    print("Configured for Lindo API %d.%d\n",options.lindomajor,options.lindominor)
+
+    printf("Configured for Lindo API %d.%d\n",options.lindomajor,options.lindominor)
 
     math.randomseed(options.seed)     
     if options.verb>2 then 
