@@ -376,11 +376,12 @@ function get_zmq_client_url(server)
 end
 
 function get_version_from_licfile(str)
-  -- Use Lua pattern matching to find numbers in the string
-  local major, minor = str:match("(%d+)(%d%d)%.lic$")
-  -- Check if both numbers were found; if not, assign '0' as strings
-  major = major or "0"
-  minor = minor or "0"
-  -- Return the numbers as strings
-  return major, minor
+   -- Use Lua pattern matching to find the two-digit and one-digit numbers in the string
+   local major, minor = str:match("(%d%d)(%d)%.lic$")
+   -- If the pattern does not match, it means the numbers are not present in the expected format
+   if not major or not minor then
+       return nil, nil -- or you can return "0", "0" if you prefer
+   end
+   -- Return the numbers as strings
+   return major, minor
 end
