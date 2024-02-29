@@ -184,7 +184,7 @@ function parse_options(arg,short,long)
     options.has_gop   = false
     options.ranges = nil
     options.writeas = nil
-    options.lsversion = sprintf("%s.s",major_lic,minor_lic) -- start with the <major.minor> version from the license file
+    options.lsversion = sprintf("%s.%s",major_lic,minor_lic) -- start with the <major.minor> version from the license file
     options.solve = 1
     options.xsolver = 0
     options.xdll = nil
@@ -247,7 +247,7 @@ function parse_options(arg,short,long)
         elseif k=="model" or k=="m" then options.model_file = v   
         elseif k=="file" or k=="f" then options.input_file = v
         elseif k=="writeas" or k=="w" then options.writeas=v
-        elseif k=="lsversion" then options.lsversion=tonumber(v) -- major version
+        elseif k=="lsversion" then options.lsversion=v -- major version
         elseif k=="solve" or k=="s" then options.solve = tonumber(v)   
         elseif k=="parfile" or k=="p" then options.parfile = v   
         elseif k=="verb" or k=="v" then options.verb = tonumber(v)
@@ -312,8 +312,11 @@ function parse_options(arg,short,long)
     if options.llogger then
         glogger.level =options.llogger
     end
-    major_lic, minor_lic = unpack(options.lsversion:splitz("."))
-    options.major_lic,options.minor_lic = tointeger(major_lic), tointeger(minor_lic)
+    if options.model_file then
+        options.model_path = paths.dirname(options.model_file)
+    end
+    major_lic, minor_lic = unpack(options.lsversion:splitz("."))    
+    options.major_lic,options.minor_lic = tonumber(major_lic), tonumber(minor_lic)
     -- New solver instance
     xta:setsolverdll("",8);
     xta:setlindodll(options.major_lic,options.minor_lic)
@@ -329,34 +332,47 @@ function parse_options(arg,short,long)
     return options, opts, optarg
 end
 
+--- Get xuserdll path
+-- @param xuserdll The xuserdll path passed by user at command line
+-- @return The xuserdll path to be used
+function get_xuserdll_path(xuserdll)    
+    if not xuserdll:find(".dll") and not xuserdll:find(".so") and not xuserdll:find(".dylib") then
+        -- if no extension is given, assume it is a dll
+        local tag = ""
+        if raw_os_arch:match"64" then
+            tag = "64_"
+        end
+        local s
+        if not os.getenv(sprintf("LINGO%s21_HOME",tag)) then
+            if not os.getenv(sprintf("LINGO%s20_HOME",tag)) then
+                if not os.getenv(sprintf("LINGO%s19_HOME",tag)) then
+                    if options.model_path then
+                        s = options.model_path -- use model path
+                    else
+                        s = "." -- use current directory as a last resort
+                    end
+                else
+                    s = os.getenv(sprintf("LINGO%s19_HOME",tag)) 
+                end
+            else
+                s = os.getenv(sprintf("LINGO%s20_HOME",tag)) 
+            end
+        else
+            s = os.getenv(sprintf("LINGO%s21_HOME",tag))
+        end
+        xuserdll = sprintf("%s/MyUser.dll",s)
+    end
+    return xuserdll
+end
+
 --- Apply solver options
+-- @param solver The solver instance
+-- @param options The options table
 function apply_solver_options(solver, options)
     local res
     options.raw_os_name, options.raw_os_arch, options.raw_require_name, options.uname =  getos_name_arch() 
     if options.xuserdll then
-        local xuserdll = options.xuserdll 
-        if not xuserdll:find(".dll") and not xuserdll:find(".so") and not xuserdll:find(".dylib") then
-            -- if no extension is given, assume it is a dll
-            local tag = ""
-            if raw_os_arch:match"64" then
-                tag = "64_"
-            end
-            local s
-            if not os.getenv(sprintf("LINGO%s21_HOME",tag)) then
-                if not os.getenv(sprintf("LINGO%s20_HOME",tag)) then
-                    if not os.getenv(sprintf("LINGO%s19_HOME",tag)) then
-                        s = os.getenv(sprintf("LINGO%s19_HOME",tag)) 
-                    else
-                        s = os.getenv(sprintf("LINGO%s20_HOME",tag)) 
-                    end
-                else
-                    s = os.getenv(sprintf("LINGO%s21_HOME",tag)) 
-                end
-            else
-                s = os.getenv(sprintf("LINGO%s21_HOME",tag))
-            end
-            xuserdll = sprintf("%s/MyUser.dll",s)
-        end
+        local xuserdll = get_xuserdll_path(options.xuserdll)
         res = solver:setXSolverLibrary(94,xuserdll)
         solver:xassert(res)
     end
