@@ -172,6 +172,7 @@ function parse_options(arg,short,long)
     local major_lic, minor_lic = get_version_from_licfile(os.getenv("LINDOAPI_LICENSE_FILE"))
     if not major_lic then
         major_lic = 15
+        minor_lic = 0
         printf("Warning: Could not determine Lindo API version from license file, using default version %d\n",major_lic)
     end
     local options = {}
@@ -311,11 +312,12 @@ function parse_options(arg,short,long)
     if options.llogger then
         glogger.level =options.llogger
     end
-    options.major_lic,options.minor_lic = unpack(options.lsversion:splitz("."))   
+    major_lic, minor_lic = unpack(options.lsversion:splitz("."))
+    options.major_lic,options.minor_lic = major_lic, minor_lic
     -- New solver instance
     xta:setsolverdll("",8);
-    xta:setlindodll(options.major_lic,options.minor_lic)
-    print("Configured for Lindo API %d.%d\n",options.major_lic,options.minor_lic)
+    xta:setlindodll(tostring(options.major_lic),tostring(options.minor_lic))
+    printf("Configured for Lindo API %d.%d\n",options.major_lic,options.minor_lic)
 
     math.randomseed(options.seed)     
     if options.verb>2 then 
@@ -330,10 +332,30 @@ end
 --- Apply solver options
 function apply_solver_options(solver, options)
     local res
+    options.raw_os_name, options.raw_os_arch, options.raw_require_name, options.uname =  getos_name_arch() 
     if options.xuserdll then
         local xuserdll = options.xuserdll 
         if not xuserdll:find(".dll") and not xuserdll:find(".so") and not xuserdll:find(".dylib") then
-            xuserdll = "j:\\usr2\\LINGO\\64_20\\MyUser.dll"        
+            -- if no extension is given, assume it is a dll
+            local tag = ""
+            if raw_os_arch:match"64" then
+                tag = "64_"
+            end
+            local s
+            if not os.getenv(sprintf("LINGO%s21_HOME",tag)) then
+                if not os.getenv(sprintf("LINGO%s20_HOME",tag)) then
+                    if not os.getenv(sprintf("LINGO%s19_HOME",tag)) then
+                        s = os.getenv(sprintf("LINGO%s19_HOME",tag)) 
+                    else
+                        s = os.getenv(sprintf("LINGO%s20_HOME",tag)) 
+                    end
+                else
+                    s = os.getenv(sprintf("LINGO%s21_HOME",tag)) 
+                end
+            else
+                s = os.getenv(sprintf("LINGO%s21_HOME",tag))
+            end
+            xuserdll = sprintf("%s/MyUser.dll",s)
         end
         res = solver:setXSolverLibrary(94,xuserdll)
         solver:xassert(res)
@@ -344,6 +366,6 @@ function apply_solver_options(solver, options)
         res = solver:setXSolverLibrary(options.xsolver,xdll)
         solver:xassert(res)
     end   
-
+    
     return
 end
