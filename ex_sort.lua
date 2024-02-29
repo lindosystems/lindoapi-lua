@@ -20,26 +20,12 @@ require 'llindo_usage'
 local solver
 local options, opts, optarg
 
-function myprintlog(pModel,str)
-  printf("%s",str)
-end
-
-function cbmip(pModel,dobj,pX)
-  printf("mipobj: %g, |X|=%g\n",dobj,pX:norm())    
-  return 0
-end
-
-function cbstd(pModel,iLoc)
-  printf("loc: %d\n",iLoc)  
-  return 0
-end
-
 function probdir()
-  local file=os.getenv("LS_PROB")
-  if not file then
-    file = "/home/mka/prob"
+  local dir=os.getenv("LS_PROB")
+  if not dir or (dir and paths.dirp(dir)) then
+    dir = "/home/mka/prob"
   end
-  return file
+  return dir
 end
 
 ---
@@ -58,7 +44,18 @@ function gen_sort(options)
     local m, n
     m = options.mdim or 10
     n = options.ndim or 4    
-    local file = options.model_file or probdir() .. sprintf("/minlp/mpx/sort%dx%d.mpx",m,n)
+    local model_file = options.model_file
+    if not model_file then
+        local tmppath = probdir() .. sprintf("/minlp/mpx")
+        if not paths.dirp(tmppath) then
+            tmppath = "/tmp/minlp/mpx"
+            if not paths.dirp(tmppath) then
+                paths.mkdir(tmppath)
+                printf("Created directory %s\n", tmppath)
+            end
+        end
+        model_file = sprintf("%s/sort%dx%d.mpx", tmppath, m, n)    
+    end
     local R = xta:rtable(n, m, "uniform(0,1)", 1031)
     local p = xta:rtable(m, 1, "uniform(0,1)", 1031)
     local w0 = xta:rtable(n, 1, "uniform(0,1)", 1031)
@@ -211,10 +208,12 @@ function gen_sort(options)
     local str = toString(sbuf)
     pModel:readMPXStream(str)
 
-    fwrite(file, "w", str)        
-    glogger.info("Wrote model to %s\n", file)    
+    if model_file then
+        fwrite(model_file, "w", str) 
+        glogger.info("Wrote model to %s\n", model_file)    
+    end    
 
-    if options.solve then
+    if options.solve then        
         res = pModel:solveGOP()
         print_table3(res)
         -- xassert(res)
@@ -229,7 +228,7 @@ function gen_sort(options)
     
     if options.writeas then
         assert(options.writeas=='mpi',"Only MPI format is supported")
-        options.model_file = changeFileExtension(file,".mpi")
+        options.model_file = changeFileExtension(model_file,".mpi")
         pModel:write(options)        
         glogger.info("Wrote model to %s\n", options.model_file)
     end
