@@ -19,6 +19,11 @@ if is_cygwin; then
 	LINDOAPI_LICENSE_FILE=$(cygpath -w $LINDOAPI_LICENSE_FILE)
 fi
 
+# Use the correct library for the platform
+if [ "${UNAME}" = "Darwin" ]; then
+  export XTASOLVER_LINDO_LIB=$LINDOAPI_HOME/bin/$PLATFORM/liblindo64.dylib
+fi
+
 # Patch names from lindoapivars.sh
 if [ "$PLATFORM" == "win32" ]; then
   PLATFORM="win32x86"
