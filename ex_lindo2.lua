@@ -535,6 +535,7 @@ function solver_ex2()
 -------- Load LP data
   
    local solver = xta:solver()  
+   assert(solver,"\n\nError: failed create a solver instance.\n")
    printf("Solver: %s\n",solver.version)
    local pModel = solver:mpmodel()     
       

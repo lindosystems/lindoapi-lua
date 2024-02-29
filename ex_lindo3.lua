@@ -152,6 +152,7 @@ function solver_ex3()
   
 -------- Load LP data  
    local solver = xta:solver() 
+   assert(solver,"\n\nError: failed create a solver instance.\n")
    local pModel = solver:mpmodel()   
       
    ierr = pModel:loadlp(

@@ -14,7 +14,7 @@ print()
 local short=""
 local long={}
 local options, opts, optarg = parse_options(arg,short,long)
-printf("%s\n",paths.dirname(os.getenv("LINDOAPI_LICENSE_FILE")))
+
 xta:setlindodll(options.major_lic,options.minor_lic)
 solver = xta:solver()
 assert(solver,"\n\nError: failed create a solver instance.\n")

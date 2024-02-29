@@ -60,7 +60,7 @@ end
 
 ---
 --
-function testSolverLicense()
+function testSolverLicense(solver)
   local licfile = os.getenv("LINDOAPI_HOME") .. "/license/lndapi150.lic"
   printf("\nLoading %s\n",licfile)
   local res = solver:loadLicenseString(licfile)
@@ -119,7 +119,8 @@ function testSolverSETS()
 end
 
 solver = xta:solver()
-testSolverLicense()
+assert(solver,"\n\nError: failed create a solver instance.\n")
+testSolverLicense(solver)
 testSolverMPX()
 testSolverSETS()
 printf("Disposing %s\n",tostring(solver))  
