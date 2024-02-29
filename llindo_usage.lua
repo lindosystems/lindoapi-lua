@@ -55,8 +55,7 @@ function print_default_usage()
     print("    , --multis=VALUE             Use multistart solver with 'VALUE' multi starts")
     print("    , --ranges=STRING            Compute range analysis, possible values are 'bounds', 'obj', etc..")
     print("    , --writeas=EXT              Write model to a file with extension 'EXT'")
-    print("  -M, --lindomajor=INTEGER       Lindo api major version to use")
-    print("  -I, --lindominor=INTEGER       Lindo api minor version to use")    
+    print("    , --lsversion=x.y            Lindo api <major.minor> version to use")
     print("    , --seed=INTEGER             Set random number generator 'seed'")
     print("    , --max                      Set objective sense to maximize (default: minimize)")
     printf("   , --llogger=STRING           Set logger value (default: %s), possible values are 'debug', 'info', 'warn', 'critc','error', 'fatal'\n",'info')
@@ -111,8 +110,7 @@ local long_default = {
     gop = 0,    
     ranges = 1,
     writeas = "w",
-    lindomajor = "M", 
-    lindominor = "I",
+    lsversion = 1,
     seed = 1,
     max = 0,
     llogger = 1,
@@ -185,8 +183,7 @@ function parse_options(arg,short,long)
     options.has_gop   = false
     options.ranges = nil
     options.writeas = nil
-    options.lindomajor = major_lic -- start with the major version from the license file
-    options.lindominor = minor_lic -- start with the minor version from the license file
+    options.lsversion = sprintf("%s.s",major_lic,minor_lic) -- start with the <major.minor> version from the license file
     options.solve = 1
     options.xsolver = 0
     options.xdll = nil
@@ -249,8 +246,7 @@ function parse_options(arg,short,long)
         elseif k=="model" or k=="m" then options.model_file = v   
         elseif k=="file" or k=="f" then options.input_file = v
         elseif k=="writeas" or k=="w" then options.writeas=v
-        elseif k=="lindomajor" or k=="M" then options.lindomajor=tonumber(v) -- major version
-        elseif k=="lindominor" or k=="I" then options.lindominor=tonumber(v) -- minor version           
+        elseif k=="lsversion" then options.lsversion=tonumber(v) -- major version
         elseif k=="solve" or k=="s" then options.solve = tonumber(v)   
         elseif k=="parfile" or k=="p" then options.parfile = v   
         elseif k=="verb" or k=="v" then options.verb = tonumber(v)
@@ -315,12 +311,11 @@ function parse_options(arg,short,long)
     if options.llogger then
         glogger.level =options.llogger
     end
-    
+    options.major_lic,options.minor_lic = unpack(options.lsversion:splitz("."))   
     -- New solver instance
     xta:setsolverdll("",8);
-    xta:setlindodll(options.lindomajor,options.lindominor)
-
-    printf("Configured for Lindo API %d.%d\n",options.lindomajor,options.lindominor)
+    xta:setlindodll(options.major_lic,options.minor_lic)
+    print("Configured for Lindo API %d.%d\n",options.major_lic,options.minor_lic)
 
     math.randomseed(options.seed)     
     if options.verb>2 then 

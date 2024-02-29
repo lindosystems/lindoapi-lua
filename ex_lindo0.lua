@@ -15,7 +15,7 @@ local short=""
 local long={}
 local options, opts, optarg = parse_options(arg,short,long)
 
-xta:setlindodll(options.lindomajor,options.lindominor)
+xta:setlindodll(options.major_lic,options.minor_lic)
 solver = xta:solver()
 assert(solver,"\n\nError: failed create a solver instance.\n")
 printf("Created a new solver instance %s\n",solver.version);

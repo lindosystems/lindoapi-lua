@@ -292,8 +292,6 @@ local has_cbmip = options.has_cbmip
 local has_cbstd = options.has_cbstd
 local has_cblog = options.has_cblog
 local has_gop   = options.has_gop
-local lindomajor = options.lindomajor
-local lindominor = options.lindominor
 local model_file = options.model_file
 verb = math.max(options.verb and options.verb or 1, 2)
 
