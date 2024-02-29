@@ -313,10 +313,10 @@ function parse_options(arg,short,long)
         glogger.level =options.llogger
     end
     major_lic, minor_lic = unpack(options.lsversion:splitz("."))
-    options.major_lic,options.minor_lic = major_lic, minor_lic
+    options.major_lic,options.minor_lic = tointeger(major_lic), tointeger(minor_lic)
     -- New solver instance
     xta:setsolverdll("",8);
-    xta:setlindodll(tostring(options.major_lic),tostring(options.minor_lic))
+    xta:setlindodll(options.major_lic,options.minor_lic)
     printf("Configured for Lindo API %d.%d\n",options.major_lic,options.minor_lic)
 
     math.randomseed(options.seed)     
