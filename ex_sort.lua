@@ -20,14 +20,6 @@ require 'llindo_usage'
 local solver
 local options, opts, optarg
 
-function probdir()
-  local dir=os.getenv("LS_PROB")
-  if not dir or (dir and paths.dirp(dir)) then
-    dir = "/home/mka/prob"
-  end
-  return dir
-end
-
 ---
 --
 function gen_sort(options)

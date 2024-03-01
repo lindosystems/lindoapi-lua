@@ -1,4 +1,48 @@
 #!/usr/bin/env lua
+
+function cygpath_w(ls_prob)
+    -- Check if the environment variable exists
+    if not ls_prob then
+        print("The input argument is nil.")
+        return nil
+    end
+
+    -- Prepare the command to execute
+    local command = "cygpath -w " .. ls_prob
+
+    -- Execute the command using io.popen, which runs the command and returns a file handle
+    local handle = io.popen(command)
+    if not handle then
+        print("Failed to execute the command.")
+        return nil
+    end
+
+    -- Read the command output
+    local output = handle:read("*a")
+
+    -- Close the file handle
+    handle:close()
+
+    -- Trim any trailing whitespace or newlines
+    output = output:gsub("%s+$", "")
+    output = output:gsub("\\", "/")
+
+    -- Return the command output
+    return output
+end
+
+--- Get the version from the license file
+function probdir()
+    local dir=os.getenv("LS_PROB_PATH")
+    if not dir or (dir and paths.dirp(dir)) then
+      dir = "/home/mka/prob"
+    end    
+    if xta.platformid==xta.const.win32x86 or xta.platformid==xta.const.win64x86 then                           
+        dir = cygpath_w(dir)
+    end        
+    return dir
+  end
+
 --- Pretty options displayer
 function print_table_dots(tbl)
     local max_key_length = 0
@@ -381,6 +425,7 @@ function apply_solver_options(solver, options)
         local xdll = options.xdll 
         res = solver:setXSolverLibrary(options.xsolver,xdll)
         solver:xassert(res)
+        glogger.info("Set external solver %d to %s\n",options.xsolver,xdll)
     end   
     
     return

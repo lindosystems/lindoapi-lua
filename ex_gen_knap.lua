@@ -143,7 +143,7 @@ end
 
 local ltxstream = generateKnapsackProblem(N, K, min_w, max_w, min_c, max_c)
 
-if options.solve then    
+if options.solve>0 then    
     -- New solver instance
     local solver = xta:solver()
     assert(solver,"\nError: cannot create a solver instance\n")

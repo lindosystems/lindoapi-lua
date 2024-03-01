@@ -260,7 +260,7 @@ while ktryenv>0 do
 
         -- Solve model        
         local ktrysolv = options.ktrysolv 
-        if options.solve then             
+        if options.solve>0 then             
             local res_opt, res_rng
             while ktrysolv>0 do         
                 local szktryid = sprintf("e%02d_m%02d_s%02d",ktryenv,ktrymod,ktrysolv)

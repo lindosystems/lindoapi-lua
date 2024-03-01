@@ -352,7 +352,7 @@ yModel = ls_calc_im_opt_bounds(pModel)
 assert(yModel,"Error: failed to compute optimal bounds\n")
 printf("Finished computing optimal bounds\n")
 
-if options.solve then
+if options.solve>0 then
 	-- Solve model
 	printf("\n")
 	yModel:setMIPCallback(cbmip)

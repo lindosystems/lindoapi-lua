@@ -102,7 +102,7 @@ end
 
 -- Solve model
 local res_opt, res_rng 
-if options.solve then 
+if options.solve>0 then 
     res_opt, res_rng = pModel:solve(options)
 end    
 
