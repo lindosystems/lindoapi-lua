@@ -1,15 +1,17 @@
-#!/usr/bin/env lua
 --
 --  Author: Alexey Melnichuk <mimir@newmail.ru>
 --
---  Copyright (C) 2013-2014 Alexey Melnichuk <mimir@newmail.ru>
+--  Copyright (C) 2013-2017 Alexey Melnichuk <mimir@newmail.ru>
 --
 --  Licensed according to the included 'LICENCE' document
 --
 --  This file is part of lua-lzqm library.
 --
 
-local LZMQ_VERSION = "0.4.3"
+local LZMQ_VERSION   = "0.4.4"
+local LZMQ_NAME      = "lzmq.ffi"
+local LZMQ_LICENSE   = "MIT"
+local LZMQ_COPYRIGHT = "Copyright (c) 2013-2017 Alexey Melnichuk"
 
 local lua_version_t
 local function lua_version()
@@ -55,6 +57,11 @@ local function ptrtohex(ptr)
   return bintohex(api.ptrtostr(ptr))
 end
 
+local function hashid(obj)
+  obj = tostring(obj)
+  return string.match(obj, ': (%x+)$') or obj
+end
+
 local FLAGS = api.FLAGS
 local ERRORS = api.ERRORS
 local ZMQ_LINGER = api.SOCKET_OPTIONS.ZMQ_LINGER[1]
@@ -71,6 +78,7 @@ local Message = {}
 local Poller  = {}
 local StopWatch = {}
 
+local NAME_PREFIX = "LuaZMQ: "
 
 local function zerror(...) return Error:new(...) end
 
@@ -143,6 +151,7 @@ function Context:new(ptr)
       sockets = make_weak_kv();
       ctx     = ctx;
       scount  = 0;
+      hash    = ptrtohex(ctx);
     }
   }, self)
 
@@ -283,7 +292,9 @@ end
 
 local SNAMES = {}
 for n, v in pairs(api.SOCKET_TYPES) do
-  SNAMES[n:sub(5)] = v
+  n = string.sub(n, 5)
+  SNAMES[n] = v
+  SNAMES[v] = n
 end
 
 function Context:socket(stype, opt)
@@ -300,6 +311,8 @@ function Context:socket(stype, opt)
     _private = {
       ctx = self;
       skt = skt;
+      hash = ptrtohex(skt);
+      socket_type = SNAMES[stype] or string.format('%d', stype);
     }
   },Socket)
   self:_inc_socket_count(1)
@@ -315,7 +328,7 @@ function Context:socket(stype, opt)
         if fn then
           local ok, err, ext = fn(o, v)
           if not ok then
-            o:destroy()
+            o:close()
             return nil, err, ext
           end
         end
@@ -370,6 +383,16 @@ else
   end
 end
 
+function Context:__tostring()
+  local str = string.format('%sContext (%s)',
+    NAME_PREFIX, self._private.hash
+  )
+  if self:closed() then
+    str = str .. ' - closed'
+  end
+  return str
+end
+
 end
 
 do -- Socket
@@ -379,7 +402,7 @@ Socket.__index = Socket
 local tmp_msg = ffi.new(api.zmq_msg_t)
 
 function Socket:closed()
-  return not self._private
+  return not self._private.skt
 end
 
 function Socket:close(linger)
@@ -403,7 +426,7 @@ function Socket:close(linger)
   end
 
   self._private.skt = nil
-  self._private = nil
+  self._private.ctx = nil
   return true
 end
 
@@ -774,6 +797,16 @@ function Socket:has_event(...)
   return unpack(res)
 end
 
+function Socket:__tostring()
+  local str = string.format('%sSocket[%s] (%s)',
+    NAME_PREFIX, self._private.socket_type, self._private.hash
+  )
+  if self:closed() then
+    str = str .. ' - closed'
+  end
+  return str
+end
+
 end
 
 do -- Message
@@ -1007,14 +1040,17 @@ Poller.__index = Poller
 function Poller:new(n)
   assert((n or 0) >= 0)
 
-  return setmetatable({
+  local o = {
     _private = {
       items   = n and ffi.new(api.vla_pollitem_t, n);
       size    = n or 0;
       nitems  = 0;
       sockets = {};
     }
-  },self)
+  }
+  o._private.hash = hashid(o)
+
+  return setmetatable(o,self)
 end
 
 -- ensure that there n empty items
@@ -1163,6 +1199,12 @@ function Poller:stop()
   self._private.is_running = nil
 end
 
+function Poller:__tostring()
+  return string.format('%sPoller (%s)',
+    NAME_PREFIX, self._private.hash
+  )
+end
+
 end
 
 do -- StopWatch
@@ -1200,7 +1242,10 @@ end
 
 do -- zmq
 
-zmq._VERSION = LZMQ_VERSION
+zmq._VERSION   = LZMQ_VERSION
+zmq._NAME      = LZMQ_NAME
+zmq._LICENSE   = LZMQ_LICENSE
+zmq._COPYRIGHT = LZMQ_COPYRIGHT
 
 function zmq.version(unpack)
   local mj,mn,pt = api.zmq_version()
@@ -1316,6 +1361,16 @@ function zmq.curve_keypair(...)
   local pub, sec = api.zmq_curve_keypair(...)
   if pub == -1 then return nil, zerror() end
   return pub, sec
+end
+
+end
+
+if api.zmq_curve_public then
+
+function zmq.curve_public(...)
+  local pub = api.zmq_curve_public(...)
+  if pub == -1 then return nil, zerror() end
+  return pub
 end
 
 end

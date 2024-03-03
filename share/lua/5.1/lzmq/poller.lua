@@ -1,4 +1,3 @@
-#!/usr/bin/env lua
 -- Copyright (c) 2011 by Robert G. Jakabosky <bobby@sharedrealm.com>
 --
 -- Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -31,6 +30,11 @@ local setmetatable = setmetatable
 local tonumber = tonumber
 local assert = assert
 local Poller = zmq.poller
+
+local function hashid(obj)
+	obj = tostring(obj)
+	return string.match(obj, ': (%x+)$') or obj
+end
 
 local poller_mt = {}
 poller_mt.__index = poller_mt
@@ -93,14 +97,19 @@ function poller_mt:stop()
 	self.is_running = false
 end
 
+function poller_mt:__tostring()
+	return string.format("LuaZMQ: Poller (%s)", self.hash)
+end
+
 local M = {}
 
 function M.new(pre_alloc)
+	local poller = Poller(pre_alloc)
 	return setmetatable({
-		poller = Poller(pre_alloc),
+		poller = poller,
+		hash = hashid(poller),
 		callbacks = {},
 	}, poller_mt)
 end
 
 return setmetatable(M, {__call = function(tab, ...) return M.new(...) end})
-
