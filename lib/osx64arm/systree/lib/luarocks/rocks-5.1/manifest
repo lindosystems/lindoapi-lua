@@ -1,0 +1,139 @@
+commands = {}
+dependencies = {
+   ["lua-llthreads2"] = {
+      ["0.1.6-1"] = {
+         {
+            constraints = {
+               {
+                  op = ">=",
+                  version = {
+                     5, 1, string = "5.1"
+                  }
+               },
+               {
+                  op = "<",
+                  version = {
+                     5, 5, string = "5.5"
+                  }
+               }
+            },
+            name = "lua"
+         }
+      }
+   },
+   lzmq = {
+      ["0.4.4-1"] = {
+         {
+            constraints = {
+               {
+                  op = ">=",
+                  version = {
+                     5, 1, string = "5.1"
+                  }
+               },
+               {
+                  op = "<",
+                  version = {
+                     5, 4, string = "5.4"
+                  }
+               }
+            },
+            name = "lua"
+         }
+      }
+   }
+}
+modules = {
+   llthreads2 = {
+      "lua-llthreads2/0.1.6-1"
+   },
+   ["llthreads2.ex"] = {
+      "lua-llthreads2/0.1.6-1"
+   },
+   lzmq = {
+      "lzmq/0.4.4-1"
+   },
+   ["lzmq.ffi"] = {
+      "lzmq/0.4.4-1"
+   },
+   ["lzmq.ffi.api"] = {
+      "lzmq/0.4.4-1"
+   },
+   ["lzmq.ffi.error"] = {
+      "lzmq/0.4.4-1"
+   },
+   ["lzmq.ffi.loop"] = {
+      "lzmq/0.4.4-1"
+   },
+   ["lzmq.ffi.poller"] = {
+      "lzmq/0.4.4-1"
+   },
+   ["lzmq.ffi.threads"] = {
+      "lzmq/0.4.4-1"
+   },
+   ["lzmq.ffi.timer"] = {
+      "lzmq/0.4.4-1"
+   },
+   ["lzmq.impl.loop"] = {
+      "lzmq/0.4.4-1"
+   },
+   ["lzmq.impl.threads"] = {
+      "lzmq/0.4.4-1"
+   },
+   ["lzmq.llthreads.ex"] = {
+      "lzmq/0.4.4-1"
+   },
+   ["lzmq.loop"] = {
+      "lzmq/0.4.4-1"
+   },
+   ["lzmq.poller"] = {
+      "lzmq/0.4.4-1"
+   },
+   ["lzmq.threads"] = {
+      "lzmq/0.4.4-1"
+   },
+   ["lzmq.timer"] = {
+      "lzmq/0.4.4-1"
+   }
+}
+repository = {
+   ["lua-llthreads2"] = {
+      ["0.1.6-1"] = {
+         {
+            arch = "installed",
+            commands = {},
+            dependencies = {},
+            modules = {
+               llthreads2 = "llthreads2.so",
+               ["llthreads2.ex"] = "llthreads2/ex.lua"
+            }
+         }
+      }
+   },
+   lzmq = {
+      ["0.4.4-1"] = {
+         {
+            arch = "installed",
+            commands = {},
+            dependencies = {},
+            modules = {
+               lzmq = "lzmq.so",
+               ["lzmq.ffi"] = "lzmq/ffi.lua",
+               ["lzmq.ffi.api"] = "lzmq/ffi/api.lua",
+               ["lzmq.ffi.error"] = "lzmq/ffi/error.lua",
+               ["lzmq.ffi.loop"] = "lzmq/ffi/loop.lua",
+               ["lzmq.ffi.poller"] = "lzmq/ffi/poller.lua",
+               ["lzmq.ffi.threads"] = "lzmq/ffi/threads.lua",
+               ["lzmq.ffi.timer"] = "lzmq/ffi/timer.lua",
+               ["lzmq.impl.loop"] = "lzmq/impl/loop.lua",
+               ["lzmq.impl.threads"] = "lzmq/impl/threads.lua",
+               ["lzmq.llthreads.ex"] = "lzmq/llthreads/ex.lua",
+               ["lzmq.loop"] = "lzmq/loop.lua",
+               ["lzmq.poller"] = "lzmq/poller.lua",
+               ["lzmq.threads"] = "lzmq/threads.lua",
+               ["lzmq.timer"] = "lzmq/timer.so"
+            }
+         }
+      }
+   }
+}

@@ -1,0 +1,15 @@
+rock_manifest = {
+   doc = {
+      LICENSE = "dd3e6b98ba10c848c0688b32f8430339",
+      ["README.md"] = "2cda7ce3b47252ad83b19363dfda220e"
+   },
+   lib = {
+      ["llthreads2.so"] = "79b40b8064e8451f4cf54a630003704a"
+   },
+   lua = {
+      llthreads2 = {
+         ["ex.lua"] = "2818e7475c162b2254aec01baae3970d"
+      }
+   },
+   ["lua-llthreads2-0.1.6-1.rockspec"] = "e8e5c74c477a2a0bf4c468225f1aa0e8"
+}
