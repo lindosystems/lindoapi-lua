@@ -82,9 +82,10 @@ end
 ---
 -- Parse command line arguments
 local long={
-    solve = 0
+    solve = 0,
+    input_file = "f",
 }
-local short = ""
+local short = "f:"
 options, opts, optarg = parse_options(arg,short,long)
 --print_table3(options)
 
@@ -112,7 +113,7 @@ local res
 local pModel = solver:mpmodel()
 glogger.info("Created a new model instance\n");
 pModel.usercalc=xta.const.size_max
-if options.has_cblog>0 then    
+if options.cblog>0 then    
 	pModel.logfun = myprintlog
 	glogger.info("Set a new log function for the model instance\n");
 end	

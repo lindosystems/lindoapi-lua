@@ -224,9 +224,9 @@ function parse_options(arg,short,long)
     local options = {}
     options.help = false
     options.parfile = nil
-    options.has_cbmip = 0
-    options.has_cbstd = 0
-    options.has_cblog = 1
+    options.cbmip = 0
+    options.cbstd = 0
+    options.cblog = 1
     options.has_gop   = false
     options.ranges = nil
     options.writeas = nil
@@ -303,9 +303,9 @@ function parse_options(arg,short,long)
         elseif k=="ktrysolv" then options.ktrysolv = tonumber(v)
         elseif k=="ktrylogf" then options.ktrylogf = v
         elseif k=="print" then options.print = tonumber(v)
-        elseif k=="cbmip" then options.has_cbmip=tonumber(v)
-        elseif k=="cbstd" then options.has_cbstd=tonumber(v)
-        elseif k=="cblog" then options.has_cblog=tonumber(v)
+        elseif k=="cbmip" then options.cbmip=tonumber(v)
+        elseif k=="cbstd" then options.cbstd=tonumber(v)
+        elseif k=="cblog" then options.cblog=tonumber(v)
         elseif k=="gop" then options.has_gop=true
         elseif k=="multis" then options.multis=tonumber(v)
         elseif k=="ranges" then options.ranges=v

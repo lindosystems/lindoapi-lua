@@ -990,6 +990,23 @@ function SplitFilenameX(strFilename)
 end
 
 ---
+-- @brief
+-- 
+function SplitFilename(strFilename)
+  -- Returns the Path, Filename, and Extension as 3 values
+  if lfs.attributes(strFilename,"mode") == "directory" then
+    local strPath = strFilename:gsub("[\\/]$","")
+    return strPath.."\\","",""
+  end
+  local a,b,c = strFilename:match("(.-)([^\\/]-([^\\/%.]+))$")
+  b = b:match("(.+)%..+")
+  if not b then
+    b = c
+    c = nil
+  end
+  return a,b,c
+end
+---
 -- Format table 
 -- @param tt
 -- @param which

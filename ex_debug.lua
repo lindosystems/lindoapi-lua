@@ -66,7 +66,7 @@ end
 local pModel = solver:mpmodel()
 glogger.info("Created a new model instance\n");
 pModel.usercalc=xta.const.size_max
-if options.has_cblog>0 then    
+if options.cblog>0 then    
 	pModel.logfun = myprintlog
 	glogger.info("Set a new log function for the model instance\n");
 end	
@@ -80,9 +80,9 @@ res.ErrorCode=nErr;
 pModel:xassert(res)
 
 -- Set callback or logback
-if options.has_cbmip>0 then 
+if options.cbmip>0 then 
 	pModel:setMIPCallback(cbmip)
-elseif options.has_cbstd>0 then	
+elseif options.cbstd>0 then	
 	pModel:setCallback(cbstd)
 end
 

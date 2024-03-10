@@ -288,9 +288,9 @@ options, opts, optarg = parse_options(arg,short,long)
 --print_table3(options)
 
 -- Local copies of options
-local has_cbmip = options.has_cbmip
-local has_cbstd = options.has_cbstd
-local has_cblog = options.has_cblog
+local cbmip = options.cbmip
+local cbstd = options.cbstd
+local cblog = options.cblog
 local has_gop   = options.has_gop
 local model_file = options.model_file
 verb = math.max(options.verb and options.verb or 1, 2)
@@ -321,13 +321,13 @@ local pModel = solver:mpmodel()
 printf("Created a new model instance\n");
 
 -- Set callbacks and logbacks
-if has_cblog>0 then    
+if cblog>0 then    
 	pModel.logfun = myprintlog
 	printf("Set a new log function for the model instance\n");
 end	
-if has_cbmip>0 then 
+if cbmip>0 then 
 	res = pModel:setMIPCallback(cbmip)
-elseif has_cbstd>0 then	
+elseif cbstd>0 then	
 	res = pModel:setCallback(cbstd)
 end
 

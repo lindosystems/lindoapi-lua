@@ -149,10 +149,81 @@ function cbstd(pModel, iLoc,udata)
     return 0
 end
 
+--- 
+local function add_objcut(pModel,options,res_lp)
+    local c = res_lp.padC
+    local ka, ia, a, rhs, sense = {}, {}, {}, {}, 'L'
+    ia[1]  = 0
+    for k=1,c.len do        
+        if math.abs(c[k])>0 then
+            table.insert(ka,k-1)
+            table.insert(a,c[k])
+        end
+    end
+    ia[2] = #ka
+    table.insert(rhs,options.addobjcut)
+    if res_lp.pdObjSense ==-1 then
+        sense = 'G'
+    end
+    local res = pModel:addConstraints(1, 
+        sense, 
+        nil,
+        xta:field(ia,'ia','int'),
+        xta:field(a,'a','double'),
+        xta:field(ka,'ka','int'),
+        xta:field(rhs,'rhs','double'))
+    pModel:xassert(res)
+end
+
+--- 
+local function hist_bnds(pModel,options,res_lp)
+    --print_table3(res_lp)    
+    if hasbit(options.histmask,3) then --histmask=4
+        res_lp.padU:printmat(20)
+        res_lp.padL:printmat(20)
+    end
+    local d = res_lp.padU- res_lp.padL
+    printf("min |u-l|=%g\n",d.min)
+    printf("max |u-l|=%g\n",d.max)
+    local eps = math.pow(10,-15)
+    if d.min<eps then
+        d=d+eps
+    end
+    local ld = xta:LOG10(d)
+    local h 
+    h = ld:histogram(10)
+    if h then
+        h:print()
+        local idx = d:find(0)
+        if idx then
+            idx:printmat()
+        end
+    end
+    if pModel.utable.ktrylogfp then
+        io.close(pModel.utable.ktrylogfp)
+    end
+end
+
+local function get_tmp_base()
+    local platform_name = {
+        [xta.const.win32x86] = "win32",
+        [xta.const.win64x86] = "win64",
+        [xta.const.linux64x86] = "linux64x86",
+        [xta.const.osx64x86] = "osx64x86"
+    }    
+    local temp_base = sprintf("tmp/%s",platform_name[xta.platformid] or "unknown")
+    if not paths.dirp(temp_base) then
+        paths.mkdir(temp_base)
+    end
+    return temp_base
+end
+
 --- Solve a model with a new solver instance
 -- @param ktryenv index of environment
 -- @param options table of options
 function ls_runlindo(ktryenv,options)    
+    local sol_digests = options.sol_digests
+    local log_digests = options.log_digests
     local solver = xta:solver()    
     assert(solver,"\nError: cannot create a solver instance\n")   
     solver:disp_pretty_version()
@@ -185,7 +256,7 @@ function ls_runlindo(ktryenv,options)
         assert(pModel,"\n\nError: failed create a model instance.\n")
         glogger.info("Created a new model instance\n");
         pModel.usercalc=xta.const.size_max
-        if options.has_cblog>0 and not (options.has_cbmip~=0 or options.has_cbstd~=0) then    
+        if options.cblog>0 and not (options.cbmip~=0 or options.cbstd~=0) then    
             pModel.logfun = myprintlog
             glogger.info("Set a new log function for the model instance\n");
         end	
@@ -222,12 +293,12 @@ function ls_runlindo(ktryenv,options)
         end
 
         -- Set callback or logback
-        if options.has_cbmip>0 then 
+        if options.cbmip>0 then 
             pModel:setMIPCallback(cbmip)
-            if options.has_cbmip>1 then
+            if options.cbmip>1 then
                 pModel.utable.lines = {}
             end
-        elseif options.has_cbstd>0 then	
+        elseif options.cbstd>0 then	
             pModel:setCallback(cbstd)
         end
 
@@ -267,7 +338,7 @@ function ls_runlindo(ktryenv,options)
                 res_opt, res_rng = pModel:solve(options)            
                 if options.verb>0 then
                     printf("\n")
-                    if options.has_cbmip==1 then
+                    if options.cbmip==1 then
                         pModel:disp_mip_sol_report()
                     end
                     local pd = pModel:getProgressData()
@@ -280,7 +351,7 @@ function ls_runlindo(ktryenv,options)
                     if pModel.utable.lines then
                         local str = table.concat(pModel.utable.lines[szktryid])                        
                         dgst = SHA2(str)
-                        glogger.info("Overwriting dgst with %s (cbmip=%d)\n",dgst,options.has_cbmip)
+                        glogger.info("Overwriting dgst with %s (cbmip=%d)\n",dgst,options.cbmip)
                     end
                     if log_digests then
                         if dgst then
@@ -290,11 +361,15 @@ function ls_runlindo(ktryenv,options)
                             log_digests[dgst] = log_digests[dgst] + 1  
                             log_digests.total = log_digests.total + 1                  
                             printf("log.digest: %s  (hits:%d/%d), (last_pd_line.digest:%s)\n",dgst,log_digests[dgst],log_digests.total,dgst_pd)
-                            local xdgst = "files:" .. dgst
+                            local xdgst = "ktrylogf:" .. dgst
                             if not log_digests[xdgst] then
                                 log_digests[xdgst] = {}
-                            end       
+                            end
                             table.insert(log_digests[xdgst],pModel.utable.ktrylogf)
+                            local xfile = "model:" .. dgst
+                            if not log_digests[xfile] then
+                                log_digests[xfile] = paths.basename(options.model_file)
+                            end
                         end
                     end
 

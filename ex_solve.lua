@@ -12,77 +12,7 @@ local status = Lindo.status
 require 'ex_cbfun'
 require 'llindo_usage'
 local solver
-local log_digests, sol_digests
 
-local platform_name = {
-    [xta.const.win32x86] = "win32",
-    [xta.const.win64x86] = "win64",
-    [xta.const.linux64x86] = "linux64x86",
-    [xta.const.osx64x86] = "osx64x86"
-}
-
---- 
-local function add_objcut(pModel,options,res_lp)
-    local c = res_lp.padC
-    local ka, ia, a, rhs, sense = {}, {}, {}, {}, 'L'
-    ia[1]  = 0
-    for k=1,c.len do        
-        if math.abs(c[k])>0 then
-            table.insert(ka,k-1)
-            table.insert(a,c[k])
-        end
-    end
-    ia[2] = #ka
-    table.insert(rhs,options.addobjcut)
-    if res_lp.pdObjSense ==-1 then
-        sense = 'G'
-    end
-    local res = pModel:addConstraints(1, 
-        sense, 
-        nil,
-        xta:field(ia,'ia','int'),
-        xta:field(a,'a','double'),
-        xta:field(ka,'ka','int'),
-        xta:field(rhs,'rhs','double'))
-    pModel:xassert(res)
-end
-
---- 
-local function hist_bnds(pModel,options,res_lp)
-    --print_table3(res_lp)    
-    if hasbit(options.histmask,3) then --histmask=4
-        res_lp.padU:printmat(20)
-        res_lp.padL:printmat(20)
-    end
-    local d = res_lp.padU- res_lp.padL
-    printf("min |u-l|=%g\n",d.min)
-    printf("max |u-l|=%g\n",d.max)
-    local eps = math.pow(10,-15)
-    if d.min<eps then
-        d=d+eps
-    end
-    local ld = xta:LOG10(d)
-    local h 
-    h = ld:histogram(10)
-    if h then
-        h:print()
-        local idx = d:find(0)
-        if idx then
-            idx:printmat()
-        end
-    end
-    if pModel.utable.ktrylogfp then
-        io.close(pModel.utable.ktrylogfp)
-    end
-end
-
-local function get_tmp_base()
-    local temp_base = sprintf("tmp/%s",platform_name[xta.platformid] or "unknown")
-    if not paths.dirp(temp_base) then
-        paths.mkdir(temp_base)
-    end
-    return temp_base
-end
 
 -- parse app specific options
 function app_options(options,k,v)
@@ -113,6 +43,10 @@ local function usage(help_)
 	if not help_ then print_help_option() end        
     print("Example:")
     print("\t lslua ex_solve.lua -m /path/to/model.mps [options]")    	
+    print("\t lslua ex_solve.lua -m ~/prob/milp/mps/miplib3/p0201.mps.gz --cblog=0 --cbmip=1") 
+    print("\t lslua ex_solve.lua -m ~/prob/lp/mps/netlib/25fv47.mps.gz --ranges=obj,bnd,rhs")     
+    print("\t lslua ex_solve.lua -m ~/prob/nlp/mpi/nonconvex/dejong.gz --gop")     
+    print("\t lslua ex_solve.lua -m ~/prob/nlp/mpi/nonconvex/dejong.gz --multis=10")     
 	print()    
 end   
 
@@ -140,6 +74,21 @@ if not options.ktrylogf and 0> 1 then
     end
 end
 
+local model_list, model_dir
+model_dir = paths.dirname(options.model_file)
+if options.model_file:find(".list") then
+    model_list = read_file_lines(options.model_file)
+    if not model_list then
+        glogger.error("Failed to read model list from %s\n",options.model_file)
+        return
+    end
+else
+    local model_file = paths.basename(options.model_file)
+    model_list = {model_file}
+end
+
+-- Setup log and sol digest tables
+local log_digests, sol_digests
 if options.ktryenv>1 or options.ktrymod>1 or options.ktrysolv>1 then
     glogger.info("Invoking back-to-back runs with ..\n")
     glogger.info("ktryenv: %s\n",options.ktryenv or "N/A")
@@ -151,14 +100,23 @@ if options.ktryenv>1 or options.ktrymod>1 or options.ktrysolv>1 then
     log_digests = {}
     log_digests.total = 0
     sol_digests = {}
-    sol_digests.total = 0    
+    sol_digests.total = 0  
+    options.log_digests = log_digests
+    options.sol_digests = sol_digests
+    options.cblog = 0
+    options.cbmip = 1  
 end
 
 
-local ktryenv = options.ktryenv
-while ktryenv>0 do
-    ktryenv = ktryenv-1
-    ls_runlindo(ktryenv,options)    
+-- Solve all models in the list
+for k=1,#model_list do    
+    local ktryenv = options.ktryenv
+    local model_file = sprintf("%s/%s",model_dir,model_list[k])
+    options.model_file = model_file
+    while ktryenv>0 do
+        ktryenv = ktryenv-1
+        ls_runlindo(ktryenv,options)    
+    end
 end
 
 if log_digests then

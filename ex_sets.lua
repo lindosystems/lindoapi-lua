@@ -316,7 +316,7 @@ local res
 -- New model instance
 local pModel = solver:mpmodel()
 printf("Created a new model instance\n");
-if options.has_cblog>0 then    
+if options.cblog>0 then    
 	pModel.logfun = myprintlog
 	printf("Set a new log function for the model instance\n");
 end	
@@ -335,9 +335,9 @@ if options.max then
 end
 
 -- Set callback or logback
-if options.has_cbmip>0 then 
+if options.cbmip>0 then 
 	pModel:setMIPCallback(cbmip)
-elseif options.has_cbstd>0 then	
+elseif options.cbstd>0 then	
 	pModel:setCallback(cbstd)
 end
 
