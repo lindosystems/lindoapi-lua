@@ -1,0 +1,21 @@
+MINIMIZE
+   +0. x1
+   +0. x2
+   +0. x3
+   +0. x4
+   +1. x5
+
+SUBJECT TO
+e1)   +0. x1
+   +0. x2
+   +0. x3
+   +0. x4
+   +1. x5
+   = +0. 
+
+END
+SUB   x1 +10.
+SUB   x2 +10.
+SUB   x3 +10.
+SUB   x4 +10.
+FREE       x5
