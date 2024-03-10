@@ -132,15 +132,6 @@ if not options.model_file then
 	return
 end	
 
-if options.seed then
-  if options.seed~=0 then
-    math.randomseed(options.seed)
-  else
-    math.randomseed(os.time())
-    glogger.info("Initialized random seed with %d (time)\n",os.time())
-  end    
-end
-
 if not options.ktrylogf and 0> 1 then
     if options.ktryenv or options.ktrymod or options.ktrysolv then
         options.ktrylogf = getBasename(options.model_file)

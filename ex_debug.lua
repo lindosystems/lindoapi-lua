@@ -49,15 +49,6 @@ if not options.iis_level then
     options.iis_level = 1   
 end
 
-if options.seed then
-  if options.seed~=0 then
-    math.randomseed(options.seed)
-  else
-    math.randomseed(os.time())
-    glogger.info("Initialized random seed with %d (time)\n",os.time())
-  end    
-end
-
 -- New solver instance
 solver = xta:solver()
 assert(solver,"\nError: cannot create a solver instance\n")

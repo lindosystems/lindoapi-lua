@@ -24,8 +24,14 @@ local function check_error(pModel, res, allowed, stop_on_err)
         io.read()
         return
     end
-    if res.ErrorCode == 0 then
+    if type(res)=='table' and res.ErrorCode == 0 then
         return
+    elseif type(res)=='number' then
+        if res == 0 then
+            return
+        end
+    else
+        error("res is not a table or number")
     end        
     local allowed = allowed or {0}
     local isContinue = false    
@@ -121,10 +127,12 @@ local solve = function(pModel, options)
     if ranges then
         res_rng = {} --initiate ranges output
     end
+    local options_lp_ = options and options.lp or false
+    local options_method_ = options and options.method or lom.LS_METHOD_FREE
     if verb>0 then printf("\nSolving %s\n",options and options.model_file or 'current model') end    
     if has_gop then
         res = pModel:solveGOP()
-    elseif has_int and not options.lp then        
+    elseif has_int and not options_lp_ then        
         res = pModel:solveMIP()
     else        
         res = pModel:optimize(options.method)

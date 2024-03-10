@@ -90,6 +90,7 @@ function print_default_usage()
     print("    , --max                      Set objective sense to maximize (default: minimize)")
     print("  -m, --model=STRING             Specify the model file name")
     print("  -p, --parfile=STRING           Specify the parameter file name")
+    print("  -f, --input_file=STRING        Specify file to process")    
     print("  -v, --verb=INTEGER             Set print/verbose level")    
     print("    , --print=INTEGER            Set print/verbose level for solver")
     print("    , --cbmip=VALUE              User mip-callback on/off (1/0), 2: log lines")
@@ -146,6 +147,7 @@ local long_default = {
     xsolver = "x",
     xdll = 1,
     parfile = "p",
+    input_file = "f",
     verb = "v",
     print = 1,
     cbmip = 1,
@@ -229,7 +231,7 @@ function parse_options(arg,short,long)
     options.ranges = nil
     options.writeas = nil
     options.lsversion = sprintf("%s.%s",major_lic,minor_lic) -- start with the <major.minor> version from the license file
-    options.solve = 1
+    options.solve = nil
     options.xsolver = 0
     options.xdll = nil
     options.model_file = nil
@@ -350,12 +352,21 @@ function parse_options(arg,short,long)
     if options.seed==0 then
         options.seed = os.time()
         printf("Initialized with seed %d (time)\n",options.seed)
+        math.randomseed(options.seed)
     else
         printf("Initialized with seed %d\n",options.seed)
+        math.randomseed(options.seed)
     end
+
     if options.llogger then
         glogger.level =options.llogger
     end
+
+    if not options.solve then
+        options.solve = 1
+        printf("No --solve=<integer> option specified, defaulting to solve=1\n")
+    end
+
     if options.model_file then
         options.model_path = paths.dirname(options.model_file)
     end

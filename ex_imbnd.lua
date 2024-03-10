@@ -306,15 +306,6 @@ if not options.model_file then
 	return
 end	
 
-if options.seed then
-  if options.seed~=0 then
-    math.randomseed(options.seed)
-  else
-    math.randomseed(os.time())
-    printf("Initialized random seed with %d (time)\n",os.time())
-  end    
-end
-
 -- New solver instance
 solver = xta:solver()
 assert(solver,"\nError: cannot create a solver instance\n")

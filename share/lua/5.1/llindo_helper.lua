@@ -332,8 +332,8 @@ function spairs(t, order)
 end
 
 ---
--- 
---
+--  Get the hostname of the machine using the system variables
+-- @return The hostname of the machine
 function gethostname()
   if xta.platformid==xta.const.win32x86 or xta.platformid==xta.const.win64x86 then
     return string.lower(os.getenv("COMPUTERNAME"))
@@ -342,9 +342,8 @@ function gethostname()
   end  
 end
 
----
--- 
---
+--- Get the hostname of the machine using the 'hostname' command
+-- @return The hostname of the machine
 function gethostname2()
     local f = io.popen ("/bin/hostname")
     local hostname = f:read("*a") or ""
@@ -353,8 +352,8 @@ function gethostname2()
     return hostname
 end
 
----
---
+--- Get the URL for the ZMQ server
+-- @param server The server to connect to
 function get_zmq_server_url(server)
   local server = server or gethostname()
   local rpcport = portmap[server]
@@ -364,8 +363,8 @@ function get_zmq_server_url(server)
   return rpcport,url,server
 end
 
----
---
+--- Get the URL for the ZMQ client
+-- @param server The server to connect to
 function get_zmq_client_url(server)  
   local server = server or "localhost"
   local rpcport = portmap[server]
@@ -375,7 +374,12 @@ function get_zmq_client_url(server)
   return rpcport,url
 end
 
+--- Get the version number from a license file
+-- @param str The string to extract the version number from
 function get_version_from_licfile(str)
+   if not str then
+      return nil, nil
+   end
    -- Use Lua pattern matching to find the two-digit and one-digit numbers in the string
    local major, minor = str:match("(%d%d)(%d)%.lic$")
    -- If the pattern does not match, it means the numbers are not present in the expected format
@@ -385,3 +389,9 @@ function get_version_from_licfile(str)
    -- Return the numbers as strings
    return major, minor
 end
+
+
+
+
+
+

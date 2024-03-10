@@ -290,7 +290,6 @@ options.nsemicont = options.nsemicont or 0
 options.min_sk = options.min_sk or 3
 options.max_sk = options.max_sk or 20
 options.verb = options.verb or 0
-options.seed = options.seed or 0
 
 verb = options.verb
 

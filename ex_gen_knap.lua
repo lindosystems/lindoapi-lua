@@ -132,16 +132,13 @@ local max_w = options.max_w or 10
 local min_c = options.min_c or 1
 local max_c = options.max_c or 10
 
-if options.seed then
-    if options.seed~=0 then
-      math.randomseed(options.seed)
-    else
-      math.randomseed(os.time())
-      printf("Initialized random seed with %d (time)\n",os.time())
-    end    
-end
-
+-- Generate a random knapsack problem
 local ltxstream = generateKnapsackProblem(N, K, min_w, max_w, min_c, max_c)
+
+if not options.solve then
+    options.solve = 1
+    glogger.info("No --solve=<integer> option specified, defaulting to solve=1\n")
+end
 
 if options.solve>0 then    
     -- New solver instance

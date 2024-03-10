@@ -276,6 +276,7 @@ if not options.ndim then
 	usage(options.help)
 	return
 end	
+
 xta.logfun = printline
 xta.loglevel = 2
 
