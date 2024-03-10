@@ -1,5 +1,5 @@
 #!/usr/bin/env lslua
--- File: ex_mps.lua
+-- File: ex_solve.lua
 -- Description: Example of reading a model from an MPS file and optimizing it.
 -- Author: mka
 -- Date: 2019-07-01
@@ -99,7 +99,7 @@ local function usage(help_)
     print()
     print("Read a model from an MPS file and optimize or modify.")
     print()
-    print("Usage: lslua ex_mps.lua [options]")
+    print("Usage: lslua ex_solve.lua [options]")
     print()
     if help_ then print_default_usage() end
     print()
@@ -110,7 +110,7 @@ local function usage(help_)
 	print("")
 	if not help_ then print_help_option() end        
     print("Example:")
-    print("\t lslua ex_mps.lua -m /path/to/model.mps [options]")    	
+    print("\t lslua ex_solve.lua -m /path/to/model.mps [options]")    	
 	print()    
 end   
 
