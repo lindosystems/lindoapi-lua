@@ -30,8 +30,6 @@ local function check_error(pModel, res, allowed, stop_on_err)
         if res == 0 then
             return
         end
-    else
-        error("res is not a table or number")
     end        
     local allowed = allowed or {0}
     local isContinue = false    
@@ -141,7 +139,7 @@ local solve = function(pModel, options)
     pModel:wassert(res)
     -- check status
     if res.pnMIPSolStatus == lxs.LS_STATUS_OPTIMAL or 
-       res.pnMIPSolStatus == lxs.LS_STATUS_FEASIBLE or 
+       res.pnMIPSolStatus == lxs.LS_STATUS_FEASIBLE or            
        res.pnMIPSolStatus==lxs.LS_STATUS_LOCAL_OPTIMAL or
        res.pnSolStatus == lxs.LS_STATUS_BASIC_OPTIMAL or 
        res.pnSolStatus == lxs.LS_STATUS_OPTIMAL or 
@@ -360,7 +358,7 @@ end
 ---@field roptol (number, optional): The relative optimality tolerance.
 ---@field poptol (number, optional): The percentage optimality tolerance.
 ---@return None.
-local set_params_user = function(pModel, options)
+local set_params_user = function(pModel, options, extParams)
     local pars = lxp
     local res
     
@@ -492,6 +490,18 @@ local set_params_user = function(pModel, options)
     if options.multis then
         res = pModel:setModelIntParameter(pars.LS_IPARAM_NLP_MAXLOCALSEARCH,options.multis)       
         res = pModel:setModelIntParameter(pars.LS_IPARAM_NLP_SOLVER,Lindo.NLPOptMethod.LS_NMETHOD_MSW_GRG)
+    end
+
+    if extParams then
+        for k, v in pairs(extParams) do
+            local res
+            if k:find("DPARAM_") then
+            res = pModel:setModelDouParameter(pars[k], tonumber(v))
+            else
+            res = pModel:setModelIntParameter(pars[k], tonumber(v))
+            end
+            pModel:wassert(res)
+        end    
     end
 end
 

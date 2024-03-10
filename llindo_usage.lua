@@ -362,6 +362,12 @@ function parse_options(arg,short,long)
         glogger.level =options.llogger
     end
 
+    if is_cygwin() then
+        options.model_file = cygpath_w(options.model_file)
+        options.parfile = cygpath_w(options.parfile)
+        options.input_file = cygpath_w(options.input_file)
+    end
+
     if not options.solve then
         options.solve = 1
         printf("No --solve=<integer> option specified, defaulting to solve=1\n")

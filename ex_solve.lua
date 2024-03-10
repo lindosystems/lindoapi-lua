@@ -1,6 +1,6 @@
 #!/usr/bin/env lslua
 -- File: ex_solve.lua
--- Description: Example of reading a model from an MPS file and optimizing it.
+-- Description: Example of reading a model from a supported file format and optimizing it.
 -- Author: mka
 -- Date: 2019-07-01
 
@@ -12,6 +12,7 @@ local status = Lindo.status
 require 'ex_cbfun'
 require 'llindo_usage'
 local solver
+local log_digests, sol_digests
 
 local platform_name = {
     [xta.const.win32x86] = "win32",
@@ -93,11 +94,12 @@ function app_options(options,k,v)
     end    
 end
 
+
 ---
 -- Parse command line arguments
 local function usage(help_)
     print()
-    print("Read a model from an MPS file and optimize or modify.")
+    print("Read a model from a supported file format and optimize or modify.")
     print()
     print("Usage: lslua ex_solve.lua [options]")
     print()
@@ -138,7 +140,6 @@ if not options.ktrylogf and 0> 1 then
     end
 end
 
-local log_digests, sol_digests
 if options.ktryenv>1 or options.ktrymod>1 or options.ktrysolv>1 then
     glogger.info("Invoking back-to-back runs with ..\n")
     glogger.info("ktryenv: %s\n",options.ktryenv or "N/A")
@@ -157,207 +158,8 @@ end
 local ktryenv = options.ktryenv
 while ktryenv>0 do
     ktryenv = ktryenv-1
-    solver = xta:solver()    
-    assert(solver,"\nError: cannot create a solver instance\n")   
-    solver:disp_pretty_version()
-
-    glogger.info("Created a new solver instance ..\n");
-    local ymd,hms = xta:datenow(),xta:timenow() 
-    local jsec = xta:jsec(ymd,hms)
-    glogger.info("Timestamp: %06d-%06d jsec:%d\n",ymd,hms,jsec)
-    local res
-    apply_solver_options(solver,options)
-
-    if options.ktrylogf then
-        local flist = paths.files(get_tmp_base(),function(file) return file:find(options.ktrylogf) and not file:find("~") end)
-        if flist then
-            local flog
-            for file in flist do
-                flog = sprintf("%s/%s",get_tmp_base(),file)
-                paths.backup(flog)                
-                paths.rmall(flog,"yes")
-                glogger.info("Backed up %s\n",flog)
-            end
-        end
-    end
-    
-    local ktrymod = options.ktrymod 
-    while ktrymod > 0 do
-        ktrymod = ktrymod-1
-        -- New model instance
-        local pModel = solver:mpmodel()        
-        assert(pModel,"\n\nError: failed create a model instance.\n")
-        glogger.info("Created a new model instance\n");
-        pModel.usercalc=xta.const.size_max
-        if options.has_cblog>0 and not (options.has_cbmip~=0 or options.has_cbstd~=0) then    
-            pModel.logfun = myprintlog
-            glogger.info("Set a new log function for the model instance\n");
-        end	
-
-        -- Set the new parameters
-        pModel:set_params_user(options)   
-        pModel:disp_params_non_default()
-    
-        -- Read model from file	
-        glogger.info("Reading '%s'\n",options.model_file)
-        local nErr = pModel:readfile(options.model_file,0)
-        pModel:xassert({ErrorCode=nErr})
-        if options.max then    
-            pModel:setModelIntParameter(pars.LS_IPARAM_OBJSENSE,-1)
-            printf("Set model sense to maximize (%d)\n",-1)
-        end
-        local res_lp 
-        if options.histmask or options.addobjcut then
-            res_lp = pModel:getLPData() 
-        end
-
-        if options.histmask then
-            if res_lp then
-                hist_bnds(pModel,options,res_lp)
-            else
-                glogger.info("Failed to get LP data\n")
-            end
-            solver:dispose()
-            return
-        end
-
-        if options.addobjcut then
-            add_objcut(pModel,options,res_lp)
-        end
-
-        -- Set callback or logback
-        if options.has_cbmip>0 then 
-            pModel:setMIPCallback(cbmip)
-            if options.has_cbmip>1 then
-                pModel.utable.lines = {}
-            end
-        elseif options.has_cbstd>0 then	
-            pModel:setCallback(cbstd)
-        end
-
-        if options.parfile then
-            res = pModel:readModelParam(options.parfile)
-            pModel:wassert(res)
-        end 
-
-        if options.lp then
-            local str=""
-            for k=1,pModel.numvars do
-                str = str .. "C"
-            end
-            res = pModel:loadVarType(str)
-            pModel:wassert(res)
-        end
-
-        -- Solve model        
-        local ktrysolv = options.ktrysolv 
-        if options.solve>0 then             
-            local res_opt, res_rng
-            while ktrysolv>0 do         
-                local szktryid = sprintf("e%02d_m%02d_s%02d",ktryenv,ktrymod,ktrysolv)
-                collectgarbage()       
-                if options.ktrylogf then
-                    pModel.utable.ktrylogf = sprintf("%s/ktrylogf_%s_%s.log",get_tmp_base(),options.ktrylogf,szktryid)
-                    pModel.utable.ktrylogfp = io.open(pModel.utable.ktrylogf,"w")
-                end
-                if pModel.utable.lines then
-                    if not pModel.utable.lines[szktryid] then
-                        pModel.utable.lines[szktryid] = {}                        
-                    end
-                    pModel.utable.lines_ktry = pModel.utable.lines[szktryid]
-                end
-                ktrysolv = ktrysolv-1
-                pModel.utable.ktrylogsha = nil
-                res_opt, res_rng = pModel:solve(options)            
-                if options.verb>0 then
-                    printf("\n")
-                    if options.has_cbmip==1 then
-                        pModel:disp_mip_sol_report()
-                    end
-                    local pd = pModel:getProgressData()
-                    if options.verb>2 then
-                        print_table3(pd)
-                    end
-                    local pd_line = lsi_pdline(pd)
-                    local dgst_pd = SHA2(pd_line)
-                    local dgst = pModel.utable.ktrylogsha
-                    if pModel.utable.lines then
-                        local str = table.concat(pModel.utable.lines[szktryid])                        
-                        dgst = SHA2(str)
-                        glogger.info("Overwriting dgst with %s (cbmip=%d)\n",dgst,options.has_cbmip)
-                    end
-                    if log_digests then
-                        if dgst then
-                            if not log_digests[dgst] then
-                                log_digests[dgst] = 0
-                            end
-                            log_digests[dgst] = log_digests[dgst] + 1  
-                            log_digests.total = log_digests.total + 1                  
-                            printf("log.digest: %s  (hits:%d/%d), (last_pd_line.digest:%s)\n",dgst,log_digests[dgst],log_digests.total,dgst_pd)
-                            local xdgst = "files:" .. dgst
-                            if not log_digests[xdgst] then
-                                log_digests[xdgst] = {}
-                            end       
-                            table.insert(log_digests[xdgst],pModel.utable.ktrylogf)
-                        end
-                    end
-
-                    if sol_digests then
-                        if res_opt.padPrimal then                        
-                            local dgst = SHA2(res_opt.padPrimal:ser())                        
-                            if not sol_digests[dgst] then
-                                sol_digests[dgst] = 0
-                            end
-                            sol_digests[dgst] = sol_digests[dgst] + 1 
-                            sol_digests.total = sol_digests.total + 1
-                            printf("sol.digest: %s  (hits:%d/%d)\n", dgst,sol_digests[dgst],sol_digests.total)  
-                        end
-                    end                    
-
-                    -- solution
-                    if res_opt then
-                        if options.verb>2 then print_table3(res_opt) end
-                            if options.verb>0 then
-                            if res_opt.padPrimal then
-                                if options.verb>1 then
-                                    res_opt.padPrimal:printmat(6,nil,12,nil,'.3e')
-                                end
-                            else
-                                glogger.info("No primal solution\n")
-                            end
-                        end
-                    end
-                    -- ranges 
-                    if res_rng then
-                        if options.verb>2 then print_table3(res_rng) end
-                        if options.verb>0 then
-                            for ktype,v in pairs(res_rng) do
-                                printf("Range %s:\n", ktype)
-                                v.padDec:printmat(6,nil,12,nil,'.3e')
-                                v.padInc:printmat(6,nil,12,nil,'.3e')
-                            end                            
-                        end
-                    end	                    
-                end
-            end    
-        end    
-
-        if options.writeas then
-            pModel:write(options.writeas)
-        end
-
-        if options.sol then
-            local solfile = changeFileExtension(options.model_file,".sol")
-            res = pModel:writesol(solfile,options.verb)
-            pModel:wassert(res)
-        end
-
-        pModel:delete()        
-    end -- ktrymod
-
-    solver:dispose()
-    glogger.info("Disposed solver instance %s\n",tostring(solver))  
-end -- ktryenv    
+    ls_runlindo(ktryenv,options)    
+end
 
 if log_digests then
     printf("\n")

@@ -7,43 +7,7 @@ local status = Lindo.status
 require 'ex_cbfun'
 require 'llindo_usage'
 
-
-function ls_runlindo(file,modelParams)
-  assert(file,"\nError: no file specified\n")  
-  local ymd,hms = xta:datenow(),xta:timenow() 
-  local jsec = xta:jsec(ymd,hms)
-  printf("%06d-%06d jsec:%d\n",ymd,hms,jsec)
-  local solver = xta:solver()
-  assert(solver,"\n\nError: failed create a solver instance.\n")
-  
-  local pModel = solver:mpmodel()
-  assert(pModel,"\nError: cannot create a model instance\n")  
-  pModel.logfun = myprintlog
-
-  for k,v in pairs(modelParams) do
-    local res
-    if k:find("DPARAM_") then
-      res = pModel:setModelDouParameter(pars[k], tonumber(v))      
-    else
-      res = pModel:setModelIntParameter(pars[k], tonumber(v))
-    end
-    pModel:wassert(res)    
-  end
-  pModel:disp_params_non_default()
-  pekc()
-
-  printf("Reading %s\n",file) 
-  local nErr = pModel:readfile(file)
-  pModel:xassert({ErrorCode=nErr})
-  
-  local res
-  res = pModel:solve(options)
-  pModel:wassert(res)
-
-  pModel:dispose()
-  printf("Disposing %s\n",tostring(solver))  
-  solver:dispose()  
- end
+local options, opts, optarg 
 
 
 local function usage(help_)
@@ -68,7 +32,7 @@ local long = {
 }
 
 local short = ""
-local options, opts, optarg = parse_options(arg,short,long)
+options, opts, optarg = parse_options(arg,short,long)
 
 if options.help then
   usage(true)
@@ -83,12 +47,6 @@ if not logFile then
     return
 end
 
-if verb==1 then
-  if not options.tlim then
-    glogger.error("No time limit specified, this app requires a time limit to be set.\n")
-    return
-  end
-end
 
 -- Table to keep track of instances and their configs
 local instances = {}
@@ -153,7 +111,7 @@ if verb>1 then
 	  print("Instance #" .. id .. " file: " .. instance.file)
 	  print("Config for instance #" .. id .. ":")
 	  for configId, configParams in pairs(instance.config) do
-      print("  Config ID " .. configId .. ":")
+      print("  Config " .. configId .. ":")
       for param, value in pairs(configParams) do
         print("    " .. param .. " = " .. value)
       end
@@ -167,15 +125,24 @@ if verb>0 then
 	for key, status in pairs(runs) do
 	  if status == "started" then
       local instanceId, configId = key:match("Instance #(%d+), config%[(%d+)%]")
+      print()
 		  printf("Run started but did not complete '%s': %s\n", key, instances[instanceId].file)
       print()
-      print("  Config ID " .. configId .. ":")
+      print("  Config " .. configId .. ":")
       local configParams = instances[instanceId].config[configId]
       for param, value in pairs(configParams) do
         print("    " .. param .. " = " .. value)
       end
-      local model_file = cygpath_w(instances[instanceId].file)
-      ls_runlindo(model_file,configParams)
+      if options and options.solve and options.solve>0 then
+        local model_file = cygpath_w(instances[instanceId].file)
+        if not options.tlim then
+          glogger.error("No time limit specified, this app requires a time limit to be set.\n")
+          return
+        else   
+          options.model_file = model_file    
+          ls_runlindo(0,options,configParams)
+        end
+      end
 	  end
 	end
 end

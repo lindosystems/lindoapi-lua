@@ -352,6 +352,20 @@ function gethostname2()
     return hostname
 end
 
+-- Get the username of the machine using the 'uname' command
+function getuname()
+  local f = io.popen ("/bin/uname -a")
+  local uname = f:read("*a") or ""
+  f:close()
+  uname =string.gsub(uname, "\n$", "")
+  return uname
+end
+
+function is_cygwin()
+  local s = os.getenv("CYGWIN_BIN")  
+  return s and true or false
+end
+
 --- Get the URL for the ZMQ server
 -- @param server The server to connect to
 function get_zmq_server_url(server)
