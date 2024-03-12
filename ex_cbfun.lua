@@ -353,37 +353,45 @@ function ls_runlindo(ktryenv,options)
                         dgst = SHA2(str)
                         glogger.info("Overwriting dgst with %s (cbmip=%d)\n",dgst,options.cbmip)
                     end
+
+                    local model_file = paths.basename(options.model_file)                                        
                     if log_digests then
+                        if not log_digests[model_file] then
+                            log_digests[model_file] = {}
+                            log_digests[model_file].total = 0
+                        end                        
                         if dgst then
-                            if not log_digests[dgst] then
-                                log_digests[dgst] = 0
+                            if not log_digests[model_file][dgst] then
+                                log_digests[model_file][dgst] = 0
                             end
-                            log_digests[dgst] = log_digests[dgst] + 1  
-                            log_digests.total = log_digests.total + 1                  
-                            printf("log.digest: %s  (hits:%d/%d), (last_pd_line.digest:%s)\n",dgst,log_digests[dgst],log_digests.total,dgst_pd)
+                            local mlog_digests = log_digests[model_file]
+                            mlog_digests[dgst] = mlog_digests[dgst] + 1  
+                            mlog_digests.total = mlog_digests.total + 1                  
+                            printf("log.digest: %s  (hits:%d/%d), (last_pd_line.digest:%s)\n",dgst,mlog_digests[dgst],mlog_digests.total,dgst_pd)
                             local xdgst = "ktrylogf:" .. dgst
                             if not log_digests[xdgst] then
-                                log_digests[xdgst] = {}
+                                mlog_digests[xdgst] = {}
                             end
-                            table.insert(log_digests[xdgst],pModel.utable.ktrylogf)
-                            local xfile = "model:" .. dgst
-                            if not log_digests[xfile] then
-                                log_digests[xfile] = paths.basename(options.model_file)
-                            end
+                            table.insert(mlog_digests[xdgst],pModel.utable.ktrylogf)
                         end
                     end
 
                     if sol_digests then
+                        if not sol_digests[model_file] then
+                            sol_digests[model_file] = {}
+                            sol_digests[model_file].total = 0
+                        end                        
+                        local msol_digests = sol_digests[model_file]   
                         if res_opt.padPrimal then                        
                             local dgst = SHA2(res_opt.padPrimal:ser())                        
-                            if not sol_digests[dgst] then
-                                sol_digests[dgst] = 0
+                            if not msol_digests[dgst] then
+                                msol_digests[dgst] = 0
                             end
-                            sol_digests[dgst] = sol_digests[dgst] + 1 
-                            sol_digests.total = sol_digests.total + 1
-                            printf("sol.digest: %s  (hits:%d/%d)\n", dgst,sol_digests[dgst],sol_digests.total)  
+                            msol_digests[dgst] = msol_digests[dgst] + 1 
+                            msol_digests.total = msol_digests.total + 1
+                            printf("sol.digest: %s  (hits:%d/%d)\n", dgst,msol_digests[dgst],msol_digests.total)  
                         end
-                    end                    
+                    end
 
                     -- solution
                     if res_opt then
@@ -405,7 +413,7 @@ function ls_runlindo(ktryenv,options)
                             for ktype,v in pairs(res_rng) do
                                 printf("Range %s:\n", ktype)
                                 v.padDec:printmat(6,nil,12,nil,'.3e')
-                                v.padInc:printmat(6,nil,12,nil,'.3e')
+                                v.padInc:printmat(6,nil,12,nil,'.3e') 
                             end                            
                         end
                     end	                    
@@ -422,8 +430,10 @@ function ls_runlindo(ktryenv,options)
             res = pModel:writesol(solfile,options.verb)
             pModel:wassert(res)
         end
-
-        pModel:delete()        
+        
+        pModel:delete()    
+        pModel = nil    
+        collectgarbage()
     end -- ktrymod
 
     solver:dispose()

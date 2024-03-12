@@ -558,6 +558,7 @@ local delete = function(pModel)
             glogger.info("Writing sha to %s\n",shafile)
             fwritef(shafile,"a","Closed log file '%s' (sha:%s)\n",pModel.utable.ktrylogf,pModel.utable.ktrylogsha or "N/A")
         end
+        if pModel.utable then pModel.utable = nil end
         -- INSERT OTHER TASKS on utable
         pModel:dispose()
         glogger.info("Deleted model instance %s\n",tostring(pModel))          
