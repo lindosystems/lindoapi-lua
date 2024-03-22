@@ -164,9 +164,16 @@ solver:wassert(res)
 res = solver:setEnvIntParameter(pars.LS_IPARAM_MIP_PRINTLEVEL, 2)        
 solver:wassert(res)
 apply_solver_options(solver, options)     
-local manifest = {}
+
+-- if a model file is specified, then work with it, otherwise work with the netlib models
+if options.model_file then
+    netlib = {options.model_file}
+end
+
 for k,v in pairs(netlib) do    
-    v = sprintf("%s/lp/mps/netlib/%s",probdir(),v)
+    if not paths.path(v) then            
+      v = sprintf("%s/lp/mps/netlib/%s",probdir(),v)
+    end
     local pModel = create_new_model(solver,v,options)
     res = modify_model(pModel, options)
     pModel:wassert(res)
