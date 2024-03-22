@@ -442,7 +442,7 @@ function apply_solver_options(solver, options)
         local xdll = options.xdll 
         res = solver:setXSolverLibrary(options.xsolver,xdll)
         solver:xassert(res)
-        glogger.info("Set external solver %d to %s\n",options.xsolver,xdll)
+        glogger.info("Set external solver %d to %s\n",options.xsolver,xdll or 'nil')
     end   
     
     return
