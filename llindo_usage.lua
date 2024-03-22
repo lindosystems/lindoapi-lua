@@ -80,7 +80,7 @@ end
 function print_default_usage()
     print("Options:")
     print("  -h, --help                     Show this help message")
-    print("  -s, --solve=solverId           Solve model with 'solverId'")
+    print("  -s, --solve=INTEGER            Flag to solve the model (default: 1) or not (0)")
     print("  -x, --xsolver=INTEGER          Set external solver to 'INTEGER' (default: 0)")
     print("    , --ktrymod=INTEGER          Set ktrymod to 'INTEGER' (default: 1)")
     print("    , --ktryenv=INTEGER          Set ktryenv to 'INTEGER' (default: 1)")
@@ -370,7 +370,7 @@ function parse_options(arg,short,long)
 
     if not options.solve then
         options.solve = 1
-        printf("No --solve=<integer> option specified, defaulting to solve=1\n")
+        printf("--solve=<integer> option specified, defaulting to solve=1\n")
     end
 
     if options.model_file then
