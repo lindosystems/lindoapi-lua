@@ -171,7 +171,7 @@ if options.model_file then
 end
 
 for k,v in pairs(netlib) do    
-    if not paths.path(v) then            
+    if not paths.filep(v) then            
       v = sprintf("%s/lp/mps/netlib/%s",probdir(),v)
     end
     local pModel = create_new_model(solver,v,options)

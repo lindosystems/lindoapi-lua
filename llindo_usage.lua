@@ -370,7 +370,7 @@ function parse_options(arg,short,long)
 
     if not options.solve then
         options.solve = 1
-        printf("--solve=<integer> option specified, defaulting to solve=1\n")
+        printf("--solve=<integer> option is not specified, defaulting to solve=1\n")
     end
 
     if options.model_file then

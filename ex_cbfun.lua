@@ -269,10 +269,6 @@ function ls_runlindo(ktryenv,options)
         glogger.info("Reading '%s'\n",options.model_file)
         local nErr = pModel:readfile(options.model_file,0)
         pModel:xassert({ErrorCode=nErr})
-        if options.max then    
-            pModel:setModelIntParameter(pars.LS_IPARAM_OBJSENSE,-1)
-            printf("Set model sense to maximize (%d)\n",-1)
-        end
         local res_lp 
         if options.histmask or options.addobjcut then
             res_lp = pModel:getLPData() 

@@ -125,6 +125,10 @@ local solve = function(pModel, options)
     if ranges then
         res_rng = {} --initiate ranges output
     end
+    if options and options.max then    
+        pModel:setModelIntParameter(lxp.LS_IPARAM_OBJSENSE,-1)
+        if verb>0 then printf("Set model sense to maximize (%d)\n",-1) end
+    end
     local options_lp_ = options and options.lp or false
     local options_method_ = options and options.method or lom.LS_METHOD_FREE
     if verb>0 then printf("\nSolving %s\n",options and options.model_file or 'current model') end    
