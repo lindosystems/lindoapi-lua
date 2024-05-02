@@ -8,6 +8,9 @@ if [ -z "$LINDOAPI_HOME" ]; then
   echo "LINDOAPI_HOME is not set. Please set the LINDOAPI_HOME environment variable."
   return 1
 fi
+if [ "$1" = "win32" -o  "$1" = "32" -o  "$1" = "win32x86" ]; then
+	export PLATFORM=win32
+fi	
 # Set LINDO API environment and PLATFORM
 source $LINDOAPI_HOME/bin/lindoapivars.sh
 

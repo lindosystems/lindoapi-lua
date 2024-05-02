@@ -65,7 +65,7 @@ end
 
 -- New solver instance
 xta:setsolverdll("",8);
-xta:setlindodll(14,0)
+--xta:setlindodll(15,0)
 solver = xta:solver()
 printf("Created a new solver instance %s\n",solver.version);
 local ymd,hms = xta:datenow(),xta:timenow() 
