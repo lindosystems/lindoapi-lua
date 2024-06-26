@@ -153,6 +153,14 @@ function solver_ex3()
 -------- Load LP data  
    local solver = xta:solver() 
    assert(solver,"\n\nError: failed create a solver instance.\n")
+   local use_highs = 1>0
+   
+   local res
+   if use_highs then
+      res = solver:setXSolverLibrary(14,"liblindohighs.dll")
+      solver:wassert(res)
+   end
+
    local pModel = solver:mpmodel()   
       
    ierr = pModel:loadlp(
@@ -171,7 +179,10 @@ function solver_ex3()
  	assert(ierr==0,szmsg)
  -- end LP/QP/CONE data
 
-
+ local res
+ if 2>1 then
+    res = pModel:setModelIntParameter(pars.LS_IPARAM_SPLEX_USE_EXTERNAL, 14)
+ end
 
 
  -- begin INTEGER data
