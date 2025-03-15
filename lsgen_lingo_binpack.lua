@@ -1,4 +1,4 @@
-#!/usr/bin/env lua
+#!/usr/bin/env lslua
 
 -- Load Penlight's lapp module for command-line parsing
 local lapp = require 'pl.lapp'

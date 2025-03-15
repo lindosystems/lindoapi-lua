@@ -1,4 +1,4 @@
-#!/usr/bin/env lua
+#!/usr/bin/env lslua
 
 local lapp = require 'pl.lapp'  -- Penlight's lapp module for CLI parsing
 local math = require 'math'

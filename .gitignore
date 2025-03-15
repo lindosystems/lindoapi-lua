@@ -4,4 +4,7 @@ a
 h
 a.mps
 *.bak
+*.lng
+
+# not supported yet
 lib/osx64arm/systree/lib/lua/5.1/libtabox64.dylib
