@@ -43,7 +43,7 @@ local function generate_instance(n, r)
     -- Ensure capacity is at least larger than the largest item
     local max_weight = math.max(unpack(w))
     if c < max_weight then
-        c = max_weight + 1  -- Adjust to make problem feasible
+        c = math.floor(max_weight*1.2)  -- Adjust to make problem feasible (e.g., 20% larger)
     end
 
     return w, c, total_weight
@@ -66,7 +66,10 @@ file:write("ENDSETS\n\n")
 
 -- Data section
 file:write("DATA:\n")
-file:write("    W = " .. table.concat(weights, " ") .. ";\n")
+file:write("    W = ")
+for i = 1, #weights, 20 do
+    file:write(table.concat(weights, " ", i, math.min(i + 19, #weights)) .. (i + 19 < #weights and "\n        " or ";\n"))
+end
 file:write("    C = " .. capacity .. ";\n")
 file:write("    N = " .. args.items .. ";\n")
 file:write("ENDDATA\n\n")
@@ -100,3 +103,19 @@ print("Number of items: " .. args.items)
 print("Item weights: " .. table.concat(weights, " "))
 print("Total weight: " .. total_weight)
 print("Bin capacity: " .. capacity .. " (fraction r = " .. args.fraction .. ")")
+print("Writing data to " .. args.output..".dat" .. " to plug into 'samples/c/ex_dw.c'")
+local f = io.open(args.output..".dat", "w")
+f:write("#define nObjects "..args.items.."\n")
+f:write("#define dCapacity "..capacity.."\n")
+f:write("double  dWeights[nObjects] = {\n")
+for i = 1, #weights do
+    f:write(weights[i])
+    if i < #weights then
+        f:write(", ")
+    end
+    if i % 20 == 0 then
+        f:write("\n")
+    end
+end
+f:write("};\n")
+f:close()
