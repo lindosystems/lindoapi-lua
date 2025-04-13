@@ -396,7 +396,8 @@ end
 --- Get xuserdll path
 -- @param xuserdll The xuserdll path passed by user at command line
 -- @return The xuserdll path to be used
-function get_xuserdll_path(xuserdll)    
+function get_xuserdll_path(options)    
+    local xuserdll = options.xuserdll
     if not xuserdll:find(".dll") and not xuserdll:find(".so") and not xuserdll:find(".dylib") then
         -- if no extension is given, assume it is a dll
         local tag = ""

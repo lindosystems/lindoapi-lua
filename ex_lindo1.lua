@@ -5,7 +5,7 @@
 -- Author: mka
 -- Date: 2019-07-01
 local Lindo = require("llindo_tabox")
-
+local gModel 
 local solver
 function myprintlog(pModel,str)
   printf("%s",str)
@@ -19,6 +19,15 @@ end
 function cbstd(pModel,iLoc)
   printf("loc: %d\n",iLoc)  
   return 0
+end
+
+
+function cbuser(pModel,primal)
+  local val = 0
+  for k,v in ipairs(primal) do
+    val = val + v
+  end
+  return val
 end
 
 function probdir()
@@ -118,10 +127,41 @@ function testSolverSETS()
  print(solver) 
 end
 
+function testUserDll()
+  local ymd,hms = xta:datenow(),xta:timenow() 
+  local jsec = xta:jsec(ymd,hms)
+  printf("%06d-%06d jsec:%d\n",ymd,hms,jsec)
+  local res
+  local pModel = solver:mpmodel()
+  --pModel.logfun = myprintlog  
+  local file=os.getenv("LINDOAPI_HOME") .. "/samples/c/ex_user/ex_user.mpi"
+  printf("Reading %s\n",file)  
+  gModel = pModel  
+  pModel.usercalc = cbuser
+  --pModel:setUsercalc(cbuser)
+  local nErr = pModel:readfile(file,0)
+  pModel:dispstats()
+  local szmsg = sprintf("Error %d: %s\n",nErr,pModel:errmsg(nErr) or "N/A")
+  assert(nErr==0,szmsg)
+  assert(nErr==0)
+  pModel.usercalc = 0
+
+  res = pModel:optimize()
+  print_table3(res)
+
+  pModel:dispose()
+  gModel = nil
+  print(solver)   
+end
+
+--- MAIN 
 solver = xta:solver()
 assert(solver,"\n\nError: failed create a solver instance.\n")
-testSolverLicense(solver)
-testSolverMPX()
-testSolverSETS()
+if 0>1 then
+  testSolverLicense(solver)
+  testSolverMPX()
+  testSolverSETS()
+end
+testUserDll()
 printf("Disposing %s\n",tostring(solver))  
 solver:dispose()
