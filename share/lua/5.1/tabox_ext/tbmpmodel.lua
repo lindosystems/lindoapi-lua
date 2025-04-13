@@ -147,6 +147,8 @@ local solve = function(pModel, options)
        res.pnMIPSolStatus==lxs.LS_STATUS_LOCAL_OPTIMAL or
        res.pnSolStatus == lxs.LS_STATUS_BASIC_OPTIMAL or 
        res.pnSolStatus == lxs.LS_STATUS_OPTIMAL or 
+       res.pnSolStatus == lxs.LS_STATUS_LOCAL_OPTIMAL or 
+       res.pnSolStatus == lxs.LS_STATUS_FEASIBLE or 
        res.pnGOPSolStatus == lxs.LS_STATUS_OPTIMAL or 
        res.pnGOPSolStatus == lxs.LS_STATUS_BASIC_OPTIMAL or 
        res.pnGOPSolStatus == lxs.LS_STATUS_LOCAL_OPTIMAL or 

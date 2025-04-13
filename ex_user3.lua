@@ -44,53 +44,46 @@ function cbstd(pModel,iLoc)
   return 0
 end
 
--- Function g(t) to integrate over [a, b]
-function gox(x, t)
-  return math.exp(x * math.cos(t))
-end
-
--- Black-box #2 -- G(x) calculated by Simpson's Rule
-function Gox(n, x)
-  local a = 0
-  local b = 2 * math.pi
-  local h = (b - a) / n
-  local dsum = gox(x, a)
-  local c = 2
-
-  for k = 1, n - 1 do
-      c = 6 - c  -- alternates between 4 and 2
-      dsum = dsum + c * gox(x, a + k * h)
-  end
-
-  return (dsum + gox(x, b)) * h / 3
-end
-
--- Black-box function #1 -- f(x)
-function fox(a, b)
-  return math.sin(a) + math.cos(b)
-end
-
 local function equal_eps(a,b)
-  return math.abs(a - b) < 1e-6
-end
-
--- Grey-box interface
-function MyUserFunc(argval)
-  local f
-  if equal_eps(argval[1], 1) then
-      local a = argval[2]
-      local b = argval[3]
-      f = fox(a, b)
-  elseif equal_eps(argval[1], 2) then
-      local n = math.floor(argval[2])
-      local x = argval[3]
-      f = Gox(n, x)
-  else
-      printf("Unknown function type %g\n", argval[1])
-      error()
+    return math.abs(a - b) < 1e-6
   end
-  return f
+
+-- Lua implementation of the user-defined function
+function MyUserFunc(argval)
+    -- Ensure argval is a table with at least 7 elements
+    if #argval < 7 then
+        error("argval must contain at least 7 elements: function ID followed by six variables.")
+    end
+
+    -- Extract variables from argval
+    local X1 = argval[2]
+    local X2 = argval[3]
+    local X3 = argval[4]
+    local X4 = argval[5]
+    local X5 = argval[6]
+    local X6 = argval[7]
+
+    local f = 0
+    local funcID = argval[1]
+
+    if equal_eps(funcID, -1) then
+        -- Objective function
+        f = -10.5 * X1 - 7.5 * X2 - 3.5 * X3 - 2.5 * X4 - 1.5 * X5 - 10 * X6
+            - 0.5 * X1^2 - 0.5 * X2^2 - 0.5 * X3^2 - 0.5 * X4^2 - 0.5 * X5^2
+    elseif equal_eps(funcID, 0) then
+        -- Constraint #1
+        f = 6 * X1 + 3 * X2 + 3 * X3 + 2 * X4 + X5 - 6.5
+    elseif equal_eps(funcID, 1) then
+        -- Constraint #2
+        f = 10 * X1 + 10 * X3 + X6 - 20
+    else
+        printf("Unrecognized function ID %g\n",funcID);
+        error()
+    end
+
+    return f
 end
+    
 
 function cbuser(pModel,primal)
   local val = 0
@@ -107,10 +100,11 @@ function testUserCalc()
   local res
   local pModel = solver:mpmodel()
   --pModel.logfun = myprintlog  
-  local file=os.getenv("LINDOAPI_HOME") .. "/samples/c/ex_user/ex_user.mpi"
+  local file=os.getenv("LINDOAPI_HOME") .. "/samples/c/ex_user3/ex_user3.mpi"
   file = cygpath_w(file)
   printf("Reading %s\n",file)  
-  
+  local options = {}
+  options.method = 0
   pModel.usercalc = cbuser
   pModel.logfun = myprintlog
   --pModel:setUsercalc(cbuser)
@@ -120,8 +114,15 @@ function testUserCalc()
   assert(nErr==0,szmsg)
   assert(nErr==0)
 
-  res = pModel:optimize()
+  res = pModel:solve(options)
   print_table3(res)
+  if res.padPrimal then
+    res.padPrimal:printmat()
+    local padPrimal = res.padPrimal
+    local res = pModel:calcObjFunc(padPrimal)
+    print_table3(res)
+  
+  end
 
   pModel:dispose()
   
