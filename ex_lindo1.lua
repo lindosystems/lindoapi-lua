@@ -48,9 +48,6 @@ function fox(a, b)
   return math.sin(a) + math.cos(b)
 end
 
-local function equal_eps(a,b)
-  return math.abs(a - b) < 1e-6
-end
 
 -- Grey-box interface
 function MyUserFunc(argval)

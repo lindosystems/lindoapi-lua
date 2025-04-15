@@ -44,10 +44,6 @@ function cbstd(pModel,iLoc)
   return 0
 end
 
-local function equal_eps(a,b)
-    return math.abs(a - b) < 1e-6
-  end
-
 -- Lua implementation of the user-defined function
 function MyUserFunc(argval)
     -- Ensure argval is a table with at least 7 elements
@@ -93,7 +89,7 @@ function cbuser(pModel,primal)
 end
 
 
-function testUserCalc()
+function solveUserCalc()
   local ymd,hms = xta:datenow(),xta:timenow() 
   local jsec = xta:jsec(ymd,hms)
   printf("%06d-%06d jsec:%d\n",ymd,hms,jsec)
@@ -114,23 +110,26 @@ function testUserCalc()
   assert(nErr==0,szmsg)
   assert(nErr==0)
 
+  local pData = pModel:getLPData()
+
   res = pModel:solve(options)
   print_table3(res)
   if res.padPrimal then
     res.padPrimal:printmat()
     local padPrimal = res.padPrimal
-    local res = pModel:calcObjFunc(padPrimal)
+    res = pModel:calcConFunc(-1,padPrimal)    
     print_table3(res)
-  
+    res.padSlacks:printmat()    
+    print(pData.pachConTypes)
   end
 
   pModel:dispose()
-  
 end
+
 
 --- MAIN 
 solver = xta:solver()
 assert(solver,"\n\nError: failed create a solver instance.\n")
-testUserCalc()
+solveUserCalc()
 printf("Disposing %s\n",tostring(solver))  
 solver:dispose()

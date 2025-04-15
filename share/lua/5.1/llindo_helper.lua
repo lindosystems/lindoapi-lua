@@ -354,16 +354,34 @@ end
 
 -- Get the username of the machine using the 'uname' command
 function getuname()
-  local f = io.popen ("/bin/uname -a")
-  local uname = f:read("*a") or ""
+  local f = io.popen ("uname -a")
+  local uname = f:read("*a")
   f:close()
   uname =string.gsub(uname, "\n$", "")
   return uname
 end
 
 function is_cygwin()
+  local flag = false
   local s = os.getenv("CYGWIN_BIN")  
-  return s and true or false
+  if s then
+    flag = true
+  end
+  if not flag then
+    s = os.getenv("CYG_SYS_BASHRC")
+    if s then
+      if s:find("CYG") then
+        flag = true
+      end
+    end
+  end
+  if not flag then
+    local uname = getuname()    
+    if uname:find("CYGWIN") then
+      flag = true
+    end
+  end  
+  return flag
 end
 
 --- Get the URL for the ZMQ server
@@ -405,7 +423,24 @@ function get_version_from_licfile(str)
 end
 
 
+-- Print message and wait for user input
+-- @param msg The message to print (optional).
+-- @return The user input after pressing enter.
+function pekc(msg)
+  printf("\n")
+  traceback()
+  if msg then printf("%s\n",msg) end  
+  printf("Press enter to continue...\n")
+  return io.read()
+end
 
 
-
-
+-- Compare two numbers with a given tolerance (epsilon).
+-- @param a The first number to compare.
+-- @param b The second number to compare.
+-- @param eps The tolerance (epsilon) for comparison. Default is 1e-6.
+-- @return True if the absolute difference between a and b is less than eps, false otherwise.
+function equal_eps(a,b,eps)
+  local eps = eps or 1e-6
+  return math.abs(a - b) < eps
+end

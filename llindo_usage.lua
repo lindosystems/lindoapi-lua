@@ -3,7 +3,7 @@
 function cygpath_w(ls_prob)
     -- Check if the environment variable exists
     if not ls_prob then
-        print("The input argument is nil.")
+        --print("The input argument is nil.")
         return nil
     end
 
@@ -365,8 +365,9 @@ function parse_options(arg,short,long)
     if is_cygwin() then
         options.model_file = cygpath_w(options.model_file)
         options.parfile = cygpath_w(options.parfile)
-        options.input_file = cygpath_w(options.input_file)
-    end
+        options.input_file = cygpath_w(options.input_file)        
+    end    
+    
 
     if not options.solve then
         options.solve = 1
