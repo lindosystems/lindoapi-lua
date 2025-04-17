@@ -21,7 +21,7 @@ local szerrmsg
 -- Optimize a subproblems with MIP or LP solver, maximizing or minimizing a variable
 function im_optimize(yModel,kidx,objsense)
     local res
-	if not options.solve_as_lp then
+	if not options.lp then
 		yModel:setModelDouParameter(pars.LS_DPARAM_MIP_TIMLIM,1000)
 		res = yModel:solveMIP()
 		yModel:xassert(res,{errs.LSERR_TIME_LIMIT})		
@@ -44,7 +44,7 @@ function im_optimize(yModel,kidx,objsense)
 	end	
 	local resx
 	if verb>3  then
-		if not options.solve_as_lp then   
+		if not options.lp then   
 			resx = yModel:getMIPPrimalSolution()
 		else
 			resx = yModel:getPrimalSolution()
@@ -57,7 +57,7 @@ end
 --
 --
 function ls_calc_im_opt_bounds(pModel)    
-	local solve_as_lp = options.solve_as_lp
+	local solve_as_lp = options.lp
     local yModel = pModel:copyModel(0)
     yModel:copyParam(pModel)
     if not yModel then
@@ -164,7 +164,9 @@ function ls_calc_im_opt_bounds(pModel)
     local elapsed = 0
     -- CALC BEST LB and UB for each var        
     local vnames = xta:field(yModel.numvars,"names","string")
-    if verb>0 then printf("Computing optimal bounds..\n") end
+    if not options.no_bound_optim then
+        if verb>0 then printf("Computing optimal bounds..\n") end
+    end
 
     for k=1,yModel.numvars do     		        
 		-- prepare for modifications		
@@ -173,56 +175,58 @@ function ls_calc_im_opt_bounds(pModel)
 			vnames[k] = resn.pachVarName
 		else
 			vnames[k] = sprintf("X%d",k)
-		end
-		if verb>1 then printf("%06d, '%20s', ",k-1,vnames[k]) end
+		end		
 		
-        objndx[1] = k-1
-        objval[1] = -1        
-        n_objs = 1
-        if k>1 then
-            objndx[2] = k-2
-            objval[2] = 0
-            n_objs = n_objs + 1
-        end                
-        elapsed = xta:tic()
-        -- maximize x[k]
-        if verb>1  then printf("U=%10g, ",U[k]) end
-        res = yModel:modifyObjective(n_objs,objndx,objval)        
-        yModel:xassert(res)             
-        local resx 
-        res, resx = im_optimize(yModel,k,-1)        
-        local lb_j, ub_j = L[k], U[k]
-        if res.status=='ok' then                    
-            ub_j = res.objval            
+        if not options.no_bound_optim then
+            if verb>1 then printf("%06d, '%20s', ",k-1,vnames[k]) end
+            objndx[1] = k-1
+            objval[1] = -1        
+            n_objs = 1
+            if k>1 then
+                objndx[2] = k-2
+                objval[2] = 0
+                n_objs = n_objs + 1
+            end                
+            elapsed = xta:tic()
+            -- maximize x[k]
+            if verb>1  then printf("U=%10g, ",U[k]) end
+            res = yModel:modifyObjective(n_objs,objndx,objval)        
+            yModel:xassert(res)             
+            local resx 
+            res, resx = im_optimize(yModel,k,-1)        
+            local lb_j, ub_j = L[k], U[k]
+            if res.status=='ok' then                    
+                ub_j = res.objval            
+            end
+            if verb>1  then printf("MAXU=%10g, ",ub_j) end            
+            
+            -- minimize x[k]
+            if verb>1  then printf("L=%10g, ",L[k]) end
+            objval[1] = 1
+            res = yModel:modifyObjective(1,objndx,objval)
+            yModel:xassert(res)
+            
+            res, resx = im_optimize(yModel,k,1)                
+            if res.status=='ok' then
+                lb_j = res.objval            
+            end
+            if verb>1  then printf("MINL=%10g, ",lb_j) end            
+            
+            -- update best bounds
+            if verb>1 then printf(" -- "); end
+            
+            if lb_j > resb.padBestL[k] + reps then
+                resb.padBestL[k] = lb_j;
+                if verb>1 then printf("(*L*)") end
+            end
+            
+            if ub_j < resb.padBestU[k] - reps then
+                resb.padBestU[k] = ub_j;
+                if verb>1 then printf("(*U*)") end
+            end
+            elapsed = xta:tic() - elapsed
+            if verb>1 then printf(" %.2f secs\n",elapsed) end
         end
-        if verb>1  then printf("MAXU=%10g, ",ub_j) end            
-        
-		-- minimize x[k]
-        if verb>1  then printf("L=%10g, ",L[k]) end
-        objval[1] = 1
-        res = yModel:modifyObjective(1,objndx,objval)
-        yModel:xassert(res)
-		
-		res, resx = im_optimize(yModel,k,1)                
-        if res.status=='ok' then
-            lb_j = res.objval            
-        end
-        if verb>1  then printf("MINL=%10g, ",lb_j) end            
-        
-        -- update best bounds
-        if verb>1 then printf(" -- "); end
-        
-        if lb_j > resb.padBestL[k] + reps then
-			resb.padBestL[k] = lb_j;
-            if verb>1 then printf("(*L*)") end
-        end
-        
-        if ub_j < resb.padBestU[k] - reps then
-			resb.padBestU[k] = ub_j;
-            if verb>1 then printf("(*U*)") end
-        end
-        elapsed = xta:tic() - elapsed
-        if verb>1 then printf(" %.2f secs\n",elapsed) end
     end
     
     rt:add(vnames)
@@ -349,10 +353,11 @@ end
 
 
 -- parse app specific options
-function app_options(options,k,v)
-    if k=="solve_as_lp" then options.solve_as_lp=true 
+function app_options(options,k,v)    
+    if k=="no_bound_optim" then options.no_bound_optim=true
 	else
 		printf("Unknown option '%s'\n",k)
+        pekc()
     end    
 end
 
@@ -367,8 +372,8 @@ local function usage(help_)
     print()
     print("  -m, --model=STRING             Specify the model file name")    
     print("    , --lp                       Solve as lp when finding best bounds")
-    print("    , --solve                    Solve as tightened model")
-    print("    , --solve_as_lp              Solve as LP when finding best bounds")    
+    print("    , --solve                    Solve the tightened model")
+    print("    , --no_bound_optim           Do not optimize bounds")
 	print("")
 	if not help_ then print_help_option() end        
     print("Example:")
@@ -379,7 +384,7 @@ end
 ---
 -- Parse command line arguments
 local long={
-    solve_as_lp = 0
+    no_bound_optim = 0
 	}
 local short = ""
 options, opts, optarg = parse_options(arg,short,long)
@@ -392,7 +397,6 @@ local cblog = options.cblog
 local has_gop   = options.has_gop
 local model_file = options.model_file
 verb = math.max(options.verb and options.verb or 1, 1)
-
 
 if options.help then
 	usage(true)
@@ -444,9 +448,14 @@ printf("Finished computing optimal bounds\n")
 if options.solve>0 then
 	-- Solve model
 	printf("\n")
-	yModel:setMIPCallback(cbmip)
-	--yModel:setModelIntParameter(pars.LS_IPARAM_MIP_PRINTLEVEL,2)
-	yModel:setModelIntParameter(pars.LS_IPARAM_LP_PRINTLEVEL,2)
+    if cblog>0 then
+        yModel.logfun = myprintlog
+        yModel:setModelIntParameter(pars.LS_IPARAM_MIP_PRINTLEVEL,2)
+        yModel:setModelIntParameter(pars.LS_IPARAM_LP_PRINTLEVEL,2)        
+    end
+    if cbmip>0 then
+	    yModel:setMIPCallback(cbmip)
+    end
 	printf("Solving %s\n",model_file)	
 	local res_opt, res_rng = yModel:solve({has_gop=false,ranges=nil})
 	if res_rng then
@@ -455,6 +464,12 @@ if options.solve>0 then
 			res_rng.padDec:printmat(6,nil,12,nil,'.3e')
 		end
 	end	
+    if res_opt then
+        print_table3(res_opt)
+        if verb>2 then
+            res_opt.padPrimal:printmat(6,nil,12,nil,'.3e')
+        end
+    end
 end
 
 if options.writeas then
