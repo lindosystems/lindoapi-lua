@@ -97,7 +97,7 @@ function ls_calc_im_opt_bounds(pModel)
 ]]
 
     -- GET BEST BOUNDS
-    if verb>1 then printf("computing best-bounds..\n") end
+    if verb>0 then printf("computing best-bounds..\n") end
     res = yModel:getBestBounds()
     yModel:wassert(res,{2009}) 
     if verb>2 then
@@ -111,6 +111,9 @@ function ls_calc_im_opt_bounds(pModel)
     
 	local check_gin = false	
 	local L, U = resb.padBestL, resb.padBestU
+    local L_IM = L:copy() -- 
+    local U_IM = U:copy()
+
 	if check_gin then		
 		for j=1,L.len do
 			if res_mipdata.pachVarTypes:sub(j,j)=="I" then
@@ -202,12 +205,12 @@ function ls_calc_im_opt_bounds(pModel)
         
         if lb_j > resb.padBestL[k] + reps then
 			resb.padBestL[k] = lb_j;
-            if verb>1 then printf("(*L*)") end
+            if verb>0 then printf("(*L*)") end
         end
         
         if ub_j < resb.padBestU[k] - reps then
 			resb.padBestU[k] = ub_j;
-            if verb>1 then printf("(*U*)") end
+            if verb>0 then printf("(*U*)") end
         end
         elapsed = xta:tic() - elapsed
         if verb>1 then printf(" %.2f secs\n",elapsed) end
