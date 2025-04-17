@@ -49,10 +49,6 @@ end
 
 -- Lua implementation of the user-defined function
 function MyUserFunc(argval)
-    -- Ensure argval is a table with at least 7 elements
-    if #argval < 7 then
-        error("argval must contain at least 7 elements: function ID followed by six variables.")
-    end
 
     assert(Xvec,"Xvec not initialized")
     -- Extract variables from argval
@@ -125,15 +121,19 @@ function solve_graybox(options)
   if 2>1 then
     local res = pModel:optimize()
     print_table3(res)
-    local sol = pModel:getPrimalSolution()
-    pModel:wassert(sol)
-    res = pModel:calcObjFunc(sol.padPrimal)
-    print_table3(res)
-    res = pModel:calcConFunc(-1,sol.padPrimal)
-    print_table3(res)
-    sol.padSlacks = res.padSlacks
-    sol.padPrimal:printmat()
-    sol.padSlacks:printmat()
+    if res.pnSolStatus==status.LS_STATUS_OPTIMAL or 
+        res.pnSolStatus==status.LS_STATUS_LOCAL_OPTIMAL or
+        res.pnSolStatus==status.LS_STATUS_BASIC_OPTIMAL then          
+      local sol = pModel:getPrimalSolution()
+      pModel:wassert(sol)
+      res = pModel:calcObjFunc(sol.padPrimal)
+      print_table3(res)
+      res = pModel:calcConFunc(-1,sol.padPrimal)
+      print_table3(res)
+      sol.padSlacks = res.padSlacks
+      sol.padPrimal:printmat()
+      sol.padSlacks:printmat()
+    end
   end
   print(pData.pachConTypes)
   csense = string_to_char_table(pData.pachConTypes)

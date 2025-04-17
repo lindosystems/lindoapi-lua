@@ -15,7 +15,7 @@ require 'llindo_usage'
 local options, opts, optarg
 local solver
 local model_file
-local verb=1
+local verb
 local szerrmsg
 
 -- Optimize a subproblems with MIP or LP solver, maximizing or minimizing a variable
@@ -87,7 +87,7 @@ function ls_calc_im_opt_bounds(pModel)
    }    
     ]]
     if verb>3 then print_table3(res_lpdata) end    
-    res_mipdata = yModel:getVarType()
+    local res_mipdata = yModel:getVarType()
     if verb>3 then print_table3(res_mipdata) end
     --[[
     {
@@ -111,10 +111,11 @@ function ls_calc_im_opt_bounds(pModel)
     
 	local check_gin = false	
 	local L, U = resb.padBestL, resb.padBestU
-    local L_IM = L:copy() -- 
-    local U_IM = U:copy()
+    local L_IM = L:copy() -- copy of best implied lower bounds
+    local U_IM = U:copy() -- copy of best implied upper bounds
+    
 
-	if check_gin then		
+	if check_gin then
 		for j=1,L.len do
 			if res_mipdata.pachVarTypes:sub(j,j)=="I" then
 				if math.abs(L[j])<=1e-12 and math.abs(U[j]-1.0)<=1e-12 then				
@@ -129,7 +130,7 @@ function ls_calc_im_opt_bounds(pModel)
     
     res = yModel:getModelDouParameter(pars.LS_DPARAM_SOLVER_FEASTOL)
     yModel:wassert(res)
-    local reps = res and res.pValue or 1e-6
+    local reps = math.max(res and res.pValue or 1e-6, 1e-6)
     
     --- DEL QTERMS
     if yModel.nonzqcp>0 then
@@ -139,7 +140,7 @@ function ls_calc_im_opt_bounds(pModel)
 		yModel:xassert(res,{2009})
 		--print_table3(res)
     end
-    printf("verb: %d\n",verb)
+    if verb>0 then printf("verb: %d\n",verb) end
     -- ZERO OUT OBJ
     res = yModel:modifyObjConstant(0)
     yModel:xassert(res,{2009})
@@ -152,11 +153,18 @@ function ls_calc_im_opt_bounds(pModel)
     
     res = yModel:modifyObjective(n_objs,objndx,objval)
     yModel:xassert(res,{2009})
-    
+
+    local rt = xta:table()
+    rt:add(L_IM,"lb_im")
+    rt:add(U_IM,"ub_im")
+    rt:addcopy(res_lpdata.padL,"lb")
+    rt:addcopy(res_lpdata.padU,"ub")
+
     local elapsed = 0
     -- CALC BEST LB and UB for each var        
     local vnames = xta:field(yModel.numvars,"names","string")
-    printf("\n")
+    if verb>0 then printf("Computing optimal bounds..\n") end
+
     for k=1,yModel.numvars do     		        
 		-- prepare for modifications		
         local resn = yModel:getVariableNamej(k-1)
@@ -205,20 +213,21 @@ function ls_calc_im_opt_bounds(pModel)
         
         if lb_j > resb.padBestL[k] + reps then
 			resb.padBestL[k] = lb_j;
-            if verb>0 then printf("(*L*)") end
+            if verb>1 then printf("(*L*)") end
         end
         
         if ub_j < resb.padBestU[k] - reps then
 			resb.padBestU[k] = ub_j;
-            if verb>0 then printf("(*U*)") end
+            if verb>1 then printf("(*U*)") end
         end
         elapsed = xta:tic() - elapsed
         if verb>1 then printf(" %.2f secs\n",elapsed) end
     end
-    local rt = xta:table()
+    
     rt:add(vnames)
-    rt:add(resb.padBestL,"lb")
-    rt:add(resb.padBestU,"ub")
+    rt:add(resb.padBestL,"lb_opt")
+    rt:add(resb.padBestU,"ub_opt")
+
     if verb>2 then
 		for k=1,rt.nrows do
 			if resb.padBestL[k]>-1e30 and resb.padBestU[k]<1e30 then
@@ -249,7 +258,91 @@ function ls_calc_im_opt_bounds(pModel)
     yModel:wassert(res)
     res = yModel:modifyObjective(yModel.numvars,varndx,res_lpdata.padC)
     yModel:wassert(res)    
-      
+
+    local lb_opt = rt.lb_opt
+    local ub_opt = rt.ub_opt
+    local lb_im = rt.lb_im
+    local ub_im = rt.ub_im
+    local lb = rt.lb
+    local ub = rt.ub
+    local flags
+    printf("Implied bounds:\n")
+    printf("%20s %10s %10s %10s %10s %10s %10s\n","Variable","lb_im","ub_im","lb_im_opt","ub_im_opt","lb_opt","ub_opt")
+    local counts = {}
+    for j=1,rt.nrows do        
+        flags = {}        
+        if lb_im[j]>lb[j] + reps then            
+            flags["lb_im"] = true
+        end
+        if ub_im[j]<ub[j] - reps then
+            flags["ub_im"] = true
+        end
+        if lb_opt[j]>lb_im[j] + reps then            
+            flags["lb_im_opt"] = true
+        end
+        if ub_opt[j]<ub_im[j] - reps then
+            flags["ub_im_opt"] = true
+        end
+        if lb_opt[j]>lb[j] + reps then            
+            flags["lb_opt"] = true
+        end
+        if ub_opt[j]<ub[j] - reps then
+            flags["ub_opt"] = true
+        end
+        if flags["lb_im"] or flags["ub_im"] or 
+           flags["lb_im_opt"] or flags["ub_im_opt"] or 
+           flags["lb_opt"] or flags["ub_opt"] then
+            printf("%20s ",vnames[j])
+            if flags["lb_im"] then
+                printf("%10s ","+")
+                counts["lb_im"] = (counts["lb_im"] or 0) + 1
+            else
+                printf("%10s ","")
+            end
+            if flags["ub_im"] then
+                printf("%10s ","+")
+                counts["ub_im"] = (counts["ub_im"] or 0) + 1
+            else
+                printf("%10s ","")
+            end
+            if flags["lb_im_opt"] then
+                printf("%10s ","+")
+                counts["lb_im_opt"] = (counts["lb_im_opt"] or 0) + 1
+            else
+                printf("%10s ","")
+            end
+            if flags["ub_im_opt"] then
+                printf("%10s ","+")
+                counts["ub_im_opt"] = (counts["ub_im_opt"] or 0) + 1
+            else
+                printf("%10s ","")
+            end
+            if flags["lb_opt"] then
+                printf("%10s ","+")
+                counts["lb_opt"] = (counts["lb_opt"] or 0) + 1
+            else
+                printf("%10s ","")
+            end
+            if flags["ub_opt"] then
+                printf("%10s ","+")
+                counts["ub_opt"] = (counts["ub_opt"] or 0) + 1
+            else
+                printf("%10s ","")
+            end
+            printf('\n')
+        end        
+        flags = nil
+    end
+    printf("\n")
+    printf("Counts:\n")
+    printf("%20s %10s\n","Type","Count")
+    printf("%20s %10d\n","lb_im",counts["lb_im"] or 0)
+    printf("%20s %10d\n","ub_im",counts["ub_im"] or 0)
+    printf("%20s %10d\n","lb_im_opt",counts["lb_im_opt"] or 0)
+    printf("%20s %10d\n","ub_im_opt",counts["ub_im_opt"] or 0)
+    printf("%20s %10d\n","lb_opt",counts["lb_opt"] or 0)
+    printf("%20s %10d\n","ub_opt",counts["ub_opt"] or 0)
+    printf("\n")
     return yModel
 end
 
@@ -296,7 +389,7 @@ local cbstd = options.cbstd
 local cblog = options.cblog
 local has_gop   = options.has_gop
 local model_file = options.model_file
-verb = math.max(options.verb and options.verb or 1, 2)
+verb = math.max(options.verb and options.verb or 1, 1)
 
 
 if options.help then
