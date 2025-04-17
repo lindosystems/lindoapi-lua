@@ -20,7 +20,8 @@ local szerrmsg
 
 -- Optimize a subproblems with MIP or LP solver, maximizing or minimizing a variable
 function im_optimize(yModel,kidx,objsense)
-	if not options.solve_as_lp then   
+    local res
+	if not options.solve_as_lp then
 		yModel:setModelDouParameter(pars.LS_DPARAM_MIP_TIMLIM,1000)
 		res = yModel:solveMIP()
 		yModel:xassert(res,{errs.LSERR_TIME_LIMIT})		
@@ -33,7 +34,7 @@ function im_optimize(yModel,kidx,objsense)
             local suffix = sprintf("_%06d_%s",kidx,objsense==-1 and "max" or "min")
             local tempfile = addSuffix2Basename(options.model_file,suffix,"im")
             yModel:write({writeas='ltx', suffix=suffix, subfolder="im"})
-		end				
+		end
 	else
 		res = yModel:optimize()
 		if yModel.solstatus==1 or yModel.solstatus==2 then
@@ -43,7 +44,7 @@ function im_optimize(yModel,kidx,objsense)
 	end	
 	local resx
 	if verb>3  then
-		if not solve_as_lp then   
+		if not options.solve_as_lp then   
 			resx = yModel:getMIPPrimalSolution()
 		else
 			resx = yModel:getPrimalSolution()
@@ -346,13 +347,13 @@ function ls_calc_im_opt_bounds(pModel)
     return yModel
 end
 
+
 -- parse app specific options
 function app_options(options,k,v)
-    
-	if 0>1 then print()
+    if k=="solve_as_lp" then options.solve_as_lp=true 
 	else
 		printf("Unknown option '%s'\n",k)
-	end
+    end    
 end
 
 -- Usage function
@@ -367,6 +368,7 @@ local function usage(help_)
     print("  -m, --model=STRING             Specify the model file name")    
     print("    , --lp                       Solve as lp when finding best bounds")
     print("    , --solve                    Solve as tightened model")
+    print("    , --solve_as_lp              Solve as LP when finding best bounds")    
 	print("")
 	if not help_ then print_help_option() end        
     print("Example:")
@@ -377,7 +379,7 @@ end
 ---
 -- Parse command line arguments
 local long={
-
+    solve_as_lp = 0
 	}
 local short = ""
 options, opts, optarg = parse_options(arg,short,long)
