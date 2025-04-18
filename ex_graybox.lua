@@ -135,8 +135,10 @@ local function solve_graybox(options)
   assert(nErr==0,szmsg)
   assert(nErr==0)
 
-  res = pModel:loadData2Inst() -- to keep instructions for LP/QP
-  pModel:wassert(res)
+  if pModel.numinst == 0 then
+    res = pModel:loadData2Inst() -- to keep instructions for LP/QP
+    pModel:wassert(res)
+  end
 
   local pData = pModel:getLPData()
   --print_table3(pData)
@@ -144,7 +146,7 @@ local function solve_graybox(options)
   local numcons = pModel.numcons
   local objsense = pData.pdObjSense
   
-  if hasbit(options.solve,bit(2)) then
+  if hasbit(options.solve,bit(2)) then --solve=2
     local res = pModel:optimize()
     print_table3(res)
     if res.pnSolStatus==status.LS_STATUS_OPTIMAL or 
@@ -180,7 +182,7 @@ local function solve_graybox(options)
   res = yModel:loadNLPDense(numcons,numvars,objsense,pData.pachConTypes,pachVarTypes,Xvec,pData.padL,pData.padU)
   yModel:wassert(res)
   
-  if hasbit(options.solve,bit(1)) then
+  if hasbit(options.solve,bit(1)) then --solve=1
     res = yModel:optimize()
     print_table3(res)
     if res.padPrimal then
@@ -237,7 +239,7 @@ local function solve_graybox(options)
     ]]  
 
   local zModel
-  if hasbit(options.solve,bit(3)) then
+  if hasbit(options.solve,bit(3)) then -- --solve=4
     -- M is the Jacobian of the constraints, and F is the gradient of the objective function
     -- Construct the sparse matrix representation of M to load into the solver
     zModel = solver:mpmodel()
