@@ -26,7 +26,7 @@ local function usage(help_)
     print("App. Options:")
     printf("    -m, --model=[string]       Model file name (default: nil)\n")
     print("    , --xuserdll=[string]       Set user DLL (default: nil)")
-    print("    , --solve=[bitmask]         +1: solve as graybox (default), +2: solve original")
+    print("    , --solve=[bitmask]         +1: solve as graybox (default), +2: solve original, +4: solve graybox with Jacobian")
 	print("")
 	if not help_ then print_help_option() end        
     print("Example:")
@@ -146,6 +146,7 @@ local function solve_graybox(options)
   local numcons = pModel.numcons
   local objsense = pData.pdObjSense
   
+  -- Solve input model with standard solver (solve=2)
   if hasbit(options.solve,bit(2)) then --solve=2
     local res = pModel:optimize()
     print_table3(res)
@@ -182,6 +183,7 @@ local function solve_graybox(options)
   res = yModel:loadNLPDense(numcons,numvars,objsense,pData.pachConTypes,pachVarTypes,Xvec,pData.padL,pData.padU)
   yModel:wassert(res)
   
+  -- Solve the input model after it is wrapped in a graybox model (solve=1)
   if hasbit(options.solve,bit(1)) then --solve=1
     res = yModel:optimize()
     print_table3(res)
@@ -220,6 +222,7 @@ local function solve_graybox(options)
     F[k] = res.pdObjval - F0
   end
   
+  -- Solve the graybox model as an LP approximation (solve=4)
   if hasbit(options.solve,bit(3)) then -- --solve=4
     local zModel
     -- J is the Jacobian of the constraints, and F is the gradient of the objective function
