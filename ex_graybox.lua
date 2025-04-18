@@ -26,6 +26,7 @@ local function usage(help_)
     print("App. Options:")
     printf("    -m, --model=[string]       Model file name (default: nil)\n")
     print("    , --xuserdll=[string]       Set user DLL (default: nil)")
+    print("    , --solve=[bitmask]         +1: solve as graybox (default), +2: solve original")
 	print("")
 	if not help_ then print_help_option() end        
     print("Example:")
@@ -92,8 +93,33 @@ function string_to_char_table(str)
     return t
   end
   
+local function dense_to_sparse(M)
+  local numcons = M.nrows
+  local numvars = M.ncols  
+  local pSparse = {}
+  pSparse.paiArows = xta:izeros(0)
+  pSparse.paiAcols = xta:izeros(numvars+1)
+  pSparse.panAcols = xta:izeros(numvars)
+  pSparse.padAcoef = xta:zeros(0)
+  local nnz = 0
+  pSparse.paiAcols[1] = 0
+  for i=1,numvars do
+    local col = M:at(i)        
+    for j=1,numcons do
+      if math.abs(col[j]) > 1e-12 then
+        nnz = nnz + 1
+        pSparse.paiArows:add(j-1)        
+        pSparse.padAcoef:add(col[j])
+        pSparse.panAcols[i] = pSparse.panAcols[i] + 1
+      end      
+    end
+    pSparse.paiAcols[i+1] = nnz
+  end
+  --print_table3(pSparse)
+  return pSparse
+end
 
-function solve_graybox(options)
+local function solve_graybox(options)
   local ymd,hms = xta:datenow(),xta:timenow() 
   local jsec = xta:jsec(ymd,hms)
   printf("%06d-%06d jsec:%d\n",ymd,hms,jsec)
@@ -112,13 +138,13 @@ function solve_graybox(options)
   res = pModel:loadData2Inst() -- to keep instructions for LP/QP
   pModel:wassert(res)
 
-  pData = pModel:getLPData()
+  local pData = pModel:getLPData()
   --print_table3(pData)
   local numvars = pModel.numvars
   local numcons = pModel.numcons
   local objsense = pData.pdObjSense
   
-  if 2>1 then
+  if hasbit(options.solve,bit(2)) then
     local res = pModel:optimize()
     print_table3(res)
     if res.pnSolStatus==status.LS_STATUS_OPTIMAL or 
@@ -135,7 +161,11 @@ function solve_graybox(options)
       sol.padSlacks:printmat()
     end
   end
+  printf("Constraint types: \n")
   print(pData.pachConTypes)
+  print()
+  printf("Objective sense: %s\n",objsense)
+  print(objsense)
   csense = string_to_char_table(pData.pachConTypes)
   res = pModel:getVarType()  
   pModel:wassert(res)
@@ -150,7 +180,7 @@ function solve_graybox(options)
   res = yModel:loadNLPDense(numcons,numvars,objsense,pData.pachConTypes,pachVarTypes,Xvec,pData.padL,pData.padU)
   yModel:wassert(res)
   
-  if 0>1 then
+  if hasbit(options.solve,bit(1)) then
     res = yModel:optimize()
     print_table3(res)
     if res.padPrimal then
@@ -181,21 +211,79 @@ function solve_graybox(options)
       end
     end   
     Jac[k].name = "Jac[" .. k .. "]"    
-    Jac[k]:printmat()
+    --Jac[k]:printmat()
     M[k] = Jac[k]
     local res = yModel:calcObjFunc(X[k])
     yModel:wassert(res)
     F[k] = res.pdObjval - F0
   end
-  M:print()
-  F:printmat()
 
 
+    --[[
+{
+      pdObjConst = 576,
+      padAcoef = lua_Field: 0x0x02e2a600 (pField: 0x0x02d7ecd8, len:91(91),
+      panAcols = lua_Field: 0x0x02e29e18 (pField: 0x0x02d7c0b0, len:28(28),
+      pachConTypes = LLLLLLLLLLLLL,
+      padU = lua_Field: 0x0x02e38f18 (pField: 0x0x02d87520, len:28(28),
+      ErrorCode = 0,
+      pdObjSense = 1,
+      paiArows = lua_Field: 0x0x02e2de68 (pField: 0x0x02d81b68, len:91(91),
+      paiAcols = lua_Field: 0x0x02e2cce0 (pField: 0x0x02d78520, len:29(29),
+      padL = lua_Field: 0x0x02e327f8 (pField: 0x0x02d84888, len:28(28),
+      padB = lua_Field: 0x0x02e4ce88 (pField: 0x0x02d75998, len:13(13),
+      padC = lua_Field: 0x0x02e39c88 (pField: 0x0x02d72e10, len:28(28),
+   }    
+    ]]  
+
+  local zModel
+  if hasbit(options.solve,bit(3)) then
+    -- M is the Jacobian of the constraints, and F is the gradient of the objective function
+    -- Construct the sparse matrix representation of M to load into the solver
+    zModel = solver:mpmodel()
+    zModel.logfun = myprintlog    
+    local pSparse = dense_to_sparse(M)
+    res = zModel:loadLPData(
+      pData.pdObjSense,
+      pData.pdObjConst,
+      F,
+      pData.padB,
+      pData.pachConTypes,
+      pSparse.paiAcols,
+      pSparse.panAcols,
+      pSparse.padAcoef,
+      pSparse.paiArows,
+      pData.padL,
+      pData.padU)
+    zModel:wassert(res)    
+    res = zModel:optimize()
+    print_table3(res)
+    if res.padPrimal then
+        res.padPrimal:printmat()
+        local padPrimal = res.padPrimal
+        res = zModel:calcConFunc(-1,padPrimal)    
+        print_table3(res)
+        res.padSlacks:printmat()    
+        print(pData.pachConTypes)
+    end
+  end
+
+  if options.verb>1 then
+    M:print("M.csv")  
+    F:print("F.csv")
+    printf("Written Jacobian (M.csv) and Obj gradient (F.csv)..\n")
+  else
+    printf("Set --verb=2 to write Jacobian (M.csv) and Obj gradient (F.csv)..\n")
+  end
 
   yModel:dispose()
+  if zModel then zModel:dispose() end
   pModel:dispose()
 end
 
+--------------------------------------------------
+--- MAIN 
+--- Parse command line arguments and run
 local short=""
 local long={
     xuserdll = 1,
@@ -212,7 +300,6 @@ if not options.model_file then
 	return
 end	
 
---- MAIN 
 solver = xta:solver()
 assert(solver,"\n\nError: failed create a solver instance.\n")
 solve_graybox(options)
