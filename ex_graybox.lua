@@ -26,7 +26,7 @@ local function usage(help_)
     print("App. Options:")
     printf("    -m, --model=[string]       Model file name (default: nil)\n")
     print("    , --xuserdll=[string]       Set user DLL (default: nil)")
-    print("    , --solve=[bitmask]         +1: solve as graybox (default), +2: solve original")
+    print("    , --solve=[bitmask]         +1: solve as graybox (default), +2: solve original, +4: solve graybox with Jacobian")
 	print("")
 	if not help_ then print_help_option() end        
     print("Example:")
@@ -93,9 +93,9 @@ function string_to_char_table(str)
     return t
   end
   
-local function dense_to_sparse(M)
-  local numcons = M.nrows
-  local numvars = M.ncols  
+local function dense_to_sparse(J)
+  local numcons = J.nrows
+  local numvars = J.ncols  
   local pSparse = {}
   pSparse.paiArows = xta:izeros(0)
   pSparse.paiAcols = xta:izeros(numvars+1)
@@ -104,7 +104,7 @@ local function dense_to_sparse(M)
   local nnz = 0
   pSparse.paiAcols[1] = 0
   for i=1,numvars do
-    local col = M:at(i)        
+    local col = J:at(i)        
     for j=1,numcons do
       if math.abs(col[j]) > 1e-12 then
         nnz = nnz + 1
@@ -146,6 +146,7 @@ local function solve_graybox(options)
   local numcons = pModel.numcons
   local objsense = pData.pdObjSense
   
+  -- Solve input model with standard solver (solve=2)
   if hasbit(options.solve,bit(2)) then --solve=2
     local res = pModel:optimize()
     print_table3(res)
@@ -182,6 +183,7 @@ local function solve_graybox(options)
   res = yModel:loadNLPDense(numcons,numvars,objsense,pData.pachConTypes,pachVarTypes,Xvec,pData.padL,pData.padU)
   yModel:wassert(res)
   
+  -- Solve the input model after it is wrapped in a graybox model (solve=1)
   if hasbit(options.solve,bit(1)) then --solve=1
     res = yModel:optimize()
     print_table3(res)
@@ -199,7 +201,7 @@ local function solve_graybox(options)
   local X0 = xta:zeros(numvars)
   local Y0 = yModel:calcConFunc(-1,X0).padSlacks
   local F0 = yModel:calcObjFunc(X0).pdObjval
-  local M = xta:table()
+  local J = xta:table()
   local F = xta:zeros(numvars)
   for k=1,numvars do
     X[k] = xta:zeros(numvars)
@@ -214,37 +216,20 @@ local function solve_graybox(options)
     end   
     Jac[k].name = "Jac[" .. k .. "]"    
     --Jac[k]:printmat()
-    M[k] = Jac[k]
+    J[k] = Jac[k]
     local res = yModel:calcObjFunc(X[k])
     yModel:wassert(res)
     F[k] = res.pdObjval - F0
   end
-
-
-    --[[
-{
-      pdObjConst = 576,
-      padAcoef = lua_Field: 0x0x02e2a600 (pField: 0x0x02d7ecd8, len:91(91),
-      panAcols = lua_Field: 0x0x02e29e18 (pField: 0x0x02d7c0b0, len:28(28),
-      pachConTypes = LLLLLLLLLLLLL,
-      padU = lua_Field: 0x0x02e38f18 (pField: 0x0x02d87520, len:28(28),
-      ErrorCode = 0,
-      pdObjSense = 1,
-      paiArows = lua_Field: 0x0x02e2de68 (pField: 0x0x02d81b68, len:91(91),
-      paiAcols = lua_Field: 0x0x02e2cce0 (pField: 0x0x02d78520, len:29(29),
-      padL = lua_Field: 0x0x02e327f8 (pField: 0x0x02d84888, len:28(28),
-      padB = lua_Field: 0x0x02e4ce88 (pField: 0x0x02d75998, len:13(13),
-      padC = lua_Field: 0x0x02e39c88 (pField: 0x0x02d72e10, len:28(28),
-   }    
-    ]]  
-
-  local zModel
+  
+  -- Solve the graybox model as an LP approximation (solve=4)
   if hasbit(options.solve,bit(3)) then -- --solve=4
-    -- M is the Jacobian of the constraints, and F is the gradient of the objective function
-    -- Construct the sparse matrix representation of M to load into the solver
+    local zModel
+    -- J is the Jacobian of the constraints, and F is the gradient of the objective function
+    -- Construct the sparse matrix representation of J to load into the solver
     zModel = solver:mpmodel()
     zModel.logfun = myprintlog    
-    local pSparse = dense_to_sparse(M)
+    local pSparse = dense_to_sparse(J)
     res = zModel:loadLPData(
       pData.pdObjSense,
       pData.pdObjConst,
@@ -268,18 +253,18 @@ local function solve_graybox(options)
         res.padSlacks:printmat()    
         print(pData.pachConTypes)
     end
+    zModel:dispose()
   end
 
   if options.verb>1 then
-    M:print("M.csv")  
-    F:print("F.csv")
-    printf("Written Jacobian (M.csv) and Obj gradient (F.csv)..\n")
+    J:print("J.csv")  
+    F:print("G.csv")
+    printf("Written Jacobian (J.csv) and Gradient (G.csv)..\n")
   else
-    printf("Set --verb=2 to write Jacobian (M.csv) and Obj gradient (F.csv)..\n")
+    printf("Set --verb=2 to write Jacobian (J.csv) and Gradient (G.csv)..\n")
   end
 
-  yModel:dispose()
-  if zModel then zModel:dispose() end
+  yModel:dispose()   
   pModel:dispose()
 end
 
