@@ -1,11 +1,6 @@
 #!/usr/bin/env lua
 
 function cygpath_w(ls_prob)
-    -- Return if not windows
-    if not is_cygwin() then
-        return ls_prob
-    end
-        
     -- Check if the environment variable exists
     if not ls_prob then
         --print("The input argument is nil.")
