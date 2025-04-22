@@ -11,12 +11,21 @@ Generate a LINGO model for the magic hexagon problem.
   -b,--block    (default 0)    Partition into block groups (0 for no block)
   -g,--debug    (default 0)    Debug mode (1 for debug, 0 for normal)
   -s,--ssym     (default 1)    Show symmetries to break
+  -G,--gen      (default 0)    Generate all orders of hexagons up to N (starting from 3)
 ]]
 
 local block_groups = {"HRZ", "LLR", "ULR"}
 
 -- Validate inputs
 assert(args.norder > 2, "Order must be positive and greater than 2")
+if args.gen > 0 then
+    assert(args.gen > 2, "Order must be positive and greater than 2")
+    for i = 3, args.gen do
+        local cmd = string.format("lslua lsgen_lingo_magixhex.lua -n %d | tee ~/shared/prob/custmodels/MagicHex%d_obj.lng", i,i)
+        os.execute(cmd)
+    end
+    return
+end
 
 
 --- Function to print the hexagonal grid structure
