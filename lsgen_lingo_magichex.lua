@@ -22,7 +22,8 @@ if args.gen > 0 then
     assert(args.gen > 2, "Order must be positive and greater than 2")
     for i = 3, args.gen do
         local cmd = string.format("lslua lsgen_lingo_magixhex.lua -n %d | tee ~/shared/prob/custmodels/MagicHex%d_obj.lng", i,i)
-        os.execute(cmd)
+        cmd:gsub("\r", ""):gsub("\n", "")
+        print(cmd)
     end
     return
 end
@@ -47,7 +48,7 @@ local function print_hex_grid(hex)
         end
         table.insert(lines, line)
     end
-    table.insert(lines,";")
+    table.insert(lines,"!;")
 
     print(table.concat(lines, "\n"))
 end
