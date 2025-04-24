@@ -1,0 +1,193 @@
+MODEL:
+SETS:
+	cell /1..61/:
+		valasg;
+	valset /1..61/;
+	cxv(cell,valset): z;
+ENDSETS
+! Variables: z(i,j) = 1 if cell i is assigned value j;
+! Each value is assigned once;
+@FOR(valset(j): @SUM(cell(i): z(i,j)) = 1;);
+! Each cell gets a value;
+@FOR(cell(i): @SUM(valset(j): z(i,j)) = 1; valasg(i) = @SUM(valset(j): (KOFF+j)*z(i,j)););
+! Binary constraints;
+@FOR(cxv(i,j): @BIN(z(i,j)));
+! Optional symmetry-breaking driver;
+min= @sum( valset(j): j*z(KIDX,j));
+! There is lots of symmetry. Choose one of the solutions;
+! There are 6xN rotations and 3 reflections;
+! To eliminate rotations, take cell(i), enumerate all positions in each rotation and add a constraint to use only one;
+CALC:
+	KIDX = 6;
+	KSUM = 210; !Comment out to make KSUM the variable to use in place off 'magic_sum(N);
+	KOFF = 0; !Comment out to make KOFF the variable to offset for the values assigned in the hexagon, 
+                       Positive KOFF shifts values assigned from 1..(3N^2-3N+1) to (1+KOFF)..(3N^2-3N+1+KOFF)
+                       If it is a variable (i.e. commented out from CALC), it should better be @free;
+	!@SET('XSOLVR',14,0); !Remove comment to use external solver '14';
+	@SET('SOLVLG', 2);
+	!@SET('GLOBAL', 1); !Remove comment to activate global solver if KOFF is a variable;
+ENDCALC
+[HRZ1] @SUM(valset(j): (j+KOFF)*z(1,j)) + @SUM(valset(j): (j+KOFF)*z(2,j)) + @SUM(valset(j): (j+KOFF)*z(3,j)) + @SUM(valset(j): (j+KOFF)*z(4,j)) + @SUM(valset(j): (j+KOFF)*z(5,j)) = KSUM;
+[HRZ2] @SUM(valset(j): (j+KOFF)*z(6,j)) + @SUM(valset(j): (j+KOFF)*z(7,j)) + @SUM(valset(j): (j+KOFF)*z(8,j)) + @SUM(valset(j): (j+KOFF)*z(9,j)) + @SUM(valset(j): (j+KOFF)*z(10,j)) + @SUM(valset(j): (j+KOFF)*z(11,j)) = KSUM;
+[HRZ3] @SUM(valset(j): (j+KOFF)*z(12,j)) + @SUM(valset(j): (j+KOFF)*z(13,j)) + @SUM(valset(j): (j+KOFF)*z(14,j)) + @SUM(valset(j): (j+KOFF)*z(15,j)) + @SUM(valset(j): (j+KOFF)*z(16,j)) + @SUM(valset(j): (j+KOFF)*z(17,j)) + @SUM(valset(j): (j+KOFF)*z(18,j)) = KSUM;
+[HRZ4] @SUM(valset(j): (j+KOFF)*z(19,j)) + @SUM(valset(j): (j+KOFF)*z(20,j)) + @SUM(valset(j): (j+KOFF)*z(21,j)) + @SUM(valset(j): (j+KOFF)*z(22,j)) + @SUM(valset(j): (j+KOFF)*z(23,j)) + @SUM(valset(j): (j+KOFF)*z(24,j)) + @SUM(valset(j): (j+KOFF)*z(25,j)) + @SUM(valset(j): (j+KOFF)*z(26,j)) = KSUM;
+[HRZ5] @SUM(valset(j): (j+KOFF)*z(27,j)) + @SUM(valset(j): (j+KOFF)*z(28,j)) + @SUM(valset(j): (j+KOFF)*z(29,j)) + @SUM(valset(j): (j+KOFF)*z(30,j)) + @SUM(valset(j): (j+KOFF)*z(31,j)) + @SUM(valset(j): (j+KOFF)*z(32,j)) + @SUM(valset(j): (j+KOFF)*z(33,j)) + @SUM(valset(j): (j+KOFF)*z(34,j)) + @SUM(valset(j): (j+KOFF)*z(35,j)) = KSUM;
+[HRZ6] @SUM(valset(j): (j+KOFF)*z(36,j)) + @SUM(valset(j): (j+KOFF)*z(37,j)) + @SUM(valset(j): (j+KOFF)*z(38,j)) + @SUM(valset(j): (j+KOFF)*z(39,j)) + @SUM(valset(j): (j+KOFF)*z(40,j)) + @SUM(valset(j): (j+KOFF)*z(41,j)) + @SUM(valset(j): (j+KOFF)*z(42,j)) + @SUM(valset(j): (j+KOFF)*z(43,j)) = KSUM;
+[HRZ7] @SUM(valset(j): (j+KOFF)*z(44,j)) + @SUM(valset(j): (j+KOFF)*z(45,j)) + @SUM(valset(j): (j+KOFF)*z(46,j)) + @SUM(valset(j): (j+KOFF)*z(47,j)) + @SUM(valset(j): (j+KOFF)*z(48,j)) + @SUM(valset(j): (j+KOFF)*z(49,j)) + @SUM(valset(j): (j+KOFF)*z(50,j)) = KSUM;
+[HRZ8] @SUM(valset(j): (j+KOFF)*z(51,j)) + @SUM(valset(j): (j+KOFF)*z(52,j)) + @SUM(valset(j): (j+KOFF)*z(53,j)) + @SUM(valset(j): (j+KOFF)*z(54,j)) + @SUM(valset(j): (j+KOFF)*z(55,j)) + @SUM(valset(j): (j+KOFF)*z(56,j)) = KSUM;
+[HRZ9] @SUM(valset(j): (j+KOFF)*z(57,j)) + @SUM(valset(j): (j+KOFF)*z(58,j)) + @SUM(valset(j): (j+KOFF)*z(59,j)) + @SUM(valset(j): (j+KOFF)*z(60,j)) + @SUM(valset(j): (j+KOFF)*z(61,j)) = KSUM;
+[LLR1] @SUM(valset(j): (j+KOFF)*z(27,j)) + @SUM(valset(j): (j+KOFF)*z(36,j)) + @SUM(valset(j): (j+KOFF)*z(44,j)) + @SUM(valset(j): (j+KOFF)*z(51,j)) + @SUM(valset(j): (j+KOFF)*z(57,j)) = KSUM;
+[LLR2] @SUM(valset(j): (j+KOFF)*z(19,j)) + @SUM(valset(j): (j+KOFF)*z(28,j)) + @SUM(valset(j): (j+KOFF)*z(37,j)) + @SUM(valset(j): (j+KOFF)*z(45,j)) + @SUM(valset(j): (j+KOFF)*z(52,j)) + @SUM(valset(j): (j+KOFF)*z(58,j)) = KSUM;
+[LLR3] @SUM(valset(j): (j+KOFF)*z(12,j)) + @SUM(valset(j): (j+KOFF)*z(20,j)) + @SUM(valset(j): (j+KOFF)*z(29,j)) + @SUM(valset(j): (j+KOFF)*z(38,j)) + @SUM(valset(j): (j+KOFF)*z(46,j)) + @SUM(valset(j): (j+KOFF)*z(53,j)) + @SUM(valset(j): (j+KOFF)*z(59,j)) = KSUM;
+[LLR4] @SUM(valset(j): (j+KOFF)*z(6,j)) + @SUM(valset(j): (j+KOFF)*z(13,j)) + @SUM(valset(j): (j+KOFF)*z(21,j)) + @SUM(valset(j): (j+KOFF)*z(30,j)) + @SUM(valset(j): (j+KOFF)*z(39,j)) + @SUM(valset(j): (j+KOFF)*z(47,j)) + @SUM(valset(j): (j+KOFF)*z(54,j)) + @SUM(valset(j): (j+KOFF)*z(60,j)) = KSUM;
+[LLR5] @SUM(valset(j): (j+KOFF)*z(1,j)) + @SUM(valset(j): (j+KOFF)*z(7,j)) + @SUM(valset(j): (j+KOFF)*z(14,j)) + @SUM(valset(j): (j+KOFF)*z(22,j)) + @SUM(valset(j): (j+KOFF)*z(31,j)) + @SUM(valset(j): (j+KOFF)*z(40,j)) + @SUM(valset(j): (j+KOFF)*z(48,j)) + @SUM(valset(j): (j+KOFF)*z(55,j)) + @SUM(valset(j): (j+KOFF)*z(61,j)) = KSUM;
+[LLR6] @SUM(valset(j): (j+KOFF)*z(2,j)) + @SUM(valset(j): (j+KOFF)*z(8,j)) + @SUM(valset(j): (j+KOFF)*z(15,j)) + @SUM(valset(j): (j+KOFF)*z(23,j)) + @SUM(valset(j): (j+KOFF)*z(32,j)) + @SUM(valset(j): (j+KOFF)*z(41,j)) + @SUM(valset(j): (j+KOFF)*z(49,j)) + @SUM(valset(j): (j+KOFF)*z(56,j)) = KSUM;
+[LLR7] @SUM(valset(j): (j+KOFF)*z(3,j)) + @SUM(valset(j): (j+KOFF)*z(9,j)) + @SUM(valset(j): (j+KOFF)*z(16,j)) + @SUM(valset(j): (j+KOFF)*z(24,j)) + @SUM(valset(j): (j+KOFF)*z(33,j)) + @SUM(valset(j): (j+KOFF)*z(42,j)) + @SUM(valset(j): (j+KOFF)*z(50,j)) = KSUM;
+[LLR8] @SUM(valset(j): (j+KOFF)*z(4,j)) + @SUM(valset(j): (j+KOFF)*z(10,j)) + @SUM(valset(j): (j+KOFF)*z(17,j)) + @SUM(valset(j): (j+KOFF)*z(25,j)) + @SUM(valset(j): (j+KOFF)*z(34,j)) + @SUM(valset(j): (j+KOFF)*z(43,j)) = KSUM;
+[LLR9] @SUM(valset(j): (j+KOFF)*z(5,j)) + @SUM(valset(j): (j+KOFF)*z(11,j)) + @SUM(valset(j): (j+KOFF)*z(18,j)) + @SUM(valset(j): (j+KOFF)*z(26,j)) + @SUM(valset(j): (j+KOFF)*z(35,j)) = KSUM;
+[ULR1] @SUM(valset(j): (j+KOFF)*z(1,j)) + @SUM(valset(j): (j+KOFF)*z(6,j)) + @SUM(valset(j): (j+KOFF)*z(12,j)) + @SUM(valset(j): (j+KOFF)*z(19,j)) + @SUM(valset(j): (j+KOFF)*z(27,j)) = KSUM;
+[ULR2] @SUM(valset(j): (j+KOFF)*z(2,j)) + @SUM(valset(j): (j+KOFF)*z(7,j)) + @SUM(valset(j): (j+KOFF)*z(13,j)) + @SUM(valset(j): (j+KOFF)*z(20,j)) + @SUM(valset(j): (j+KOFF)*z(28,j)) + @SUM(valset(j): (j+KOFF)*z(36,j)) = KSUM;
+[ULR3] @SUM(valset(j): (j+KOFF)*z(3,j)) + @SUM(valset(j): (j+KOFF)*z(8,j)) + @SUM(valset(j): (j+KOFF)*z(14,j)) + @SUM(valset(j): (j+KOFF)*z(21,j)) + @SUM(valset(j): (j+KOFF)*z(29,j)) + @SUM(valset(j): (j+KOFF)*z(37,j)) + @SUM(valset(j): (j+KOFF)*z(44,j)) = KSUM;
+[ULR4] @SUM(valset(j): (j+KOFF)*z(4,j)) + @SUM(valset(j): (j+KOFF)*z(9,j)) + @SUM(valset(j): (j+KOFF)*z(15,j)) + @SUM(valset(j): (j+KOFF)*z(22,j)) + @SUM(valset(j): (j+KOFF)*z(30,j)) + @SUM(valset(j): (j+KOFF)*z(38,j)) + @SUM(valset(j): (j+KOFF)*z(45,j)) + @SUM(valset(j): (j+KOFF)*z(51,j)) = KSUM;
+[ULR5] @SUM(valset(j): (j+KOFF)*z(5,j)) + @SUM(valset(j): (j+KOFF)*z(10,j)) + @SUM(valset(j): (j+KOFF)*z(16,j)) + @SUM(valset(j): (j+KOFF)*z(23,j)) + @SUM(valset(j): (j+KOFF)*z(31,j)) + @SUM(valset(j): (j+KOFF)*z(39,j)) + @SUM(valset(j): (j+KOFF)*z(46,j)) + @SUM(valset(j): (j+KOFF)*z(52,j)) + @SUM(valset(j): (j+KOFF)*z(57,j)) = KSUM;
+[ULR6] @SUM(valset(j): (j+KOFF)*z(11,j)) + @SUM(valset(j): (j+KOFF)*z(17,j)) + @SUM(valset(j): (j+KOFF)*z(24,j)) + @SUM(valset(j): (j+KOFF)*z(32,j)) + @SUM(valset(j): (j+KOFF)*z(40,j)) + @SUM(valset(j): (j+KOFF)*z(47,j)) + @SUM(valset(j): (j+KOFF)*z(53,j)) + @SUM(valset(j): (j+KOFF)*z(58,j)) = KSUM;
+[ULR7] @SUM(valset(j): (j+KOFF)*z(18,j)) + @SUM(valset(j): (j+KOFF)*z(25,j)) + @SUM(valset(j): (j+KOFF)*z(33,j)) + @SUM(valset(j): (j+KOFF)*z(41,j)) + @SUM(valset(j): (j+KOFF)*z(48,j)) + @SUM(valset(j): (j+KOFF)*z(54,j)) + @SUM(valset(j): (j+KOFF)*z(59,j)) = KSUM;
+[ULR8] @SUM(valset(j): (j+KOFF)*z(26,j)) + @SUM(valset(j): (j+KOFF)*z(34,j)) + @SUM(valset(j): (j+KOFF)*z(42,j)) + @SUM(valset(j): (j+KOFF)*z(49,j)) + @SUM(valset(j): (j+KOFF)*z(55,j)) + @SUM(valset(j): (j+KOFF)*z(60,j)) = KSUM;
+[ULR9] @SUM(valset(j): (j+KOFF)*z(35,j)) + @SUM(valset(j): (j+KOFF)*z(43,j)) + @SUM(valset(j): (j+KOFF)*z(50,j)) + @SUM(valset(j): (j+KOFF)*z(56,j)) + @SUM(valset(j): (j+KOFF)*z(61,j)) = KSUM;
+END
+!Hex grid:
+! Honeycomb structure for order N=5;
+!           1   2   3   4   5 
+!         6   7   8   9  10  11 
+!      12  13  14  15  16  17  18 
+!    19  20  21  22  23  24  25  26 
+!  27  28  29  30  31  32  33  34  35 
+!    36  37  38  39  40  41  42  43 
+!      44  45  46  47  48  49  50 
+!        51  52  53  54  55  56 
+!          57  58  59  60  61 
+!;
+! ||||||||||||||||||||;
+!Rotated original hex grid 60 degrees:
+! Honeycomb structure for order N=5;
+!          27  19  12   6   1 
+!        36  28  20  13   7   2 
+!      44  37  29  21  14   8   3 
+!    51  45  38  30  22  15   9   4 
+!  57  52  46  39  31  23  16  10   5 
+!    58  53  47  40  32  24  17  11 
+!      59  54  48  41  33  25  18 
+!        60  55  49  42  34  26 
+!          61  56  50  43  35 
+!;
+! ////////////////////;
+!Rotated original hex grid 120 degrees:
+! Honeycomb structure for order N=5;
+!          57  51  44  36  27 
+!        58  52  45  37  28  19 
+!      59  53  46  38  29  20  12 
+!    60  54  47  39  30  21  13   6 
+!  61  55  48  40  31  22  14   7   1 
+!    56  49  41  32  23  15   8   2 
+!      50  42  33  24  16   9   3 
+!        43  34  25  17  10   4 
+!          35  26  18  11   5 
+!;
+! --------------------;
+!Rotated original hex grid 180 degrees:
+! Honeycomb structure for order N=5;
+!          61  60  59  58  57 
+!        56  55  54  53  52  51 
+!      50  49  48  47  46  45  44 
+!    43  42  41  40  39  38  37  36 
+!  35  34  33  32  31  30  29  28  27 
+!    26  25  24  23  22  21  20  19 
+!      18  17  16  15  14  13  12 
+!        11  10   9   8   7   6 
+!           5   4   3   2   1 
+!;
+! \\\\\\\\\\\\\\\\\\\\;
+!Rotated original hex grid 240 degrees:
+! Honeycomb structure for order N=5;
+!          35  43  50  56  61 
+!        26  34  42  49  55  60 
+!      18  25  33  41  48  54  59 
+!    11  17  24  32  40  47  53  58 
+!   5  10  16  23  31  39  46  52  57 
+!     4   9  15  22  30  38  45  51 
+!       3   8  14  21  29  37  44 
+!         2   7  13  20  28  36 
+!           1   6  12  19  27 
+!;
+! ||||||||||||||||||||;
+!Rotated original hex grid 300 degrees:
+! Honeycomb structure for order N=5;
+!           5  11  18  26  35 
+!         4  10  17  25  34  43 
+!       3   9  16  24  33  42  50 
+!     2   8  15  23  32  41  49  56 
+!   1   7  14  22  31  40  48  55  61 
+!     6  13  21  30  39  47  54  60 
+!      12  20  29  38  46  53  59 
+!        19  28  37  45  52  58 
+!          27  36  44  51  57 
+!;
+! --------------------;
+!Rotated original hex grid 360 degrees:
+! Honeycomb structure for order N=5;
+!           1   2   3   4   5 
+!         6   7   8   9  10  11 
+!      12  13  14  15  16  17  18 
+!    19  20  21  22  23  24  25  26 
+!  27  28  29  30  31  32  33  34  35 
+!    36  37  38  39  40  41  42  43 
+!      44  45  46  47  48  49  50 
+!        51  52  53  54  55  56 
+!          57  58  59  60  61 
+!;
+!Flipped across horizontal axis:
+! Honeycomb structure for order N=5;
+!          57  58  59  60  61 
+!        51  52  53  54  55  56 
+!      44  45  46  47  48  49  50 
+!    36  37  38  39  40  41  42  43 
+!  27  28  29  30  31  32  33  34  35 
+!    19  20  21  22  23  24  25  26 
+!      12  13  14  15  16  17  18 
+!         6   7   8   9  10  11 
+!           1   2   3   4   5 
+!;
+!Flipped across LLR diagonal:
+! Honeycomb structure for order N=5;
+!          61  56  50  43  35 
+!        60  55  49  42  34  26 
+!      59  54  48  41  33  25  18 
+!    58  53  47  40  32  24  17  11 
+!  57  52  46  39  31  23  16  10   5 
+!    51  45  38  30  22  15   9   4 
+!      44  37  29  21  14   8   3 
+!        36  28  20  13   7   2 
+!          27  19  12   6   1 
+!;
+!Flipped accros ULR diagonal:
+! Honeycomb structure for order N=5;
+!          35  26  18  11   5 
+!        43  34  25  17  10   4 
+!      50  42  33  24  16   9   3 
+!    56  49  41  32  23  15   8   2 
+!  61  55  48  40  31  22  14   7   1 
+!    60  54  47  39  30  21  13   6 
+!      59  53  46  38  29  20  12 
+!        58  52  45  37  28  19 
+!          57  51  44  36  27 
+!;
+!Symmetry breaking constraints:
+! - Break N deg rotational symmetry, N=60, 120, 180, 240, 300
+! - Break horizontal symmetry
+! - Break LLR diagonal symmetry
+! - Break ULR diagonal symmetry
+;
+!	@FOR(cell(i):
+!		@FOR(cell(j) | i,j share the same position in any symmetric hexagon:
+!			valasg(i) <> valasg(j) for all symmetry groups..
+!		);

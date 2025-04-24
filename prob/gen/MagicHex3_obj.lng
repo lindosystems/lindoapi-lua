@@ -1,0 +1,141 @@
+MODEL:
+SETS:
+	cell /1..19/:
+		valasg;
+	valset /1..19/;
+	cxv(cell,valset): z;
+ENDSETS
+! Variables: z(i,j) = 1 if cell i is assigned value j;
+! Each value is assigned once;
+@FOR(valset(j): @SUM(cell(i): z(i,j)) = 1;);
+! Each cell gets a value;
+@FOR(cell(i): @SUM(valset(j): z(i,j)) = 1; valasg(i) = @SUM(valset(j): (KOFF+j)*z(i,j)););
+! Binary constraints;
+@FOR(cxv(i,j): @BIN(z(i,j)));
+! Optional symmetry-breaking driver;
+min= @sum( valset(j): j*z(KIDX,j));
+! There is lots of symmetry. Choose one of the solutions;
+! There are 6xN rotations and 3 reflections;
+! To eliminate rotations, take cell(i), enumerate all positions in each rotation and add a constraint to use only one;
+CALC:
+	KIDX = 6;
+	KSUM = 38; !Comment out to make KSUM the variable to use in place off 'magic_sum(N);
+	KOFF = 0; !Comment out to make KOFF the variable to offset for the values assigned in the hexagon, 
+                       Positive KOFF shifts values assigned from 1..(3N^2-3N+1) to (1+KOFF)..(3N^2-3N+1+KOFF)
+                       If it is a variable (i.e. commented out from CALC), it should better be @free;
+	!@SET('XSOLVR',14,0); !Remove comment to use external solver '14';
+	@SET('SOLVLG', 2);
+	!@SET('GLOBAL', 1); !Remove comment to activate global solver if KOFF is a variable;
+ENDCALC
+[HRZ1] @SUM(valset(j): (j+KOFF)*z(1,j)) + @SUM(valset(j): (j+KOFF)*z(2,j)) + @SUM(valset(j): (j+KOFF)*z(3,j)) = KSUM;
+[HRZ2] @SUM(valset(j): (j+KOFF)*z(4,j)) + @SUM(valset(j): (j+KOFF)*z(5,j)) + @SUM(valset(j): (j+KOFF)*z(6,j)) + @SUM(valset(j): (j+KOFF)*z(7,j)) = KSUM;
+[HRZ3] @SUM(valset(j): (j+KOFF)*z(8,j)) + @SUM(valset(j): (j+KOFF)*z(9,j)) + @SUM(valset(j): (j+KOFF)*z(10,j)) + @SUM(valset(j): (j+KOFF)*z(11,j)) + @SUM(valset(j): (j+KOFF)*z(12,j)) = KSUM;
+[HRZ4] @SUM(valset(j): (j+KOFF)*z(13,j)) + @SUM(valset(j): (j+KOFF)*z(14,j)) + @SUM(valset(j): (j+KOFF)*z(15,j)) + @SUM(valset(j): (j+KOFF)*z(16,j)) = KSUM;
+[HRZ5] @SUM(valset(j): (j+KOFF)*z(17,j)) + @SUM(valset(j): (j+KOFF)*z(18,j)) + @SUM(valset(j): (j+KOFF)*z(19,j)) = KSUM;
+[LLR1] @SUM(valset(j): (j+KOFF)*z(8,j)) + @SUM(valset(j): (j+KOFF)*z(13,j)) + @SUM(valset(j): (j+KOFF)*z(17,j)) = KSUM;
+[LLR2] @SUM(valset(j): (j+KOFF)*z(4,j)) + @SUM(valset(j): (j+KOFF)*z(9,j)) + @SUM(valset(j): (j+KOFF)*z(14,j)) + @SUM(valset(j): (j+KOFF)*z(18,j)) = KSUM;
+[LLR3] @SUM(valset(j): (j+KOFF)*z(1,j)) + @SUM(valset(j): (j+KOFF)*z(5,j)) + @SUM(valset(j): (j+KOFF)*z(10,j)) + @SUM(valset(j): (j+KOFF)*z(15,j)) + @SUM(valset(j): (j+KOFF)*z(19,j)) = KSUM;
+[LLR4] @SUM(valset(j): (j+KOFF)*z(2,j)) + @SUM(valset(j): (j+KOFF)*z(6,j)) + @SUM(valset(j): (j+KOFF)*z(11,j)) + @SUM(valset(j): (j+KOFF)*z(16,j)) = KSUM;
+[LLR5] @SUM(valset(j): (j+KOFF)*z(3,j)) + @SUM(valset(j): (j+KOFF)*z(7,j)) + @SUM(valset(j): (j+KOFF)*z(12,j)) = KSUM;
+[ULR1] @SUM(valset(j): (j+KOFF)*z(1,j)) + @SUM(valset(j): (j+KOFF)*z(4,j)) + @SUM(valset(j): (j+KOFF)*z(8,j)) = KSUM;
+[ULR2] @SUM(valset(j): (j+KOFF)*z(2,j)) + @SUM(valset(j): (j+KOFF)*z(5,j)) + @SUM(valset(j): (j+KOFF)*z(9,j)) + @SUM(valset(j): (j+KOFF)*z(13,j)) = KSUM;
+[ULR3] @SUM(valset(j): (j+KOFF)*z(3,j)) + @SUM(valset(j): (j+KOFF)*z(6,j)) + @SUM(valset(j): (j+KOFF)*z(10,j)) + @SUM(valset(j): (j+KOFF)*z(14,j)) + @SUM(valset(j): (j+KOFF)*z(17,j)) = KSUM;
+[ULR4] @SUM(valset(j): (j+KOFF)*z(7,j)) + @SUM(valset(j): (j+KOFF)*z(11,j)) + @SUM(valset(j): (j+KOFF)*z(15,j)) + @SUM(valset(j): (j+KOFF)*z(18,j)) = KSUM;
+[ULR5] @SUM(valset(j): (j+KOFF)*z(12,j)) + @SUM(valset(j): (j+KOFF)*z(16,j)) + @SUM(valset(j): (j+KOFF)*z(19,j)) = KSUM;
+END
+!Hex grid:
+! Honeycomb structure for order N=3;
+!       1   2   3 
+!     4   5   6   7 
+!   8   9  10  11  12 
+!    13  14  15  16 
+!      17  18  19 
+!;
+! ||||||||||||||||||||;
+!Rotated original hex grid 60 degrees:
+! Honeycomb structure for order N=3;
+!       8   4   1 
+!    13   9   5   2 
+!  17  14  10   6   3 
+!    18  15  11   7 
+!      19  16  12 
+!;
+! ////////////////////;
+!Rotated original hex grid 120 degrees:
+! Honeycomb structure for order N=3;
+!      17  13   8 
+!    18  14   9   4 
+!  19  15  10   5   1 
+!    16  11   6   2 
+!      12   7   3 
+!;
+! --------------------;
+!Rotated original hex grid 180 degrees:
+! Honeycomb structure for order N=3;
+!      19  18  17 
+!    16  15  14  13 
+!  12  11  10   9   8 
+!     7   6   5   4 
+!       3   2   1 
+!;
+! \\\\\\\\\\\\\\\\\\\\;
+!Rotated original hex grid 240 degrees:
+! Honeycomb structure for order N=3;
+!      12  16  19 
+!     7  11  15  18 
+!   3   6  10  14  17 
+!     2   5   9  13 
+!       1   4   8 
+!;
+! ||||||||||||||||||||;
+!Rotated original hex grid 300 degrees:
+! Honeycomb structure for order N=3;
+!       3   7  12 
+!     2   6  11  16 
+!   1   5  10  15  19 
+!     4   9  14  18 
+!       8  13  17 
+!;
+! --------------------;
+!Rotated original hex grid 360 degrees:
+! Honeycomb structure for order N=3;
+!       1   2   3 
+!     4   5   6   7 
+!   8   9  10  11  12 
+!    13  14  15  16 
+!      17  18  19 
+!;
+!Flipped across horizontal axis:
+! Honeycomb structure for order N=3;
+!      17  18  19 
+!    13  14  15  16 
+!   8   9  10  11  12 
+!     4   5   6   7 
+!       1   2   3 
+!;
+!Flipped across LLR diagonal:
+! Honeycomb structure for order N=3;
+!      19  16  12 
+!    18  15  11   7 
+!  17  14  10   6   3 
+!    13   9   5   2 
+!       8   4   1 
+!;
+!Flipped accros ULR diagonal:
+! Honeycomb structure for order N=3;
+!      12   7   3 
+!    16  11   6   2 
+!  19  15  10   5   1 
+!    18  14   9   4 
+!      17  13   8 
+!;
+!Symmetry breaking constraints:
+! - Break N deg rotational symmetry, N=60, 120, 180, 240, 300
+! - Break horizontal symmetry
+! - Break LLR diagonal symmetry
+! - Break ULR diagonal symmetry
+;
+!	@FOR(cell(i):
+!		@FOR(cell(j) | i,j share the same position in any symmetric hexagon:
+!			valasg(i) <> valasg(j) for all symmetry groups..
+!		);
