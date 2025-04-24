@@ -148,6 +148,8 @@ local function solve_graybox(options)
   
   -- Solve input model with standard solver (solve=2)
   if hasbit(options.solve,bit(2)) then --solve=2
+    --pModel:setModelParameter(pars.LS_IPARAM_NLP_SOLVE_AS_LP,1)
+    --pModel:setModelParameter(pars.LS_IPARAM_NLP_USE_LINDO_CRASH,1)
     local res = pModel:optimize()
     print_table3(res)
     if res.pnSolStatus==status.LS_STATUS_OPTIMAL or 
@@ -168,11 +170,13 @@ local function solve_graybox(options)
   print(pData.pachConTypes)
   print()
   printf("Objective sense: %s\n",objsense)
-  print(objsense)
+  print()
   csense = string_to_char_table(pData.pachConTypes)
   res = pModel:getVarType()  
   pModel:wassert(res)
   local pachVarTypes = res.pachVarTypes
+
+  -- Set up the graybox model
   local yModel = solver:mpmodel()
   yModel.usercalc = cbuser
   yModel.logfun = myprintlog  
@@ -185,6 +189,11 @@ local function solve_graybox(options)
   
   -- Solve the input model after it is wrapped in a graybox model (solve=1)
   if hasbit(options.solve,bit(1)) then --solve=1
+    --yModel:setModelParameter(pars.LS_IPARAM_NLP_SOLVE_AS_LP,1)
+    yModel:setModelParameter(pars.LS_IPARAM_NLP_SOLVER,11)
+    --yModel:setModelParameter(pars.LS_IPARAM_NLP_FEASCHK,2)
+    yModel:setModelParameter(pars.LS_IPARAM_NLP_PRINTLEVEL,10)
+    yModel:setModelParameter(pars.LS_IPARAM_LP_PRINTLEVEL,2)
     res = yModel:optimize()
     print_table3(res)
     if res.padPrimal then
@@ -244,6 +253,7 @@ local function solve_graybox(options)
       pData.padU)
     zModel:wassert(res)    
     res = zModel:optimize()
+    zModel:writeMPSFile("graybox-l.mps",0)
     print_table3(res)
     if res.padPrimal then
         res.padPrimal:printmat()
