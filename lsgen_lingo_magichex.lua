@@ -4,14 +4,14 @@ local lapp = require 'pl.lapp' -- Penlight's lapp module for CLI parsing
 local math = require 'math'
 
 local N, BLK
--- Command-line argument specification
 local args = lapp [[
 Generate a LINGO model for the magic hexagon problem.
-  -n,--norder   (default 5)    Order of the hexagon (N > 2)
-  -b,--block    (default 0)    Partition into block groups (0 for no block)
-  -g,--debug    (default 0)    Debug mode (1 for debug, 0 for normal)
-  -s,--ssym     (default 1)    Show symmetries to break
-  -G,--gen      (default 0)    Generate all orders of hexagons up to N (starting from 3)
+   -n,--norder   (default 5)    Order of the hexagon (N > 2)
+   -b,--block    (default 0)    Partition into block groups (0 for no block)
+   -g,--debug    (default 0)    Debug mode (1 for debug, 0 for normal)
+   -s,--ssym     (default 1)    Show symmetries to break
+   -G,--gen      (default 0)    Generate all orders of hexagons up to N (starting from 3)
+   -o,--outdir   (default "./prob/gen")  Output directory for generated files
 ]]
 
 local block_groups = {"HRZ", "LLR", "ULR"}
@@ -21,7 +21,7 @@ assert(args.norder > 2, "Order must be positive and greater than 2")
 if args.gen > 0 then
     assert(args.gen > 2, "Order must be positive and greater than 2")
     for i = 3, args.gen do
-        local cmd = string.format("lslua lsgen_lingo_magixhex.lua -n %d | tee ~/shared/prob/custmodels/MagicHex%d_obj.lng", i,i)
+        local cmd = string.format("lslua lsgen_lingo_magixhex.lua -n %d | tee %s/MagicHex%d_obj.lng", i,args.outdir,i)
         cmd:gsub("\r", ""):gsub("\n", "")
         print(cmd)
     end
@@ -607,5 +607,15 @@ if args.ssym > 0 then
         print(desc_group_txt .. "\n;")
     end
     io.flush()
+    print("!Symmetry breaking constraints:")
+    print("! - Break N deg rotational symmetry, N=60, 120, 180, 240, 300")
+    print("! - Break horizontal symmetry")
+    print("! - Break LLR diagonal symmetry")
+    print("! - Break ULR diagonal symmetry")
+    print(";");
+    print("!\t@FOR(cell(i):")
+    print("!\t\t@FOR(cell(j) | i,j share the same position in any symmetric hexagon:")
+    print("!\t\t\tvalasg(i) <> valasg(j) for all symmetry groups..")
+    print("!\t\t);")
 end
 
