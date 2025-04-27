@@ -18,10 +18,10 @@ Generate a LINGO model for the magic hexagon problem.
 local block_groups = {"HRZ", "LLR", "ULR"}
 
 -- Validate inputs
-assert(args.norder > 2, "Order must be positive and greater than 2")
+assert(args.norder > 1, "Order must be positive and greater than 1")
 if args.gen > 0 then
-    assert(args.gen > 2, "Order must be positive and greater than 2")
-    for i = 3, args.gen do
+    assert(args.gen > 1, "Order must be positive and greater than 1")
+    for i = 2, args.gen do
         local cmd = string.format("lslua lsgen_lingo_magichex.lua -n %d | tee %s/MagicHex%d_obj.lng", i,args.outdir,i)
         cmd:gsub("\r", ""):gsub("\n", "")
         print(cmd)
@@ -357,7 +357,7 @@ end
 -- Generates the LINGO model for the magic hexagon problem
 -- @param N is the order of the hexagon
 function generate_lingo_magic_hexagon(N)
-    assert(N > 2, "N must be greater than 2")
+    assert(N > 1, "N must be greater than 2")
 
     local function total_cells(N)
         return 3 * N * (N - 1) + 1        
