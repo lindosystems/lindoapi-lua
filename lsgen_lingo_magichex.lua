@@ -1,5 +1,6 @@
 #!/usr/bin/env lslua
 --local Lindo = require("llindo_tabox")
+require 'ftamod_print'
 local lapp = require 'pl.lapp' -- Penlight's lapp module for CLI parsing
 local math = require 'math'
 
@@ -17,10 +18,10 @@ Generate a LINGO model for the magic hexagon problem.
 local block_groups = {"HRZ", "LLR", "ULR"}
 
 -- Validate inputs
-assert(args.norder > 2, "Order must be positive and greater than 2")
+assert(args.norder > 1, "Order must be positive and greater than 1")
 if args.gen > 0 then
-    assert(args.gen > 2, "Order must be positive and greater than 2")
-    for i = 3, args.gen do
+    assert(args.gen > 1, "Order must be positive and greater than 1")
+    for i = 2, args.gen do
         local cmd = string.format("lslua lsgen_lingo_magichex.lua -n %d | tee %s/MagicHex%d_obj.lng", i,args.outdir,i)
         cmd:gsub("\r", ""):gsub("\n", "")
         print(cmd)
@@ -53,6 +54,33 @@ local function print_hex_grid(hex)
     print(table.concat(lines, "\n"))
 end
 
+-- Function to build the symmetry sets for the hexagonal grid
+-- @param hex initial/base hexagonal grid structure
+-- @param SYM_HEX_LIST symmetric hexagonal grid structures
+local function alldiff_symmetry_sets(hex,SYM_HEX_LIST)
+    local alldiff_list = {} -- anchored to the cells in the base hexagonal grid
+    for r = 1, #hex do
+        local row = hex[r]
+        for k = 1,#SYM_HEX_LIST do
+            local rhex = SYM_HEX_LIST[k].hex -- rotated hexagonal grid structure
+            local tag = SYM_HEX_LIST[k].tag -- r60,r120,r180,r240,r300,hrz,llr,ulr
+            local rrow = rhex[r]
+            for c = 1, #row do
+                local orig_cell = row[c]                
+                if orig_cell ~= 0 then
+                    if not alldiff_list[orig_cell] then
+                        alldiff_list[orig_cell] = {}
+                    end                 
+                    local sym_cell  = rrow[c]                       
+                    if sym_cell ~= 0 then
+                        table.insert(alldiff_list[orig_cell], sym_cell)
+                    end
+                end
+            end
+        end
+    end
+    return alldiff_list
+end
 -- Function to generate LLR and ULR diagonal sets for the magic hexagon problem
 -- Builds the raw honeycomb layout with correct IDs for order N
 local function build_honeycomb(N)
@@ -193,10 +221,143 @@ local function print_groups(groups, label)
     end
 end
 
+-- Applies an ASG (assignment) mapping to a given hex matrix
+-- hex: padded matrix with original IDs
+-- asg: table mapping old ID → new ID
+-- returns: new hex matrix with reassigned IDs
+local function apply_asg_to_hex(hex, asg)
+    local M = #hex
+    local new_hex = {}
+
+    for r = 1, M do
+        new_hex[r] = {}
+        for c = 1, M do
+            local val = hex[r][c]
+            if val ~= 0 and asg[val] then
+                new_hex[r][c] = asg[val]
+            else
+                new_hex[r][c] = 0
+            end
+        end
+    end
+
+    return new_hex
+end
+
+
+-- Flip around horizontal axis (top-bottom)
+local function flip_hrz(hex)
+    local M = #hex
+    local flipped = {}
+    for r = 1, M do
+        flipped[r] = {}
+        for c = 1, M do
+            flipped[r][c] = hex[M - r + 1][c]
+        end
+    end
+    return flipped
+end
+
+-- Flip around LLR diagonal (bottom-left to top-right)
+local function flip_llr(hex,asg)
+    local flipped = apply_asg_to_hex(hex, asg)
+    flipped = flip_hrz(flipped)
+    return flipped
+end
+
+-- Flip around ULR diagonal (top-left to bottom-right)
+local function flip_ulr(hex,asg)
+    local flipped = apply_asg_to_hex(hex, asg)
+    flipped = apply_asg_to_hex(flipped, asg)
+    flipped = flip_hrz(flipped)
+    return flipped
+end
+
+-- Generate an assignment vector ASG for 60° clockwise rotation
+-- Rotates the hexagon 60 degrees clockwise and reconstructs the padded matrix
+local function rotate_hexagon_60(N)
+    local M = 2 * N - 1
+
+    -- Step 1: Get original diagonal and horizontal groups
+    local hrz = generate_horizontal_groups(N)
+    local llr, ulr = generate_diagonal_groups(N)
+
+    -- Step 2: Compute new HRZ, LLR, ULR after rotation
+    local new_llr, new_ulr, new_hrz = {}, {}, {}
+
+    for i = 1, #hrz do
+        new_llr[i] = {}
+        for j = #hrz[i], 1, -1 do
+            table.insert(new_llr[i], hrz[i][j])
+        end
+    end
+
+    for i = 1, #llr do
+        new_ulr[i] = {}
+        for _, val in ipairs(llr[i]) do
+            table.insert(new_ulr[i], val)
+        end
+    end
+
+    for i = 1, #ulr do
+        new_hrz[i] = {}
+        for j = #ulr[i], 1, -1 do
+            table.insert(new_hrz[i], ulr[i][j])
+        end
+    end
+
+    -- Step 3: Build rotated matrix and ASG mapping
+    local ASG = {}  -- ASG[new_id] = old_id
+    local new_id = 1
+
+    for r = 1, M do
+        local row = new_hrz[r]
+        local len = #row
+        local offset = math.floor((M - len) / 2)
+        for i = 1, len do
+            local old_id = row[i]
+            ASG[new_id] = old_id
+            new_id = new_id + 1
+        end
+    end
+
+    return new_hrz, new_llr, new_ulr, ASG
+end
+
+--- Function to append symmetry-breaking constraints to the LINGO model
+local function get_alldiff_sets(hex, N)
+    local SYM_HEX_LIST = {}  -- To store each rotated hex
+    local hex = hex
+    
+    -- Step 1: Precompute rotation operator
+    local new_hrz, new_llr, new_ulr, asg = rotate_hexagon_60(N)
+    
+    -- Step 2: Generate and store each rotated hex    
+    for k = 1, 6 do
+        hex = apply_asg_to_hex(hex, asg)
+        local t = { hex = hex, tag = string.format("r%d", k*60) }
+        SYM_HEX_LIST[#SYM_HEX_LIST+1] = t
+    end    
+  
+    if args.ssym > 0 then
+        local flip_hrz_hex = flip_hrz(hex)
+        SYM_HEX_LIST[#SYM_HEX_LIST+1] = { hex = flip_hrz_hex, tag = "hrz" }
+        local flip_llr_hex = flip_llr(hex,asg)
+        SYM_HEX_LIST[#SYM_HEX_LIST+1] = { hex = flip_llr_hex, tag = "llr" }
+        local flip_ulr_hex = flip_ulr(hex,asg)
+        SYM_HEX_LIST[#SYM_HEX_LIST+1] = { hex = flip_ulr_hex, tag = "ulr" }
+    end
+    
+    local alldiff_sets = alldiff_symmetry_sets(hex, SYM_HEX_LIST)
+
+    return alldiff_sets, SYM_HEX_LIST, asg         
+
+end
+
 -- Generates the LINGO model for the magic hexagon problem
 -- @param N is the order of the hexagon
 function generate_lingo_magic_hexagon(N)
-    assert(N > 2, "N must be greater than 2")
+    assert(N > 1, "N must be greater than 2")
 
     local function total_cells(N)
         return 3 * N * (N - 1) + 1        
@@ -309,6 +470,24 @@ function generate_lingo_magic_hexagon(N)
         add_constraint(group, "ULR" , i)
     end
 
+    -- Add symmetry-breaking constraints
+    if args.ssym > 0 then 
+        local hex = build_hex_grid(N)       
+        local alldiff_sets, _, _ = get_alldiff_sets(hex,N)
+        for cell=1, #alldiff_sets do
+            local group = alldiff_sets[cell]
+            local setname = string.format("[sym_%d] ", cell)
+            local cons = setname;
+            for k=1,#group do
+                local val = group[k]            
+                local sbuf = string.format("z(%d,%d) + ",  cell, val)
+                cons = cons .. sbuf            
+            end
+            cons = cons .. " 0 <= 1;"
+            table.insert(lingo, cons)                
+        end
+    end
+
     table.insert(lingo, "END")
 
     return table.concat(lingo, "\n")
@@ -409,80 +588,6 @@ function describe_groups(N, hrz, llr, ulr)
     return table.concat(description, "\n")
 end
 
--- Generate an assignment vector ASG for 60° clockwise rotation
--- Rotates the hexagon 60 degrees clockwise and reconstructs the padded matrix
-local function rotate_hexagon_60(N)
-    local M = 2 * N - 1
-
-    -- Step 1: Get original diagonal and horizontal groups
-    local hrz = generate_horizontal_groups(N)
-    local llr, ulr = generate_diagonal_groups(N)
-
-    -- Step 2: Compute new HRZ, LLR, ULR after rotation
-    local new_llr, new_ulr, new_hrz = {}, {}, {}
-
-    for i = 1, #hrz do
-        new_llr[i] = {}
-        for j = #hrz[i], 1, -1 do
-            table.insert(new_llr[i], hrz[i][j])
-        end
-    end
-
-    for i = 1, #llr do
-        new_ulr[i] = {}
-        for _, val in ipairs(llr[i]) do
-            table.insert(new_ulr[i], val)
-        end
-    end
-
-    for i = 1, #ulr do
-        new_hrz[i] = {}
-        for j = #ulr[i], 1, -1 do
-            table.insert(new_hrz[i], ulr[i][j])
-        end
-    end
-
-    -- Step 3: Build rotated matrix and ASG mapping
-    local ASG = {}  -- ASG[new_id] = old_id
-    local new_id = 1
-
-    for r = 1, M do
-        local row = new_hrz[r]
-        local len = #row
-        local offset = math.floor((M - len) / 2)
-        for i = 1, len do
-            local old_id = row[i]
-            ASG[new_id] = old_id
-            new_id = new_id + 1
-        end
-    end
-
-    return new_hrz, new_llr, new_ulr, ASG
-end
-
--- Applies an ASG (assignment) mapping to a given hex matrix
--- hex: padded matrix with original IDs
--- asg: table mapping old ID → new ID
--- returns: new hex matrix with reassigned IDs
-local function apply_asg_to_hex(hex, asg)
-    local M = #hex
-    local new_hex = {}
-
-    for r = 1, M do
-        new_hex[r] = {}
-        for c = 1, M do
-            local val = hex[r][c]
-            if val ~= 0 and asg[val] then
-                new_hex[r][c] = asg[val]
-            else
-                new_hex[r][c] = 0
-            end
-        end
-    end
-
-    return new_hex
-end
-
 --- Extracts row groups from the hexagonal grid
 -- @param hex is the hexagonal grid structure
 function extract_row_groups(hex, N)
@@ -518,35 +623,6 @@ function extract_row_groups(hex, N)
     return hrz, llr, ulr
 end
 
--- Flip around horizontal axis (top-bottom)
-local function flip_hrz(hex)
-    local M = #hex
-    local flipped = {}
-    for r = 1, M do
-        flipped[r] = {}
-        for c = 1, M do
-            flipped[r][c] = hex[M - r + 1][c]
-        end
-    end
-    return flipped
-end
-
--- Flip around LLR diagonal (bottom-left to top-right)
-local function flip_llr(hex,asg)
-    local flipped = apply_asg_to_hex(hex, asg)
-    flipped = flip_hrz(flipped)
-    return flipped
-end
-
--- Flip around ULR diagonal (top-left to bottom-right)
-local function flip_ulr(hex,asg)
-    local flipped = apply_asg_to_hex(hex, asg)
-    flipped = apply_asg_to_hex(flipped, asg)
-    flipped = flip_hrz(flipped)
-    return flipped
-end
-
-  
 N = args.norder -- Get the order from command line arguments
 BLK = args.block -- Get the block size from command line arguments
 -- Generate the LINGO model for the magic hexagon problem
@@ -564,45 +640,46 @@ end
 
 if args.ssym > 0 then
     local flipper = {"|", "/", "-","\\", "|","-"}
-    local hex = build_hex_grid(N)
-    print("!Hex grid:")
-    print_hex_grid(hex)
-    local new_hrz, new_llr, new_ulr, asg = rotate_hexagon_60(N)
+    local hex = build_hex_grid(N)       
+    local alldiff_sets, SYM_HEX_LIST, asg = get_alldiff_sets(hex,N)    
+    print("!Baseline Hex grid:")
+    print_hex_grid(hex)    
+    print("!Rotational Hex grids:")
     for k=1,6 do
-        hex = apply_asg_to_hex(hex, asg)
+        local rhex = SYM_HEX_LIST[k].hex -- rotated hexagonal grid structure
         print("! " .. string.rep(flipper[k], 20) .. ";")
         print("!Rotated original hex grid " .. k * 60 .. " degrees:")
-        print_hex_grid(hex)        
+        print_hex_grid(rhex)        
         if args.debug> 1 then
-            local hrz, llr, ulr = extract_row_groups(hex,N)
+            local hrz, llr, ulr = extract_row_groups(rhex,N)
             local desc_group_txt = describe_groups(N,hrz, llr, ulr)
             print(desc_group_txt .. "\n;")
         end
     end
     io.flush()
-    local flip_hrz = flip_hrz(hex)
+    local flip_hrz_hex = SYM_HEX_LIST[7].hex -- flipped hexagonal grid structure
     print("!Flipped across horizontal axis:")
-    print_hex_grid(flip_hrz)
+    print_hex_grid(flip_hrz_hex)
     if args.debug > 1 then
-        local hrz, llr, ulr = extract_row_groups(flip_hrz,N)
+        local hrz, llr, ulr = extract_row_groups(flip_hrz_hex,N)
         local desc_group_txt = describe_groups(N,hrz, llr, ulr)
         print(desc_group_txt .. "\n;")
     end
     io.flush()
     print("!Flipped across LLR diagonal:")
-    local flip_llr = flip_llr(hex,asg)
-    print_hex_grid(flip_llr)
+    local flip_llr_hex = SYM_HEX_LIST[8].hex -- flipped hexagonal grid structure
+    print_hex_grid(flip_llr_hex)
     if args.debug > 1 then
-        local hrz, llr, ulr = extract_row_groups(flip_llr,N)
+        local hrz, llr, ulr = extract_row_groups(flip_llr_hex,N)
         local desc_group_txt = describe_groups(N,hrz, llr, ulr)
         print(desc_group_txt .. "\n;")
     end
     io.flush()
     print("!Flipped accros ULR diagonal:")
-    local flip_ulr = flip_ulr(hex,asg)
-    print_hex_grid(flip_ulr)
+    local flip_ulr_hex = SYM_HEX_LIST[9].hex -- flipped hexagonal grid structure
+    print_hex_grid(flip_ulr_hex)
     if args.debug > 1 then
-        local hrz, llr, ulr = extract_row_groups(flip_ulr,N)
+        local hrz, llr, ulr = extract_row_groups(flip_ulr_hex,N)
         local desc_group_txt = describe_groups(N,hrz, llr, ulr)
         print(desc_group_txt .. "\n;")
     end
@@ -614,8 +691,6 @@ if args.ssym > 0 then
     print("! - Break ULR diagonal symmetry")
     print(";");
     print("!\t@FOR(cell(i):")
-    print("!\t\t@FOR(cell(j) | i,j share the same position in any symmetric hexagon:")
-    print("!\t\t\tvalasg(i) <> valasg(j) for all symmetry groups..")
+    print("!\t\t@SUM(cell(j) | for all j where i and j share the same position in any symmetric hexagon: z(i,j)) <= 1;")
     print("!\t\t);")
 end
-

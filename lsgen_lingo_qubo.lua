@@ -9,7 +9,7 @@ Generate a QUBO model in LINGO format with random c and Q.
   -n,--nvars      (default 4)     Number of variables
   -d,--density    (default 0.5)   Density of Q matrix (0 to 1)
   -m,--method     (default 2)     Q generation method (1: shuffle, 2: probabilistic)
-  -o,--output     (default "qubo.lng")  Output LINGO file name
+  -o,--output     (default "./prob/gen/qubo.lng")  Output LINGO file name
 ]]
 
 -- Validate inputs

@@ -48,6 +48,8 @@ function cbstd(pModel,iLoc)
   return 0
 end
 
+local res_slk 
+local kount = 0
 -- Lua implementation of the user-defined function
 function MyUserFunc(argval)
 
@@ -56,9 +58,13 @@ function MyUserFunc(argval)
     for k=1,gModel.numvars do
         Xvec[k] = argval[k+1]
     end
-    local res_slk = gModel:calcConFunc(-1,Xvec)
-    local f = 0
-    local funcID = math.floor(argval[1]+0.5)
+    local funcID = math.floor(argval[1]+0.5)    
+    if funcID==0 then
+      res_slk = gModel:calcConFunc(-1,Xvec)
+      --printf("Computed slack values for all constraints\n")
+      kount = kount + 1
+    end
+    local f = 0    
     local res
     if equal_eps(funcID, -1) then
         -- Objective function
@@ -66,7 +72,12 @@ function MyUserFunc(argval)
         f = res.pdObjval  
     elseif funcID>=0 and funcID<=gModel.numcons then
         -- Constraint #funcID
-        f = res_slk.padSlacks[funcID+1]        
+        if res_slk then
+          f = res_slk.padSlacks[funcID+1]        
+        else
+          res = gModel:calcConFunc(funcID,Xvec)
+          f = res.padSlacks
+        end
         if csense[funcID+1] == 'L' then
             f = -f            
         end
@@ -124,42 +135,42 @@ local function solve_graybox(options)
   local jsec = xta:jsec(ymd,hms)
   printf("%06d-%06d jsec:%d\n",ymd,hms,jsec)
   local res
-  local pModel = solver:mpmodel()
-  gModel = pModel
-  pModel.logfun = myprintlog  
+  local oModel = solver:mpmodel()
+  gModel = oModel
+  oModel.logfun = myprintlog  
   printf("Reading %s\n",options.model_file)  
-  --pModel:setUsercalc(cbuser)
-  local nErr = pModel:readfile(options.model_file,0)
-  pModel:dispstats()
-  local szmsg = sprintf("Error %d: %s\n",nErr,pModel:errmsg(nErr) or "N/A")
+  --oModel:setUsercalc(cbuser)
+  local nErr = oModel:readfile(options.model_file,0)
+  oModel:dispstats()
+  local szmsg = sprintf("Error %d: %s\n",nErr,oModel:errmsg(nErr) or "N/A")
   assert(nErr==0,szmsg)
   assert(nErr==0)
 
-  if pModel.numinst == 0 then
-    res = pModel:loadData2Inst() -- to keep instructions for LP/QP
-    pModel:wassert(res)
+  if oModel.numinst == 0 then
+    res = oModel:loadData2Inst() -- to keep instructions for LP/QP
+    oModel:wassert(res)
   end
 
-  local pData = pModel:getLPData()
+  local pData = oModel:getLPData()
   --print_table3(pData)
-  local numvars = pModel.numvars
-  local numcons = pModel.numcons
+  local numvars = oModel.numvars
+  local numcons = oModel.numcons
   local objsense = pData.pdObjSense
   
   -- Solve input model with standard solver (solve=2)
   if hasbit(options.solve,bit(2)) then --solve=2
-    --pModel:setModelParameter(pars.LS_IPARAM_NLP_SOLVE_AS_LP,1)
-    --pModel:setModelParameter(pars.LS_IPARAM_NLP_USE_LINDO_CRASH,1)
-    local res = pModel:optimize()
+    --oModel:setModelParameter(pars.LS_IPARAM_NLP_SOLVE_AS_LP,1)
+    --oModel:setModelParameter(pars.LS_IPARAM_NLP_USE_LINDO_CRASH,1)
+    local res = oModel:solve()
     print_table3(res)
     if res.pnSolStatus==status.LS_STATUS_OPTIMAL or 
         res.pnSolStatus==status.LS_STATUS_LOCAL_OPTIMAL or
         res.pnSolStatus==status.LS_STATUS_BASIC_OPTIMAL then          
-      local sol = pModel:getPrimalSolution()
-      pModel:wassert(sol)
-      res = pModel:calcObjFunc(sol.padPrimal)
+      local sol = oModel:getPrimalSolution()
+      oModel:wassert(sol)
+      res = oModel:calcObjFunc(sol.padPrimal)
       print_table3(res)
-      res = pModel:calcConFunc(-1,sol.padPrimal)
+      res = oModel:calcConFunc(-1,sol.padPrimal)
       print_table3(res)
       sol.padSlacks = res.padSlacks
       sol.padPrimal:printmat()
@@ -172,74 +183,95 @@ local function solve_graybox(options)
   printf("Objective sense: %s\n",objsense)
   print()
   csense = string_to_char_table(pData.pachConTypes)
-  res = pModel:getVarType()  
-  pModel:wassert(res)
+  res = oModel:getVarType()  
+  oModel:wassert(res)
   local pachVarTypes = res.pachVarTypes
 
   -- Set up the graybox model
-  local yModel = solver:mpmodel()
-  yModel.usercalc = cbuser
-  yModel.logfun = myprintlog  
+  local pModel = solver:mpmodel()
+  pModel.usercalc = cbuser
+  pModel.logfun = myprintlog  
   Xvec = xta:zeros(numvars)
   assert(pData.pachConTypes,"pData.pachConTypes not initialized")
   assert(pachVarTypes,"pachVarTypes not initialized")
-  
-  res = yModel:loadNLPDense(numcons,numvars,objsense,pData.pachConTypes,pachVarTypes,Xvec,pData.padL,pData.padU)
-  yModel:wassert(res)
+  local tstart = xta:tic()
+  printf("Loading graybox model..")
+  res = pModel:loadNLPDense(numcons,numvars,objsense,pData.pachConTypes,pachVarTypes,Xvec,pData.padL,pData.padU)
+  pModel:wassert(res)
+  printf("done in %.2f sec\n",xta:toc(tstart))
   
   -- Solve the input model after it is wrapped in a graybox model (solve=1)
   if hasbit(options.solve,bit(1)) then --solve=1
-    --yModel:setModelParameter(pars.LS_IPARAM_NLP_SOLVE_AS_LP,1)
-    yModel:setModelParameter(pars.LS_IPARAM_NLP_SOLVER,11)
-    --yModel:setModelParameter(pars.LS_IPARAM_NLP_FEASCHK,2)
-    yModel:setModelParameter(pars.LS_IPARAM_NLP_PRINTLEVEL,10)
-    yModel:setModelParameter(pars.LS_IPARAM_LP_PRINTLEVEL,2)
-    res = yModel:optimize()
+    --pModel:setModelParameter(pars.LS_IPARAM_NLP_SOLVE_AS_LP,1)
+    pModel:setModelParameter(pars.LS_IPARAM_NLP_SOLVER,11)
+    --pModel:setModelParameter(pars.LS_IPARAM_NLP_FEASCHK,2)
+    pModel:setModelParameter(pars.LS_IPARAM_NLP_PRINTLEVEL,10)
+    pModel:setModelParameter(pars.LS_IPARAM_LP_PRINTLEVEL,2)
+    if pModel.numint + pModel.numbin > 0 then
+      res = pModel:solveMIP()
+      pModel:wassert(res)
+    else
+      res = pModel:optimize()
+      pModel:wassert(res)
+    end   
     print_table3(res)
     if res.padPrimal then
         res.padPrimal:printmat()
         local padPrimal = res.padPrimal
-        res = yModel:calcConFunc(-1,padPrimal)    
+        res = pModel:calcConFunc(-1,padPrimal)    
         print_table3(res)
         res.padSlacks:printmat()    
         print(pData.pachConTypes)
     end
   end
-  local X={}
-  local Jac={}
-  local X0 = xta:zeros(numvars)
-  local Y0 = yModel:calcConFunc(-1,X0).padSlacks
-  local F0 = yModel:calcObjFunc(X0).pdObjval
-  local J = xta:table()
-  local F = xta:zeros(numvars)
-  for k=1,numvars do
-    X[k] = xta:zeros(numvars)
-    X[k][k] = 1
-    local res = yModel:calcConFunc(-1,X[k])
-    yModel:wassert(res)
-    Jac[k] = res.padSlacks - Y0  
-    for r = 1,numcons do
-      if csense[r] == 'L' then
-        Jac[k][r] = -Jac[k][r]
-      end
-    end   
-    Jac[k].name = "Jac[" .. k .. "]"    
-    --Jac[k]:printmat()
-    J[k] = Jac[k]
-    local res = yModel:calcObjFunc(X[k])
-    yModel:wassert(res)
-    F[k] = res.pdObjval - F0
-  end
+
+
   
-  -- Solve the graybox model as an LP approximation (solve=4)
+  -- Construct the LP approximation explictly and solve (solve=4)
   if hasbit(options.solve,bit(3)) then -- --solve=4
-    local zModel
+    printf("Solving graybox model as LP approximation explicitly..\n")
+    printf("Calculating Jacobian and gradient..\n")
+    local X={}
+    local Jac={}
+    local X0 = xta:zeros(numvars)
+    local Y0 = pModel:calcConFunc(-1,X0).padSlacks
+    local F0 = pModel:calcObjFunc(X0).pdObjval
+    local J = xta:table()
+    local F = xta:zeros(numvars)
+    local count = 0
+    for k=1,numvars do
+      X[k] = xta:zeros(numvars)
+      X[k][k] = 1
+      local res = pModel:calcConFunc(-1,X[k])
+      pModel:wassert(res)
+      Jac[k] = res.padSlacks - Y0  
+      for r = 1,numcons do
+        if csense[r] == 'L' then
+          Jac[k][r] = -Jac[k][r]
+        end
+      end   
+      Jac[k].name = "Jac[" .. k .. "]"    
+      --Jac[k]:printmat()
+      J[k] = Jac[k]
+      local res = pModel:calcObjFunc(X[k])
+      pModel:wassert(res)
+      F[k] = res.pdObjval - F0
+      if k % 10 == 0 then
+        printf("*");
+        count = count + 1
+        if count % 10 == 0 then
+          printf(" :%d .. %.2f secs\n",count,xta:toc(tstart))
+        end            
+      end
+    end
+    printf("\nDone in %.2f sec, kount=%d\n",xta:toc(tstart),kount)    
+    local yModel
     -- J is the Jacobian of the constraints, and F is the gradient of the objective function
     -- Construct the sparse matrix representation of J to load into the solver
-    zModel = solver:mpmodel()
-    zModel.logfun = myprintlog    
+    yModel = solver:mpmodel()
+    yModel.logfun = myprintlog    
     local pSparse = dense_to_sparse(J)
-    res = zModel:loadLPData(
+    res = yModel:loadLPData(
       pData.pdObjSense,
       pData.pdObjConst,
       F,
@@ -251,19 +283,31 @@ local function solve_graybox(options)
       pSparse.paiArows,
       pData.padL,
       pData.padU)
-    zModel:wassert(res)    
-    res = zModel:optimize()
-    --zModel:writeMPSFile("tmp/graybox-l.mps",0)
+    yModel:wassert(res)    
+    if oModel.numint + oModel.numbin > 0 then
+      res = yModel:loadVarType(pachVarTypes)
+      yModel:wassert(res)
+      res = yModel:solveMIP()
+      yModel:wassert(res)
+    else
+      res = yModel:optimize()
+      yModel:wassert(res)
+    end    
+    if options.verb>1 then
+      yModel:writeMPSFile("graybox-l.mps",0)
+    else
+      printf("Set --verb=2 to write graybox-l.mps\n")
+    end
     print_table3(res)
     if res.padPrimal then
         res.padPrimal:printmat()
         local padPrimal = res.padPrimal
-        res = zModel:calcConFunc(-1,padPrimal)    
+        res = yModel:calcConFunc(-1,padPrimal)    
         print_table3(res)
         res.padSlacks:printmat()    
         print(pData.pachConTypes)
     end
-    zModel:dispose()
+    yModel:dispose()
   end
 
   if options.verb>1 then
@@ -274,8 +318,8 @@ local function solve_graybox(options)
     printf("Set --verb=2 to write Jacobian (J.csv) and Gradient (G.csv)..\n")
   end
 
-  yModel:dispose()   
-  pModel:dispose()
+  pModel:dispose()   
+  oModel:dispose()
 end
 
 --------------------------------------------------

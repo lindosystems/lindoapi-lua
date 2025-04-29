@@ -10,7 +10,7 @@ local args = lapp [[
 Generate a bin packing instance for LINGO with random weights and tight capacity.
   -n,--items    (default 10)    Number of items (positive integer)
   -r,--fraction (default 0.05)   Tightness fraction for capacity (between 0 and 1)
-  -o,--output   (default "bin_packing.lng")  Output file name
+  -o,--output   (default "./prog/gen/bin_packing.lng")  Output file name
   -g,--seed     (default 0)     Random seed (0 for current time)
 ]]
 

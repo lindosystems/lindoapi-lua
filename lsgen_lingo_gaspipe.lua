@@ -8,7 +8,7 @@ local args = lapp [[
 Generate a LINGO model for gas pipeline optimization with quadratic costs.
   -s,--nsupply    (default 2)     Number of supply nodes
   -d,--ndemand    (default 3)     Number of demand nodes
-  -o,--output     (default "gas_opt.lng")  Output LINGO file name
+  -o,--output     (default "./prog/gen/gas_opt.lng")  Output LINGO file name
 ]]
 
 -- Seed random number generator for reproducibility
