@@ -161,7 +161,7 @@ local function solve_graybox(options)
   if hasbit(options.solve,bit(2)) then --solve=2
     --oModel:setModelParameter(pars.LS_IPARAM_NLP_SOLVE_AS_LP,1)
     --oModel:setModelParameter(pars.LS_IPARAM_NLP_USE_LINDO_CRASH,1)
-    local res = oModel:solve()
+    local res = oModel:solve(options)
     print_table3(res)
     if res.pnSolStatus==status.LS_STATUS_OPTIMAL or 
         res.pnSolStatus==status.LS_STATUS_LOCAL_OPTIMAL or
