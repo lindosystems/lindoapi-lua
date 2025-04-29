@@ -253,7 +253,7 @@ local function solve_graybox(options)
       pData.padU)
     zModel:wassert(res)    
     res = zModel:optimize()
-    zModel:writeMPSFile("graybox-l.mps",0)
+    --zModel:writeMPSFile("tmp/graybox-l.mps",0)
     print_table3(res)
     if res.padPrimal then
         res.padPrimal:printmat()
