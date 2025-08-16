@@ -1,5 +1,5 @@
 #!/usr/bin/env lslua
--- Lua script to generate randomized N×N Sudoku Lingo models using Penlight
+-- Lua script to generate randomized Nï¿½N Sudoku Lingo models using Penlight
 -- Author: Claude
 -- Note: This generates standard Sudoku where N must be a perfect square (4, 9, 16, 25, etc.)
 
@@ -8,11 +8,11 @@ local math = require 'math'
 
 -- Command-line argument parsing with lapp
 local args = lapp [[
-Generate a randomized N×N Sudoku puzzle in LINGO format.
+Generate a randomized Nï¿½N Sudoku puzzle in LINGO format.
   -n,--size       (default 9)     Grid size N (must be perfect square: 4, 9, 16, 25)
   -c,--clues      (default 0.3)   Clue density (0.2 = 20% of cells filled)
   -s,--seed       (default 0)     Random seed (0 = use current time)
-  -o,--output     (default "./sudoku_puzzle.lng")  Output LINGO file name
+  -o,--output     (default "./prob/gen/sudoku_puzzle.lng")  Output LINGO file name
   -v,--verbose    (default false) Verbose output showing puzzle generation steps
 ]]
 
@@ -45,7 +45,7 @@ else
     if VERBOSE then print("Using specified seed: " .. args.seed) end
 end
 
--- Create empty N×N grid
+-- Create empty Nï¿½N grid
 local function create_empty_grid(n)
     local grid = {}
     for i = 1, n do
@@ -184,9 +184,9 @@ local function generate_lingo_model(puzzle, n, sqrt_n)
     
     -- Header
     table.insert(model, "MODEL:")
-    table.insert(model, "! Randomly generated " .. n .. "×" .. n .. " Sudoku Solver in LINGO")
+    table.insert(model, "! Randomly generated " .. n .. "ï¿½" .. n .. " Sudoku Solver in LINGO")
     table.insert(model, "! Generated on: " .. os.date("%Y-%m-%d %H:%M:%S"))
-    table.insert(model, "! Subgrid size: " .. sqrt_n .. "×" .. sqrt_n)
+    table.insert(model, "! Subgrid size: " .. sqrt_n .. "ï¿½" .. sqrt_n)
     table.insert(model, ";")
     
     -- Sets
@@ -251,7 +251,7 @@ local function generate_lingo_model(puzzle, n, sqrt_n)
     table.insert(model, "")
     
     -- Subgrid constraints
-    table.insert(model, "! Force each number k to appear once in each " .. sqrt_n .. "×" .. sqrt_n .. " subsquare;")
+    table.insert(model, "! Force each number k to appear once in each " .. sqrt_n .. "ï¿½" .. sqrt_n .. " subsquare;")
     table.insert(model, "   @FOR( dim(k):")
     
     -- Generate all subgrid constraints
@@ -286,7 +286,7 @@ local function generate_lingo_model(puzzle, n, sqrt_n)
     table.insert(model, "    @SET( 'TERSEO', 1);")
     table.insert(model, "    @SOLVE();")
     table.insert(model, " ! Write the solution in matrix form;")
-    table.insert(model, "    @WRITE( @NEWLINE( 1), 25*' ', '" .. n .. "×" .. n .. " Sudoku Puzzle Solution', @NEWLINE( 1));")
+    table.insert(model, "    @WRITE( @NEWLINE( 1), 25*' ', '" .. n .. "ï¿½" .. n .. " Sudoku Puzzle Solution', @NEWLINE( 1));")
     table.insert(model, "    @FOR( DIM( i):")
     table.insert(model, "       @FOR( DIM( j):")
     table.insert(model, "          @WRITE( @FORMAT( '8g', x( i, j)));")
@@ -320,10 +320,10 @@ end
 -- Main execution
 local function main()
     if VERBOSE then
-        print("Generating randomized " .. N .. "×" .. N .. " Sudoku Lingo model...")
+        print("Generating randomized " .. N .. "ï¿½" .. N .. " Sudoku Lingo model...")
         print("Configuration:")
-        print("  Grid size: " .. N .. "×" .. N)
-        print("  Subgrid size: " .. SQRT_N .. "×" .. SQRT_N)
+        print("  Grid size: " .. N .. "ï¿½" .. N)
+        print("  Subgrid size: " .. SQRT_N .. "ï¿½" .. SQRT_N)
         print("  Clue density: " .. string.format("%.1f%%", CLUES_PERCENTAGE * 100))
         print("  Output file: " .. OUTPUT_FILE)
     end
@@ -374,8 +374,8 @@ local function main()
     print("\nSudoku puzzle generated successfully!")
     print("Output file: " .. OUTPUT_FILE)
     print("Statistics:")
-    print("  Grid size: " .. N .. "×" .. N)
-    print("  Subgrid size: " .. SQRT_N .. "×" .. SQRT_N)
+    print("  Grid size: " .. N .. "ï¿½" .. N)
+    print("  Subgrid size: " .. SQRT_N .. "ï¿½" .. SQRT_N)
     print("  Total cells: " .. (N * N))
     print("  Clues provided: " .. clues)
     print("  Empty cells: " .. (N * N - clues))
