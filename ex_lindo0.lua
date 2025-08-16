@@ -14,7 +14,7 @@ print()
 local short=""
 local long={}
 local options, opts, optarg = parse_options(arg,short,long)
-
+print(options.major_lic,options.minor_lic)
 xta:setlindodll(options.major_lic,options.minor_lic)
 solver = xta:solver()
 assert(solver,"\n\nError: failed create a solver instance.\n")
