@@ -221,7 +221,7 @@ end
 --- Solve a model with a new solver instance
 -- @param ktryenv index of environment
 -- @param options table of options
-function ls_runlindo(ktryenv,options)    
+function ls_runlindo(ktryenv,options)
     local sol_digests = options.sol_digests
     local log_digests = options.log_digests
     local solver = xta:solver()    
@@ -435,3 +435,82 @@ function ls_runlindo(ktryenv,options)
     solver:dispose()
     glogger.info("Disposed solver instance %s\n",tostring(solver))  
 end -- ktryenv    
+
+-- Get solution file name for LP solution pool
+-- @param inp_file_name input file name
+-- @param solidx solution index
+-- @return LP solution file path
+function get_lpsolu_filename(inp_file_name, solidx)
+  local solidx = solidx or -1
+
+  -- Extract path and filename components
+  local inp_path = inp_file_name:match("^(.*/)")
+  if not inp_path then
+    inp_path = "./"
+  end
+  
+  local inp_file = inp_file_name:match("([^/]+)$")
+  if not inp_file then
+    inp_file = inp_file_name
+  end
+  
+  -- Get base name (filename without extension)
+  local base_name = inp_file:match("^([^%.]+)")
+  if not base_name then
+    base_name = inp_file
+  end
+  
+  local result
+  if solidx >= 1 then
+    result = string.format("%slpsol/%s.sol%d.gz", inp_path, base_name, solidx)
+  else
+    result = string.format("%slpsol/%s.sol.gz", inp_path, base_name)
+  end
+  
+  return result
+end
+
+-- Get solution file name for MIP solution pool or GOP solution pool
+-- @param inp_file_name input file name
+-- @param solidx solution index
+-- @param itype solution type (1 for miplib2010 format, other for miplib2017 format)
+-- @return solution file path
+function get_mipsolu_filename(inp_file_name, solidx, itype)
+  local solidx = solidx or 1
+  local itype = itype or 0
+  if inp_file_name:find("miplib2010") then
+    itype = 1
+    solidx = -1
+  end
+  -- Extract path and filename components
+  local inp_path = inp_file_name:match("^(.*/)")
+  if not inp_path then
+    inp_path = "./"
+  end
+  
+  local inp_file = inp_file_name:match("([^/]+)$")
+  if not inp_file then
+    inp_file = inp_file_name
+  end
+  
+  -- Get base name (filename without extension)
+  local base_name = inp_file:match("^([^%.]+)")
+  if not base_name then
+    base_name = inp_file
+  end
+  
+  local result
+  if itype == 1 then
+    -- miplib2010 format
+    if solidx >= 1 then
+      result = string.format("%ssol/%s.sol%d.gz", inp_path, base_name, solidx)
+    else
+      result = string.format("%ssol/%s.sol.gz", inp_path, base_name)
+    end
+  else
+    -- miplib2017 format
+    result = string.format("%ssolutions/%s/%d/%s.sol.gz", inp_path, base_name, solidx, base_name)
+  end
+  
+  return result
+end

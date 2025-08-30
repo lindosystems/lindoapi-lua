@@ -16,7 +16,7 @@ local long={}
 local options, opts, optarg = parse_options(arg,short,long)
 print(options.major_lic,options.minor_lic)
 xta:setlindodll(options.major_lic,options.minor_lic)
-solver = xta:solver()
+local solver = xta:solver()
 assert(solver,"\n\nError: failed create a solver instance.\n")
 printf("Created a new solver instance %s\n",solver.version);
 printf("Lindo status codes:\n")
