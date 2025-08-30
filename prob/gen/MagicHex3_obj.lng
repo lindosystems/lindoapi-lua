@@ -23,9 +23,9 @@ CALC:
 	KOFF = 0; !Comment out to make KOFF the variable to offset for the values assigned in the hexagon, 
                        Positive KOFF shifts values assigned from 1..(3N^2-3N+1) to (1+KOFF)..(3N^2-3N+1+KOFF)
                        If it is a variable (i.e. commented out from CALC), it should better be @free;
-	!@SET('XSOLVR',14,0); !Remove comment to use external solver '14';
+	!@SET('XSOLVR',14,'liblindohighs.dll'); !Remove comment to use external solver '14';
 	@SET('SOLVLG', 2);
-	!@SET('GLOBAL', 1); !Remove comment to activate global solver if KOFF is a variable;
+!      @SET('GLOBAL', 1); !Remove comment to activate global solver if KOFF is a variable;
 ENDCALC
 [HRZ1] @SUM(valset(j): (j+KOFF)*z(1,j)) + @SUM(valset(j): (j+KOFF)*z(2,j)) + @SUM(valset(j): (j+KOFF)*z(3,j)) = KSUM;
 [HRZ2] @SUM(valset(j): (j+KOFF)*z(4,j)) + @SUM(valset(j): (j+KOFF)*z(5,j)) + @SUM(valset(j): (j+KOFF)*z(6,j)) + @SUM(valset(j): (j+KOFF)*z(7,j)) = KSUM;
@@ -42,8 +42,9 @@ ENDCALC
 [ULR3] @SUM(valset(j): (j+KOFF)*z(3,j)) + @SUM(valset(j): (j+KOFF)*z(6,j)) + @SUM(valset(j): (j+KOFF)*z(10,j)) + @SUM(valset(j): (j+KOFF)*z(14,j)) + @SUM(valset(j): (j+KOFF)*z(17,j)) = KSUM;
 [ULR4] @SUM(valset(j): (j+KOFF)*z(7,j)) + @SUM(valset(j): (j+KOFF)*z(11,j)) + @SUM(valset(j): (j+KOFF)*z(15,j)) + @SUM(valset(j): (j+KOFF)*z(18,j)) = KSUM;
 [ULR5] @SUM(valset(j): (j+KOFF)*z(12,j)) + @SUM(valset(j): (j+KOFF)*z(16,j)) + @SUM(valset(j): (j+KOFF)*z(19,j)) = KSUM;
+!@free(koff);
 END
-!Hex grid:
+!Baseline Hex grid:
 ! Honeycomb structure for order N=3;
 !       1   2   3 
 !     4   5   6   7 
@@ -51,6 +52,7 @@ END
 !    13  14  15  16 
 !      17  18  19 
 !;
+!Rotational Hex grids:
 ! ||||||||||||||||||||;
 !Rotated original hex grid 60 degrees:
 ! Honeycomb structure for order N=3;
@@ -136,6 +138,7 @@ END
 ! - Break ULR diagonal symmetry
 ;
 !	@FOR(cell(i):
-!		@FOR(cell(j) | i,j share the same position in any symmetric hexagon:
-!			valasg(i) <> valasg(j) for all symmetry groups..
+!		@SUM(cell(j) | for all j where i and j share the same position in any symmetric hexagon: z(i,j)) <= 1;
 !		);
+
+
