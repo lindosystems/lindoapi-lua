@@ -45,8 +45,8 @@ local function usage(help_)
     print("\t lslua ex_solve.lua -m /path/to/model.mps [options]")    	
     print("\t lslua ex_solve.lua -m ~/prob/milp/mps/miplib3/p0201.mps.gz --cblog=0 --cbmip=1") 
     print("\t lslua ex_solve.lua -m ~/prob/lp/mps/netlib/25fv47.mps.gz --ranges=obj,bnd,rhs")     
-    print("\t lslua ex_solve.lua -m ~/prob/nlp/mpi/nonconvex/dejong.gz --gop")     
-    print("\t lslua ex_solve.lua -m ~/prob/nlp/mpi/nonconvex/dejong.gz --multis=10")     
+    print("\t lslua ex_solve.lua -m ~/prob/nlp/mpi/nonconvex/dejong.mpi.gz --gop")     
+    print("\t lslua ex_solve.lua -m ~/prob/nlp/mpi/nonconvex/dejong.mpi.gz --multis=10")     
 	print()    
 end   
 

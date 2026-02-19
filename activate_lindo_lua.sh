@@ -8,11 +8,37 @@ if [ -z "$LINDOAPI_HOME" ]; then
   echo "LINDOAPI_HOME is not set. Please set the LINDOAPI_HOME environment variable."
   return 1
 fi
-if [ "$1" = "win32" -o  "$1" = "32" -o  "$1" = "win32x86" ]; then
-	export PLATFORM=win32
-fi	
+
+# Detect platform based on UNAME and MNAME
+USER_PLATFORM=""
+case "$UNAME" in
+  CYGWIN*|MSYS*|MINGW*)
+    # Windows platform - check if 32-bit override requested
+    if [ "$1" = "win32" -o "$1" = "32" -o "$1" = "win32x86" ]; then
+      USER_PLATFORM=win32
+    else
+      USER_PLATFORM=win64
+    fi
+    ;;
+  Linux*)
+    USER_PLATFORM=linux64
+    ;;
+  Darwin*)
+    if [ "$MNAME" = "arm64" ]; then
+      USER_PLATFORM=osxarm64
+    else
+      USER_PLATFORM=osx64
+    fi
+    ;;
+esac
+
 # Set LINDO API environment and PLATFORM
 source $LINDOAPI_HOME/bin/lindoapivars.sh
+
+# Override PLATFORM with detected platform
+if [ ! -z "$USER_PLATFORM" ]; then
+	export PLATFORM=$USER_PLATFORM
+fi
 
 if [ -z "$LINDOAPI_LICENSE_FILE" ]; then
   echo "LINDOAPI_LICENSE_FILE is not set. Please check the installation of LINDO API."

@@ -108,7 +108,7 @@ end
 --- General callback function that gets called from various localtions in the Lindo API
 -- @param pModel Pointer to the model instance
 -- @param iLoc Location code
-function cbstd(pModel, iLoc,udata)
+function cbstd_(pModel, iLoc,udata)
     local iter,bncnt,lpcnt,mipcnt,pfeas,bestbnd,pobj,accnt,status,curtime,szerr
     local res
     
@@ -144,7 +144,51 @@ function cbstd(pModel, iLoc,udata)
 
     szerr = "" -- pModel:errmsg(res.ErrorCode) or "N/A"
     printf("\n%6s:%8u %8u %8u %14e %14e %14e %8u %6u %8.2f %s",
-    "(CB)",iter,bncnt,lpcnt+mipcnt,pfeas,bestbnd,pobj,accnt,status,curtime,szerr);
+    string.format("(CB-%02d)",iLoc),iter,bncnt,lpcnt+mipcnt,pfeas,bestbnd,pobj,accnt,status,curtime,szerr);
+
+    return 0
+end
+
+--- General callback function that gets called from various localtions in the Lindo API
+--- This version always return the progress info safely without throwing an error even if 
+--- the callback is called at a location where some of the progress info is not available. 
+function cbstd(pModel, iLoc,udata)
+    local iter,bncnt,lpcnt,mipcnt,pfeas,bestbnd,pobj,accnt,status,curtime,szerr
+    local res
+    
+    res = pModel:getProgressInfoSafe(iLoc,info.LS_IINFO_CUR_ITER)
+    iter = res and res.pValue or 0
+
+    res = pModel:getProgressInfoSafe(iLoc,info.LS_IINFO_CUR_STATUS)
+    status = res and res.pValue or 0    
+
+    res = pModel:getProgressInfoSafe(iLoc,info.LS_IINFO_CUR_LP_COUNT)
+    lpcnt = res and res.pValue or 0    
+    
+    res = pModel:getProgressInfoSafe(iLoc,info.LS_IINFO_CUR_BRANCH_COUNT)
+    bncnt = res and res.pValue or 0    
+    
+    res = pModel:getProgressInfoSafe(iLoc,info.LS_IINFO_CUR_MIP_COUNT)
+    mipcnt = res and res.pValue or 0    
+
+    res = pModel:getProgressInfoSafe(iLoc,info.LS_DINFO_SUB_PINF)
+    pfeas = res and res.pValue or 0    
+    
+    res = pModel:getProgressInfoSafe(iLoc,info.LS_DINFO_CUR_BEST_BOUND)
+    bestbnd = res and res.pValue or 0    
+    
+    res = pModel:getProgressInfoSafe(iLoc,info.LS_DINFO_CUR_OBJ)
+    pobj = res and res.pValue or 0    
+
+    res = pModel:getProgressInfoSafe(iLoc,info.LS_IINFO_CUR_ACTIVE_COUNT)
+    accnt = res and res.pValue or 0    
+    
+    res = pModel:getProgressInfoSafe(iLoc,info.LS_DINFO_CUR_TIME)
+    curtime = res and res.pValue or 0    
+
+    szerr = "" -- pModel:errmsg(res.ErrorCode) or "N/A"
+    printf("\n%6s:%8u %8u %8u %14e %14e %14e %8u %6u %8.2f %s",
+    string.format("(CB-%02d)",iLoc),iter,bncnt,lpcnt+mipcnt,pfeas,bestbnd,pobj,accnt,status,curtime,szerr);
 
     return 0
 end
