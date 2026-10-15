@@ -551,9 +551,9 @@ Lindo.parameters =
    --! Optimality tolerance for NCM method */
    LS_DPARAM_SAMP_NCM_OPTTOL                = 7707,
    --! Number of parallel threads */
-   LS_IPARAM_SAMP_NUM_THREADS               = 7708,
+   LS_IPARAM_SAMP_NUM_THREADS               = 7738,
    --! Buffer size for random number generators */
-   LS_IPARAM_SAMP_RG_BUFFER_SIZE            = 7709,
+   LS_IPARAM_SAMP_RG_BUFFER_SIZE            = 7739,
 
    --Branch And Price parameters (8000 - 8499) */
 
