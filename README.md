@@ -2,8 +2,8 @@
                       Copyright (c) 2024
 
          LINDO Systems, Inc.           312.988.7422
-         1415 North Dayton St.         info@lindo.com
-         Chicago, IL 60622             http://www.lindo.com
+         1332 North Halsted Street     info@lindo.com
+         Chicago, Illinois 60642       http://www.lindo.com
          
 **lindoapi-lua** is a Lua binding for the LINDO API. It allows you to interface with the LINDO API optimization library in the Lua programming language. This can be particularly useful if you want to perform complex mathematical optimization tasks in your Lua applications.
 
