@@ -1,5 +1,5 @@
 # lindoapi-lua
-                      Copyright (c) 2024
+                    Copyright (c) 2024-2027
 
          LINDO Systems, Inc.           312.988.7422
          1332 North Halsted Street     info@lindo.com
